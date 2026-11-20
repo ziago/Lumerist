@@ -63,7 +63,7 @@ jobs:
           ./Scripts/build-windows-installer.ps1 -Iscc $iscc
 
       # Built from this exact commit (BUILD-COMMIT), so a release Mac can use
-      # them: gh run download <run> -n windows-packages -D build/release/<version>/windows
+      # them: gh run download <run> -n windows-packages -D build/release (it fills <version>/windows)
       - name: Upload the packages
         uses: actions/upload-artifact@v4
         with:

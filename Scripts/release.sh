@@ -158,12 +158,13 @@ notarize() {
   local result
   # "|| true": a rejected submission must still reach the log below.
   result="$(xcrun notarytool submit "$file" --keychain-profile "$profile" --wait --output-format plist)" || true
-  local status submission
-  status="$(print -r -- "$result" | plutil -extract status raw -o - - 2>/dev/null || true)"
+  # Not "status": zsh reserves that name (the last exit code) and refuses to assign it.
+  local outcome submission
+  outcome="$(print -r -- "$result" | plutil -extract status raw -o - - 2>/dev/null || true)"
   submission="$(print -r -- "$result" | plutil -extract id raw -o - - 2>/dev/null || true)"
-  if [[ "$status" != "Accepted" ]]; then
+  if [[ "$outcome" != "Accepted" ]]; then
     [[ -n "$submission" ]] && xcrun notarytool log "$submission" --keychain-profile "$profile" || true
-    fail "Notarization of $(basename "$file") ended with status: ${status:-unknown}"
+    fail "Notarization of $(basename "$file") ended with status: ${outcome:-unknown}"
   fi
 }
 
