@@ -1,0 +1,94 @@
+{
+  "group": "system-keys",
+  "cases": [
+    {
+      "id": "system-keys/a-palette-tap-leaves-it-open-and-a-hold-closes-it-on-release",
+      "steps": [
+        { "down": "LeftOf1", "at": 0, "decision": "consume", "intents": ["openPalette"] },
+        { "down": "LeftOf1", "repeat": true, "at": 0.1, "decision": "consume" },
+        { "up": "LeftOf1", "at": 0.1, "decision": "consume", "intents": [], "state": { "paletteOpen": true } },
+        { "down": "LeftOf1", "at": 0.5, "intents": ["closePalette"] },
+        { "up": "LeftOf1", "at": 0.6, "decision": "consume", "state": { "paletteOpen": false } },
+        { "down": "LeftOf1", "at": 1 },
+        { "up": "LeftOf1", "at": 1.6, "decision": "consume", "intents": ["closePalette"] }
+      ]
+    },
+    {
+      "id": "system-keys/other-input-while-the-palette-is-open-makes-it-a-hold",
+      "steps": [
+        { "down": "LeftOf1", "at": 0 },
+        { "down": "H", "at": 0.05, "decision": "pass" },
+        { "wheel": 1, "decision": "pass" },
+        { "up": "LeftOf1", "at": 0.1, "decision": "consume", "intents": ["closePalette"] }
+      ]
+    },
+    {
+      "id": "system-keys/keep-visible-pins-the-palette",
+      "keymap": { "palette": { "keepVisible": true } },
+      "steps": [
+        { "down": "LeftOf1", "at": 0 },
+        { "up": "LeftOf1", "at": 1, "intents": [], "state": { "paletteOpen": true } },
+        { "down": "LeftOf1", "at": 2, "intents": ["closePalette"] },
+        { "up": "LeftOf1", "at": 2.1, "decision": "consume", "state": { "paletteOpen": false } },
+        { "down": "LeftOf1", "at": 3 },
+        { "up": "LeftOf1", "at": 4 },
+        { "paletteDidClose": true, "state": { "paletteOpen": false } }
+      ]
+    },
+    {
+      "id": "system-keys/the-palette-is-develop-only-and-respects-text-fields",
+      "steps": [
+        { "down": "LeftOf1", "in": "library", "decision": "pass" },
+        { "down": "LeftOf1", "textFocused": true, "decision": "pass" }
+      ]
+    },
+    {
+      "id": "system-keys/no-palette-key-no-palette",
+      "keymap": { "systemKeys": { "paletteKey": null } },
+      "steps": [
+        { "down": "LeftOf1", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "system-keys/key-reference-toggle-is-tab-plus-h",
+      "steps": [
+        { "down": "Tab", "decision": "consume" },
+        { "down": "H", "decision": "consume", "intents": ["toggleKeyReference"] },
+        { "down": "H", "repeat": true, "intents": [] },
+        { "up": "H", "decision": "consume" },
+        { "up": "Tab", "decision": "consume" },
+        { "down": "H", "decision": "pass" },
+        { "up": "H" },
+        { "down": "Tab", "textFocused": true, "decision": "pass" }
+      ]
+    },
+    {
+      "id": "system-keys/key-reference-toggle-can-be-a-plain-key",
+      "keymap": { "systemKeys": { "keyReferenceToggle": "Shift+LeftOf1" } },
+      "steps": [
+        { "down": "Shift+LeftOf1", "intents": ["toggleKeyReference"] },
+        { "up": "LeftOf1", "decision": "consume" },
+        { "down": "Shift+LeftOf1", "textFocused": true, "decision": "pass" }
+      ]
+    },
+    {
+      "id": "system-keys/pause-stops-everything-until-toggled-again",
+      "steps": [
+        { "down": "Control+Esc", "intents": [{ "togglePause": true }], "state": { "paused": true } },
+        { "up": "Esc", "decision": "consume" },
+        { "down": "Q", "decision": "pass" },
+        { "down": "Shift+LeftOf1", "decision": "pass" },
+        { "click": "back", "decision": "pass" },
+        { "down": "Control+Esc", "intents": [{ "togglePause": false }], "state": { "paused": false } },
+        { "down": "Q", "decision": "consume" }
+      ]
+    },
+    {
+      "id": "system-keys/pausing-while-a-key-is-held-delivers-it",
+      "steps": [
+        { "down": "Q" },
+        { "down": "Control+Esc", "decision": ["Q↓"], "intents": [{ "togglePause": true }] }
+      ]
+    }
+  ]
+}

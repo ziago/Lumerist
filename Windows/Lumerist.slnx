@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Lumerist.App/Lumerist.App.csproj" />
+  <Project Path="Lumerist.Core.Tests/Lumerist.Core.Tests.csproj" />
+  <Project Path="Lumerist.Core/Lumerist.Core.csproj" />
+</Solution>

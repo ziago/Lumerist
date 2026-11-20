@@ -1,0 +1,20 @@
+.build/
+build/
+*.app
+# The Windows app project is a folder, not a macOS bundle.
+!/Windows/Lumerist.App/
+DerivedData/
+
+# Local notes, not published.
+docs/private/
+
+# macOS Finder metadata.
+.DS_Store
+
+# Local tool output.
+.playwright-mcp/
+Resources/Icon/*.iconset/
+
+# .NET build output (Windows/).
+bin/
+obj/

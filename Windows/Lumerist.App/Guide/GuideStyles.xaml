@@ -1,0 +1,247 @@
+<!--
+  Styles of the guide, "Stay in touch" and About & Support windows: the
+  Mac's NeonButtonStyle (primary, secondary, quiet), SynthCheckboxStyle and
+  the email field. Galerist (".Flat") and Miami (".Neon") differ in shape and
+  type, so code picks the set for the theme in effect and rebuilds on a theme
+  change; colours are DynamicResource and follow it by themselves.
+  Button labels are upper case on both looks: code sets the text.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ControlTemplate x:Key="Guide.Button.Template" TargetType="Button">
+    <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="1" CornerRadius="{DynamicResource Synth.Radius.Control}"
+            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+      <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="False" />
+    </Border>
+  </ControlTemplate>
+
+  <Style x:Key="Guide.Button.Base" TargetType="Button">
+    <Setter Property="Template" Value="{StaticResource Guide.Button.Template}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="14,0" />
+  </Style>
+
+  <!-- Galerist: square, mono small caps; primary ink filled, secondary a hairline box, quiet text only. -->
+  <Style x:Key="Guide.Button.Flat.Base" TargetType="Button" BasedOn="{StaticResource Guide.Button.Base}">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Mono}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="MinHeight" Value="30" />
+  </Style>
+
+  <Style x:Key="Guide.Button.Flat.Primary" TargetType="Button" BasedOn="{StaticResource Guide.Button.Flat.Base}">
+    <Setter Property="Foreground" Value="{DynamicResource Synth.OnMagenta}" />
+    <Setter Property="Background" Value="{DynamicResource Synth.Magenta}" />
+    <Style.Triggers>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Opacity" Value="0.82" />
+      </Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.Ice}" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Disabled}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.GridLine}" />
+        <Setter Property="Cursor" Value="Arrow" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="Guide.Button.Flat.Secondary" TargetType="Button" BasedOn="{StaticResource Guide.Button.Flat.Base}">
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Ice}" />
+    <Setter Property="Background" Value="{DynamicResource Synth.Panel}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Synth.Outline}" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.Steel}" />
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Synth.GridLine}" />
+      </Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.Teal}" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Disabled}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.GridLine}" />
+        <Setter Property="Cursor" Value="Arrow" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="Guide.Button.Flat.Quiet" TargetType="Button" BasedOn="{StaticResource Guide.Button.Flat.Base}">
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Body}" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="MinHeight" Value="26" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Teal}" />
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Steel}" />
+      </Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.Teal}" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Disabled}" />
+        <Setter Property="Cursor" Value="Arrow" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- Miami: Chakra Petch caps; primary magenta, secondary a teal outline, quiet steel text. -->
+  <Style x:Key="Guide.Button.Neon.Base" TargetType="Button" BasedOn="{StaticResource Guide.Button.Base}">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Display}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+
+  <Style x:Key="Guide.Button.Neon.Primary" TargetType="Button" BasedOn="{StaticResource Guide.Button.Neon.Base}">
+    <Setter Property="Foreground" Value="{DynamicResource Synth.OnMagenta}" />
+    <Setter Property="Background" Value="{DynamicResource Synth.Magenta}" />
+    <!-- The glow is decoration only. A style's effect is frozen, so its colour is Miami's magenta written out. -->
+    <Setter Property="Effect">
+      <Setter.Value>
+        <DropShadowEffect Color="#FF3EA5" BlurRadius="18" ShadowDepth="0" Opacity="0.55" />
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Synth.MagentaLight}" />
+      </Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.Ice}" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Disabled}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.GridLine}" />
+        <Setter Property="Effect" Value="{x:Null}" />
+        <Setter Property="Cursor" Value="Arrow" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="Guide.Button.Neon.Secondary" TargetType="Button" BasedOn="{StaticResource Guide.Button.Neon.Base}">
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Teal}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Synth.Teal}" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.TealLight}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.TealLight}" />
+      </Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.Amber}" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Disabled}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.GridLine}" />
+        <Setter Property="Cursor" Value="Arrow" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="Guide.Button.Neon.Quiet" TargetType="Button" BasedOn="{StaticResource Guide.Button.Neon.Base}">
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Steel}" />
+    <Setter Property="Padding" Value="6,0" />
+    <Setter Property="MinHeight" Value="26" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Ice}" />
+      </Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource Synth.Amber}" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Synth.Disabled}" />
+        <Setter Property="Cursor" Value="Arrow" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- The Mac's SynthCheckboxStyle: an outlined box, magenta (Galerist: ink red) when ticked. -->
+  <Style x:Key="Guide.CheckBox" TargetType="CheckBox">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Body}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="CheckBox">
+          <!-- A Grid, not a horizontal StackPanel: the text gets the width that is left and wraps in it. -->
+          <Grid Background="Transparent">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <!-- Level with the first line of text, which may wrap. -->
+            <Grid Width="15" Height="15" VerticalAlignment="Top" Margin="0,1,0,0">
+              <Border x:Name="Box" CornerRadius="{DynamicResource Synth.Radius.Row}" BorderThickness="1"
+                      Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" />
+              <Path x:Name="Tick" Data="M 3.5,7.8 L 6.3,10.6 L 11.5,4.6" StrokeThickness="2" Visibility="Collapsed"
+                    Stroke="{DynamicResource Synth.OnMagenta}" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+            </Grid>
+            <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Top" RecognizesAccessKey="False" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Box" Property="Background" Value="{DynamicResource Synth.Magenta}" />
+              <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Synth.Magenta}" />
+              <Setter TargetName="Tick" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Synth.Amber}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Foreground" Value="{DynamicResource Synth.Disabled}" />
+              <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Synth.Disabled}" />
+              <Setter TargetName="Tick" Property="Stroke" Value="{DynamicResource Synth.Disabled}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- The email field: no chrome of its own, the frame comes from Background and BorderBrush (teal when focused). -->
+  <Style x:Key="Guide.EmailBox" TargetType="TextBox">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Ice}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Synth.Outline}" />
+    <Setter Property="CaretBrush" Value="{DynamicResource Synth.Teal}" />
+    <Setter Property="SelectionBrush" Value="{DynamicResource Synth.Teal}" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="TextBox">
+          <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="1" CornerRadius="{DynamicResource Synth.Radius.Control}" SnapsToDevicePixels="True">
+            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
+                          Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+              <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource Synth.Teal}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Foreground" Value="{DynamicResource Synth.Steel}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+</ResourceDictionary>

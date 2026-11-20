@@ -1,0 +1,93 @@
+{
+  "group": "masks",
+  "cases": [
+    {
+      "id": "masks/dial-keys-move-the-masks-slider",
+      "steps": [
+        { "down": "Q", "in": "masking" },
+        { "wheel": 1, "in": "masking", "intents": [{ "gestureBegan": "develop/local_Exposure" }, { "adjust": "develop/local_Exposure", "delta": 0.05 }] },
+        { "up": "Q", "in": "masking", "intents": [{ "gestureEnded": "develop/local_Exposure" }] }
+      ]
+    },
+    {
+      "id": "masks/sliders-without-a-mask-equivalent-never-touch-the-photo",
+      "about": "Vibrance has no mask slider: scrolling is swallowed with one notice per hold.",
+      "steps": [
+        { "down": "3", "in": "masking", "decision": "consume", "intents": [] },
+        { "wheel": 3, "in": "masking", "decision": "consume", "intents": [{ "unavailableInMask": "develop/Vibrance" }] },
+        { "wheel": 1, "in": "masking", "intents": [] },
+        { "down": "3", "repeat": true, "in": "masking", "decision": "consume" },
+        { "up": "3", "in": "masking", "decision": "consume", "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "masks/a-tap-without-a-mask-equivalent-still-reaches-lightroom",
+      "steps": [
+        { "down": "3", "in": "masking", "decision": "consume" },
+        { "up": "3", "in": "masking", "decision": ["3↓", "3↑"], "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "masks/typing-while-a-mask-is-selected-keeps-the-order",
+      "steps": [
+        { "down": "3", "in": "masking", "decision": "consume" },
+        { "down": "H", "in": "masking", "decision": ["3↓", "H↓"] }
+      ]
+    },
+    {
+      "id": "masks/leaving-the-mask-restores-the-global-sliders",
+      "steps": [
+        { "down": "Q", "in": "masking" },
+        { "up": "Q", "in": "masking" },
+        { "down": "Q" },
+        { "wheel": 1, "lastIntent": { "adjust": "develop/Exposure", "delta": 0.05 } }
+      ]
+    },
+    {
+      "id": "masks/following-the-mask-can-be-turned-off",
+      "keymap": { "input": { "followSelectedMask": false } },
+      "steps": [
+        { "down": "Q", "in": "masking" },
+        { "wheel": 1, "in": "masking", "lastIntent": { "adjust": "develop/Exposure", "delta": 0.05 } },
+        { "up": "Q", "in": "masking" },
+        { "down": "3", "in": "masking" },
+        { "wheel": 1, "in": "masking", "lastIntent": { "adjust": "develop/Vibrance", "delta": 1 } }
+      ]
+    },
+    {
+      "id": "masks/nudge-keys-follow-the-mask-too",
+      "keymap": { "slots": { "develop/Exposure": { "nudgeUp": "]" }, "develop/Vibrance": { "nudgeUp": "[" } } },
+      "steps": [
+        { "down": "]", "in": "masking", "intents": [{ "adjust": "develop/local_Exposure", "delta": 0.05 }] },
+        { "down": "[", "in": "masking", "decision": "consume", "intents": [{ "unavailableInMask": "develop/Vibrance" }] },
+        { "down": "]", "intents": [{ "adjust": "develop/Exposure", "delta": 0.05 }] }
+      ]
+    },
+    {
+      "id": "masks/reset-in-a-mask-resets-the-masks-slider",
+      "steps": [
+        { "down": "Q", "in": "masking" },
+        { "click": "left", "count": 2, "in": "masking", "intents": [{ "reset": "develop/local_Exposure" }] }
+      ]
+    },
+    {
+      "id": "masks/preset-amount-becomes-the-mask-amount",
+      "steps": [
+        { "down": "P", "in": "masking" },
+        { "wheel": 1, "in": "masking", "lastIntent": { "adjust": "develop/local_Amount", "delta": 1 } },
+        { "up": "P", "in": "masking" },
+        { "down": "P" },
+        { "wheel": 1, "lastIntent": { "adjust": "develop/PresetAmount", "delta": 1 } }
+      ]
+    },
+    {
+      "id": "masks/a-key-pressed-before-masking-is-known-follows-the-mask",
+      "about": "Q went down just before the app learned that the Masking tool is open: the wheel moves the mask, never the whole photo.",
+      "steps": [
+        { "down": "Q", "state": { "activeParameter": "develop/Exposure" } },
+        { "wheel": 1, "in": "masking", "intents": [{ "gestureBegan": "develop/local_Exposure" }, { "adjust": "develop/local_Exposure", "delta": 0.05 }] },
+        { "up": "Q", "in": "masking", "intents": [{ "gestureEnded": "develop/local_Exposure" }] }
+      ]
+    }
+  ]
+}

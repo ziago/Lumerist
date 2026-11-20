@@ -1,0 +1,55 @@
+{
+  "about": "The standard layout every new install starts from, and the default options. Both apps must build exactly this.",
+  "develop": {
+    "dial": {
+      "Temperature": "1", "Tint": "2", "Vibrance": "3", "Texture": "4", "Clarity": "5", "Dehaze": "6",
+      "Exposure": "Q", "Contrast": "W", "Saturation": "E", "straightenAngle": "R", "lumerist.cropZoom": "T",
+      "Highlights": "A", "Shadows": "S", "Whites": "D", "Blacks": "F",
+      "ParametricShadows": "X", "ParametricDarks": "C", "ParametricLights": "V", "ParametricHighlights": "B",
+      "PresetAmount": "P", "local_Amount": "M"
+    }
+  },
+  "library": {
+    "dial": {
+      "Temperature": "1", "Tint": "2", "Vibrance": "3", "Texture": "4", "Clarity": "5",
+      "Exposure": "Q", "Contrast": "W", "Saturation": "E",
+      "Highlights": "A", "Shadows": "S", "Whites": "D", "Blacks": "F"
+    }
+  },
+  "commandKeys": [
+    { "id": "8022E100-5E15-408A-A02C-9796E4B60CBA", "scope": "develop", "chord": "Combo+A", "group": "Lightroom",
+      "title": "Auto Tone", "action": { "command": "autoTone" } },
+    { "id": "84C5337F-EA7E-44F3-97CE-6772C2231EB4", "scope": "develop", "chord": "Combo+W", "group": "Lightroom",
+      "title": "Auto White Balance", "action": { "command": "autoWhiteBalance" } },
+    { "id": "F0851B74-86AE-4988-BE39-01DF8EFAFE25", "scope": "develop", "chord": "Combo+R", "group": "Lightroom",
+      "title": "Reset all", "action": { "command": "resetAll" } },
+    { "id": "787E1A28-ED89-40D3-9855-6049A5F3F639", "scope": "develop", "chord": "Combo+Q", "group": "Lightroom",
+      "title": "Paste settings from previous", "action": { "shortcut": "Primary+Alt+V" } }
+  ],
+  "systemKeys": {
+    "comboKey": "Tab",
+    "paletteKey": "LeftOf1",
+    "keyReferenceToggle": "Combo+H",
+    "pauseToggle": "Control+Esc"
+  },
+  "input": {
+    "invertWheel": false,
+    "swapNormalAndCoarse": false,
+    "trackpadPointsPerStep": 12,
+    "requireMouseDown": true,
+    "dragSensitivity": 25,
+    "returnCursorAfterRelease": true,
+    "doubleClickReset": true,
+    "middleClickReset": true,
+    "mouseBackForward": true,
+    "followSelectedMask": true,
+    "revealPanels": false,
+    "arrowKeysAdjust": true
+  },
+  "palette": { "keepVisible": false, "favourites": [] },
+  "platformNotes": [
+    "LeftOf1 is the key left of 1: key code 50 on ANSI Mac keyboards and 10 on ISO ones (the app picks the right one); scan code 0x29 on Windows for both.",
+    "Primary+Alt+V is Lightroom's Paste Settings from Previous: ⌥⌘V on macOS, Ctrl+Alt+V on Windows.",
+    "Control+Esc pauses: ⌃Esc on macOS, Ctrl+Esc on Windows (the keyboard hook takes it before the Start menu; to be confirmed on Windows)."
+  ]
+}

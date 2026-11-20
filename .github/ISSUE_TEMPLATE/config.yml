@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/ziago/Lumerist/discussions
+    about: Ask questions, share layouts, and discuss ideas with other users.
+  - name: Report a security problem
+    url: https://github.com/ziago/Lumerist/security/advisories/new
+    about: Please report vulnerabilities privately.

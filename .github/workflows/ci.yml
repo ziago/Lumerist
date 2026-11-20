@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  macos:
+    name: macOS app and plug-in
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Swift tests
+        run: swift test
+
+      - name: Shared cases and values (Swift side)
+        run: python3 Scripts/check-parity.py --side swift
+
+      - name: Plug-in tests (LuaJIT)
+        run: |
+          brew install luajit
+          zsh Scripts/test-lua.sh
+
+      - name: Parameter catalog is up to date
+        run: python3 Scripts/generate-parameters.py --check
+
+      - name: Universal release build (unsigned)
+        run: |
+          swift build -c release --arch arm64 --arch x86_64
+          lipo -archs "$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/LumeristApp"
+
+  windows:
+    name: Windows app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: C# tests
+        run: dotnet test Windows
+
+      - name: Shared cases and values (C# side)
+        run: python Scripts/check-parity.py --side csharp
+
+      - name: Parameter catalog is up to date
+        run: python Scripts/generate-parameters.py --check
+
+      - name: Release packages, x64 and arm64 (unsigned)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y }
+          ./Scripts/build-windows-installer.ps1 -Iscc $iscc
+
+      # Built from this exact commit (BUILD-COMMIT), so a release Mac can use
+      # them: gh run download <run> -n windows-packages -D build/release/<version>/windows
+      - name: Upload the packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packages
+          path: |
+            build/release/*/windows/*.exe
+            build/release/*/windows/*.zip
+            build/release/*/windows/*.sha256
+            build/release/*/windows/BUILD-COMMIT
+          if-no-files-found: error
+          retention-days: 14
+
+      # Every window drawn once, from the packaged app: a WPF failure that the
+      # tests cannot see (fonts, cultures, styles) fails here.
+      - name: Screens render (x64 package)
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem build/release/*/windows/x64/Lumerist/Lumerist.exe | Select-Object -First 1
+          $shots = Join-Path $env:RUNNER_TEMP 'snapshots'
+          $run = Start-Process -FilePath $exe.FullName -ArgumentList '--render-snapshots', $shots -Wait -PassThru
+          $count = (Get-ChildItem $shots -Filter *.png -ErrorAction SilentlyContinue).Count
+          Write-Host "$count screens rendered, exit code $($run.ExitCode)"
+          if ($run.ExitCode -ne 0 -or $count -eq 0) { throw 'Some screens failed to render.' }
+
+      - name: Upload the screens
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-screens
+          path: ${{ runner.temp }}/snapshots
+          if-no-files-found: ignore

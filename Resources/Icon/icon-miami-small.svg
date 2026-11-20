@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Simplified for 64 px and below: no grid or sun stripes, thicker teal outline. -->
+  <defs>
+    <linearGradient id="bBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#140A33"/><stop offset="0.62" stop-color="#2A0F4A"/><stop offset="1" stop-color="#070B18"/>
+    </linearGradient>
+    <linearGradient id="bSun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB347"/><stop offset="0.55" stop-color="#FF6A5E"/><stop offset="1" stop-color="#FF3EA5"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(100 100) scale(0.919643) translate(-64 -64)">
+    <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bBg)"/>
+    <path d="M262 600a250 250 0 0 1 500 0z" fill="url(#bSun)"/>
+    <rect x="320" y="300" width="384" height="300" rx="56" fill="#070B18" fill-opacity="0.82" stroke="#2DE2E6" stroke-width="40"/>
+    <path d="M430 450h164" stroke="#2DE2E6" stroke-width="44" stroke-linecap="round"/>
+  </g>
+</svg>

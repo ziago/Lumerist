@@ -1,0 +1,12 @@
+{
+  "about": "Values the Mac app, the Windows app and the Lightroom plug-in must agree on. Scripts/check-parity.py checks that each side uses them.",
+  "protocolVersion": 3,
+  "requestPort": 50550,
+  "responsePort": 50551,
+  "pluginId": "io.github.ziago.lumerist.lightroom",
+  "consent": {
+    "version": "lk-optin-v2",
+    "sha256": "4bd6382380b390149de25bed81c1639306528d76b97e6c4161cb99b6062f50b7",
+    "hashOf": "the consent message and notice joined with a newline, UTF-8, no trailing newline"
+  }
+}

@@ -1,0 +1,193 @@
+<!--
+  Base styles every window shares. Colours, fonts and radii come from
+  Design/Theme.cs as DynamicResource, so they follow a theme change.
+  Keys are a contract between the windows: add new styles, never rename
+  these. The richer components of the Mac's Components.swift live in
+  Design/Controls/.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Text: the Mac's synthTitle / synthLabel / synthBody. -->
+  <Style x:Key="Synth.Text.Body" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Body}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style x:Key="Synth.Text.Secondary" TargetType="TextBlock" BasedOn="{StaticResource Synth.Text.Body}">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Steel}" />
+  </Style>
+
+  <!-- Titles: text goes through Theme.TitleText (uppercase in Miami). -->
+  <Style x:Key="Synth.Text.Title" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Display}" />
+    <Setter Property="FontSize" Value="24" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Ice}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style x:Key="Synth.Text.Heading" TargetType="TextBlock" BasedOn="{StaticResource Synth.Text.Title}">
+    <Setter Property="FontSize" Value="15" />
+  </Style>
+
+  <!-- Small uppercase monospaced label (table headers, read-outs): write the text in capitals. -->
+  <Style x:Key="Synth.Text.Label" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Mono}" />
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Steel}" />
+  </Style>
+
+  <Style x:Key="Synth.Text.Mono" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Mono}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Body}" />
+  </Style>
+
+  <!-- Surfaces. -->
+  <Style x:Key="Synth.Card" TargetType="Border">
+    <Setter Property="Background" Value="{DynamicResource Synth.Panel}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Synth.GridLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{DynamicResource Synth.Radius.Container}" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <Style x:Key="Synth.Divider" TargetType="Rectangle">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Fill" Value="{DynamicResource Synth.GridLine}" />
+    <Setter Property="SnapsToDevicePixels" Value="True" />
+  </Style>
+
+  <!-- Buttons: Primary is the main action (magenta in Miami, red in Galerist); Secondary an outline. -->
+  <Style x:Key="Synth.Button.Secondary" TargetType="Button">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Ice}" />
+    <Setter Property="Background" Value="{DynamicResource Synth.PanelRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Synth.Outline}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14,6" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource Synth.Radius.Control}"
+                  Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource Synth.Teal}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource Synth.Amber}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Foreground" Value="{DynamicResource Synth.Disabled}" />
+              <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="Synth.Button.Primary" TargetType="Button" BasedOn="{StaticResource Synth.Button.Secondary}">
+    <Setter Property="Foreground" Value="{DynamicResource Synth.OnMagenta}" />
+    <Setter Property="Background" Value="{DynamicResource Synth.Magenta}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Synth.Magenta}" />
+  </Style>
+
+  <!-- A text-only button, like a link. -->
+  <Style x:Key="Synth.Button.Link" TargetType="Button">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Teal}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <ContentPresenter x:Name="Content" RecognizesAccessKey="True" />
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter Property="Foreground" Value="{DynamicResource Synth.TealLight}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Inputs. -->
+  <Style x:Key="Synth.TextBox" TargetType="TextBox">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Ice}" />
+    <Setter Property="Background" Value="{DynamicResource Synth.PanelRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Synth.Outline}" />
+    <Setter Property="CaretBrush" Value="{DynamicResource Synth.Teal}" />
+    <Setter Property="SelectionBrush" Value="{DynamicResource Synth.Teal}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="6,4" />
+  </Style>
+
+  <!-- A checkbox drawn as a switch, the Mac's toggles. -->
+  <Style x:Key="Synth.Toggle" TargetType="CheckBox">
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Body}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="CheckBox">
+          <Grid Background="Transparent">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border x:Name="Track" Width="30" Height="16" VerticalAlignment="Center" CornerRadius="8"
+                    Background="{DynamicResource Synth.PanelRaised}" BorderBrush="{DynamicResource Synth.Outline}" BorderThickness="1">
+              <Border x:Name="Thumb" Width="10" Height="10" CornerRadius="5" Margin="2,0" HorizontalAlignment="Left"
+                      Background="{DynamicResource Synth.Steel}" />
+            </Border>
+            <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Track" Property="Background" Value="{DynamicResource Synth.Teal}" />
+              <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource Synth.Teal}" />
+              <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right" />
+              <Setter TargetName="Thumb" Property="Background" Value="{DynamicResource Synth.OnTeal}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource Synth.Amber}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Opacity" Value="0.5" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Window background for every Lumerist window. -->
+  <Style x:Key="Synth.Window" TargetType="Window">
+    <Setter Property="Background" Value="{DynamicResource Synth.Abyss}" />
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Body}" />
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="UseLayoutRounding" Value="True" />
+    <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+  </Style>
+</ResourceDictionary>

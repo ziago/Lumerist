@@ -1,0 +1,142 @@
+{
+  "group": "nudge-and-command-keys",
+  "cases": [
+    {
+      "id": "nudge-and-command-keys/nudge-keys-step-on-each-press-and-repeat",
+      "keymap": { "slots": { "develop/Exposure": { "nudgeDown": "[", "nudgeUp": "]" } } },
+      "steps": [
+        { "down": "[", "decision": "consume", "intents": [{ "adjust": "develop/Exposure", "delta": -0.05 }] },
+        { "down": "[", "repeat": true, "intents": [{ "adjust": "develop/Exposure", "delta": -0.05 }] },
+        { "up": "[", "decision": "consume" },
+        { "down": "Shift+]", "intents": [{ "adjust": "develop/Exposure", "delta": 0.33 }] }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/combo-nudge-keys-need-the-combo-key",
+      "keymap": { "slots": { "develop/Exposure": { "nudgeDown": "Combo+[", "nudgeUp": "Combo+]" } } },
+      "steps": [
+        { "down": "]", "decision": "pass" },
+        { "down": "Tab", "decision": "consume" },
+        { "down": "]", "intents": [{ "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "down": "]", "repeat": true, "intents": [{ "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "up": "]", "decision": "consume" },
+        { "down": "Shift+[", "intents": [{ "adjust": "develop/Exposure", "delta": -0.33 }] },
+        { "up": "[", "decision": "consume" },
+        { "up": "Tab", "decision": "consume", "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/each-nudge-key-is-a-combo-or-not-on-its-own",
+      "about": "Nudge − is Tab + [, Nudge + is a plain ]. With Tab held, the plain ] is no combo: both keys are typed.",
+      "keymap": { "slots": { "develop/Exposure": { "nudgeDown": "Combo+[", "nudgeUp": "]" } } },
+      "steps": [
+        { "down": "]", "intents": [{ "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "up": "]" },
+        { "down": "[", "decision": "pass" },
+        { "down": "Tab" },
+        { "down": "[", "intents": [{ "adjust": "develop/Exposure", "delta": -0.05 }] },
+        { "up": "[" },
+        { "up": "Tab" },
+        { "down": "Tab" },
+        { "down": "]", "decision": ["Tab↓", "]↓"] }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/the-combo-key-alone-is-replayed",
+      "steps": [
+        { "down": "Tab", "state": { "engaged": true } },
+        { "down": "Tab", "repeat": true, "decision": "consume" },
+        { "up": "Tab", "decision": ["Tab↓", "Tab↑"] },
+        { "down": "Tab" },
+        { "down": "P", "decision": ["Tab↓", "P↓"], "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/combo-command-keys",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Combo+K", "title": "Undo", "action": { "command": "undo" } }
+      ] },
+      "steps": [
+        { "down": "K", "decision": "pass" },
+        { "up": "K" },
+        { "down": "Tab", "decision": "consume" },
+        { "down": "K", "decision": "consume", "intents": [{ "action": { "command": "undo" } }] },
+        { "down": "K", "repeat": true, "decision": "consume", "intents": [] },
+        { "up": "K", "decision": "consume" },
+        { "up": "Tab", "decision": "consume" },
+        { "down": "Combo+K", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/a-changed-combo-key-carries-the-combos",
+      "keymap": {
+        "systemKeys": { "comboKey": "H" },
+        "commandKeys": [{ "scope": "develop", "chord": "Combo+K", "title": "Undo", "action": { "command": "undo" } }]
+      },
+      "steps": [
+        { "down": "Tab", "decision": "pass" },
+        { "up": "Tab" },
+        { "down": "H" },
+        { "down": "K", "intents": [{ "action": { "command": "undo" } }] }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/no-combo-key",
+      "keymap": { "systemKeys": { "comboKey": null } },
+      "steps": [
+        { "down": "Tab", "decision": "pass" },
+        { "down": "A", "decision": "consume" }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/default-combos-in-develop",
+      "about": "Tab + A Auto Tone, Tab + Q Lightroom's Paste Settings from Previous; A alone stays the Highlights Dial Key; the combos are Develop only.",
+      "steps": [
+        { "down": "Tab", "decision": "consume" },
+        { "down": "A", "decision": "consume", "intents": [{ "action": { "command": "autoTone" } }] },
+        { "up": "A", "decision": "consume" },
+        { "down": "Q", "intents": [{ "action": { "shortcut": "Primary+Alt+V" } }] },
+        { "up": "Q" },
+        { "up": "Tab", "decision": "consume" },
+        { "down": "A", "decision": "consume" },
+        { "wheel": 1, "intents": [{ "gestureBegan": "develop/Highlights" }, { "adjust": "develop/Highlights", "delta": 1 }] },
+        { "up": "A", "intents": [{ "gestureEnded": "develop/Highlights" }] },
+        { "down": "Tab", "in": "library" },
+        { "down": "A", "in": "library", "decision": ["Tab↓", "A↓"] }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/a-dial-key-tap-runs-its-action-and-a-hold-adjusts",
+      "keymap": { "commandKeys": [
+        { "scope": "library", "chord": "W", "title": "Auto Tone", "action": { "command": "autoTone" } }
+      ] },
+      "steps": [
+        { "down": "W", "in": "library", "decision": "consume" },
+        { "up": "W", "in": "library", "decision": "consume", "intents": [{ "action": { "command": "autoTone" } }] },
+        { "down": "W", "in": "library" },
+        { "wheel": 1, "in": "library", "lastIntent": { "adjust": "library/Contrast", "delta": 5 } },
+        { "up": "W", "in": "library", "intents": [{ "gestureEnded": "library/Contrast" }] }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/action-only-keys-fire-on-key-down",
+      "keymap": { "commandKeys": [
+        { "scope": "any", "chord": "H", "title": "Next", "action": { "command": "nextPhoto" } }
+      ] },
+      "steps": [
+        { "down": "H", "decision": "consume", "intents": [{ "action": { "command": "nextPhoto" } }] },
+        { "up": "H", "decision": "consume" },
+        { "down": "H", "in": "library", "intents": [{ "action": { "command": "nextPhoto" } }] }
+      ]
+    },
+    {
+      "id": "nudge-and-command-keys/library-uses-quick-develop-steps",
+      "about": "Quick Develop Temperature moves 5 and 20, like Lightroom's single and double arrows.",
+      "steps": [
+        { "down": "1", "in": "library" },
+        { "wheel": 1, "in": "library", "lastIntent": { "adjust": "library/Temperature", "delta": 5 } },
+        { "wheel": 1, "modifiers": ["Shift"], "in": "library", "lastIntent": { "adjust": "library/Temperature", "delta": 20 } }
+      ]
+    }
+  ]
+}

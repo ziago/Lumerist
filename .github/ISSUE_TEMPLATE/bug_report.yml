@@ -1,0 +1,75 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem! The more details, the faster it can be fixed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a photo in Develop
+        2. Hold Q and turn the wheel
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: lumerist
+    attributes:
+      label: Lumerist version
+      description: Shown in the app (General → About) and in Lightroom's Plug-in Manager.
+      placeholder: "0.9.0"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "macOS 15.4"
+    validations:
+      required: true
+  - type: dropdown
+    id: mac
+    attributes:
+      label: Mac
+      options:
+        - Apple Silicon
+        - Intel
+    validations:
+      required: true
+  - type: input
+    id: lightroom
+    attributes:
+      label: Lightroom Classic version and language
+      placeholder: "16.0, Italian"
+    validations:
+      required: true
+  - type: input
+    id: keyboard
+    attributes:
+      label: Keyboard layout
+      placeholder: "US, Italian, German (QWERTZ), French (AZERTY)…"
+  - type: input
+    id: mouse
+    attributes:
+      label: Mouse or trackpad
+      placeholder: "Magic Mouse, Logitech MX Master with Logi Options+, trackpad…"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Turn on the debug log in Lumerist → General, reproduce the problem, then attach:
+        `~/Library/Logs/Lumerist/Lumerist.log` and
+        `~/Library/Logs/Adobe/Lightroom/LrClassicLogs/Lumerist.log`.
+      render: text

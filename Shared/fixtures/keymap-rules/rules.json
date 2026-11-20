@@ -1,0 +1,207 @@
+{
+  "group": "keymap-rules",
+  "cases": [
+    {
+      "id": "keymap-rules/the-standard-layout-is-clean",
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 0 }
+    },
+    {
+      "id": "keymap-rules/steps-stay-in-the-catalog-range",
+      "keymap": { "slots": { "develop/Exposure": { "normalStep": 3 } } },
+      "validate": { "error": "invalidStep", "parameter": "develop/Exposure" }
+    },
+    {
+      "id": "keymap-rules/a-zero-step-is-invalid",
+      "keymap": { "slots": { "develop/Exposure": { "normalStep": 0.05, "coarseStep": 0 } } },
+      "validate": { "error": "invalidStep", "parameter": "develop/Exposure" }
+    },
+    {
+      "id": "keymap-rules/drag-sensitivity-range",
+      "keymap": { "input": { "dragSensitivity": 40 } },
+      "validate": { "error": "invalidOption", "option": "drag sensitivity" }
+    },
+    {
+      "id": "keymap-rules/trackpad-travel-range",
+      "keymap": { "input": { "trackpadPointsPerStep": 2 } },
+      "validate": { "error": "invalidOption", "option": "trackpad sensitivity" }
+    },
+    {
+      "id": "keymap-rules/command-keys-need-a-title",
+      "keymap": { "replaceCommandKeys": true, "commandKeys": [
+        { "scope": "develop", "chord": "H", "title": "  ", "action": { "command": "undo" } }
+      ] },
+      "validate": { "error": "invalidCommandKey", "reason": "a title of 1–80 characters is required" }
+    },
+    {
+      "id": "keymap-rules/macros-cannot-contain-macros",
+      "keymap": { "replaceCommandKeys": true, "commandKeys": [
+        { "scope": "develop", "chord": "H", "title": "Nested", "action": { "macro": [
+          { "action": { "macro": [{ "action": { "command": "undo" }, "delay": 0 }] }, "delay": 0 }
+        ] } }
+      ] },
+      "validate": { "error": "invalidCommandKey", "reason": "macros cannot contain macros" }
+    },
+    {
+      "id": "keymap-rules/macro-delays-are-at-most-ten-seconds",
+      "keymap": { "replaceCommandKeys": true, "commandKeys": [
+        { "scope": "develop", "chord": "H", "title": "Slow", "action": { "macro": [
+          { "action": { "command": "undo" }, "delay": 11 }
+        ] } }
+      ] },
+      "validate": { "error": "invalidCommandKey", "reason": "macro delays must be 0–10 s" }
+    },
+    {
+      "id": "keymap-rules/dial-keys-cannot-be-combos",
+      "keymap": { "slots": { "develop/GrainAmount": { "dial": "Combo+K" } } },
+      "validate": { "error": "invalidCombo", "misuse": "dialKey", "parameter": "develop/GrainAmount" }
+    },
+    {
+      "id": "keymap-rules/nudge-keys-can-be-combos",
+      "keymap": { "slots": { "develop/GrainAmount": { "nudgeUp": "Combo+K" } } },
+      "validate": "ok"
+    },
+    {
+      "id": "keymap-rules/lightroom-shortcuts-cannot-be-combos",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Combo+K", "title": "Send", "action": { "shortcut": "Combo+Primary+V" } }
+      ] },
+      "validate": { "error": "invalidCombo", "misuse": "lightroomShortcut" }
+    },
+    {
+      "id": "keymap-rules/a-shortcut-inside-a-macro-cannot-be-a-combo",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Combo+K", "title": "Send", "action": { "macro": [
+          { "action": { "command": "undo" }, "delay": 0 },
+          { "action": { "shortcut": "Combo+V" }, "delay": 0 }
+        ] } }
+      ] },
+      "validate": { "error": "invalidCombo", "misuse": "lightroomShortcut" }
+    },
+    {
+      "id": "keymap-rules/system-keys-other-than-the-key-reference-cannot-be-combos",
+      "keymap": { "systemKeys": { "paletteKey": "Combo+LeftOf1" } },
+      "validate": { "error": "invalidCombo", "misuse": "systemKey", "role": "paletteKey" }
+    },
+    {
+      "id": "keymap-rules/the-key-reference-combo-is-taken",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Combo+H", "title": "Undo", "action": { "command": "undo" } }
+      ] },
+      "conflicts": { "matches": [{ "severity": "error", "chord": "Combo+H", "usesSystem": "keyReferenceToggle" }] }
+    },
+    {
+      "id": "keymap-rules/the-key-reference-combo-cannot-use-the-combo-key",
+      "keymap": { "systemKeys": { "keyReferenceToggle": "Combo+Tab" } },
+      "conflicts": { "matches": [{ "severity": "error", "scope": null, "usesSystem": "comboKey" }] }
+    },
+    {
+      "id": "keymap-rules/a-dial-key-and-a-tap-action-may-share-a-chord",
+      "keymap": { "commandKeys": [
+        { "scope": "library", "chord": "W", "title": "Auto Tone", "action": { "command": "autoTone" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0 }
+    },
+    {
+      "id": "keymap-rules/duplicate-dial-keys",
+      "keymap": { "slots": { "develop/GrainAmount": { "dial": "Q" } } },
+      "validate": { "error": "conflicts" },
+      "conflicts": { "errors": 1, "matches": [
+        { "severity": "error", "chord": "Q", "scope": "develop", "message": "Q is the Dial Key of more than one slider." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/a-nudge-key-cannot-share-a-dial-key",
+      "keymap": { "slots": { "develop/GrainAmount": { "nudgeUp": "Q" } } },
+      "conflicts": { "errors": 1, "matches": [
+        { "severity": "error", "chord": "Q", "message": "Q is both a Nudge Key and another key." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/two-nudge-keys-cannot-share-a-chord",
+      "keymap": { "slots": {
+        "develop/GrainAmount": { "nudgeUp": "]" },
+        "develop/GrainSize": { "nudgeDown": "]" }
+      } },
+      "conflicts": { "errors": 1, "matches": [
+        { "severity": "error", "chord": "]", "message": "] is used by more than one Nudge Key." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/a-nudge-key-cannot-share-a-command-key",
+      "keymap": {
+        "commandKeys": [{ "scope": "library", "chord": "W", "title": "Auto Tone", "action": { "command": "autoTone" } }],
+        "slots": { "library/Exposure": { "nudgeUp": "W" } }
+      },
+      "conflicts": { "errors": 1, "matches": [{ "severity": "error", "chord": "W", "scope": "library" }] }
+    },
+    {
+      "id": "keymap-rules/a-system-key-cannot-be-assigned",
+      "keymap": { "slots": { "develop/GrainAmount": { "dial": "LeftOf1" } } },
+      "conflicts": { "matches": [{ "severity": "error", "chord": "LeftOf1", "usesSystem": "paletteKey" }] }
+    },
+    {
+      "id": "keymap-rules/two-system-keys-cannot-share-a-chord",
+      "keymap": { "systemKeys": { "pauseToggle": "LeftOf1" } },
+      "conflicts": { "matches": [{ "severity": "error", "scope": null, "usesSystem": "pauseToggle" }] }
+    },
+    {
+      "id": "keymap-rules/two-combo-actions-on-one-key",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Combo+H", "title": "A", "action": { "command": "undo" } },
+        { "scope": "any", "chord": "Combo+H", "title": "B", "action": { "command": "redo" } }
+      ] },
+      "conflicts": { "matches": [
+        { "severity": "error", "chord": "Combo+H", "message": "Tab + H runs more than one action." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/a-combo-nudge-key-and-a-combo-command-key",
+      "keymap": { "slots": { "develop/GrainAmount": { "nudgeUp": "Combo+A" } } },
+      "conflicts": { "errors": 1, "matches": [
+        { "severity": "error", "chord": "Combo+A", "message": "Tab + A is both a Nudge Key and another key." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/a-combo-and-the-plain-key-are-different-keys",
+      "keymap": { "slots": { "develop/GrainAmount": { "nudgeDown": "Combo+[", "nudgeUp": "]" } } },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 0 }
+    },
+    {
+      "id": "keymap-rules/a-combo-cannot-use-the-combo-key-itself",
+      "keymap": { "slots": { "develop/GrainAmount": { "nudgeUp": "Combo+Shift+Tab" } } },
+      "validate": { "error": "conflicts" },
+      "conflicts": { "matches": [{ "severity": "error", "chord": "Combo+Shift+Tab", "usesSystem": "comboKey" }] }
+    },
+    {
+      "id": "keymap-rules/moving-the-combo-key-onto-a-combo-breaks-it",
+      "keymap": { "systemKeys": { "comboKey": "A" } },
+      "conflicts": { "matches": [{ "severity": "error", "chord": "Combo+A" }] }
+    },
+    {
+      "id": "keymap-rules/a-combo-cannot-use-the-pause-key",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Combo+Control+Esc", "title": "Undo", "action": { "command": "undo" } }
+      ] },
+      "conflicts": { "matches": [{ "severity": "error", "usesSystem": "pauseToggle" }] }
+    },
+    {
+      "id": "keymap-rules/combos-without-a-combo-key-are-warnings",
+      "about": "The four standard combos and Tab + H do nothing without a Combo Key.",
+      "keymap": { "systemKeys": { "comboKey": null } },
+      "conflicts": { "errors": 0, "warnings": 5, "matches": [
+        { "severity": "warning", "chord": "Combo+A", "message": "Combo + A does nothing until you set a Combo Key." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/typing-keys-and-reserved-modifiers-are-warnings",
+      "keymap": { "slots": {
+        "develop/GrainAmount": { "dial": "Space" },
+        "develop/GrainSize": { "dial": "Primary+H" }
+      } },
+      "conflicts": { "errors": 0, "warnings": 2 }
+    }
+  ]
+}

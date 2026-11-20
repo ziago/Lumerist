@@ -1,0 +1,175 @@
+{
+  "group": "dial-keys",
+  "cases": [
+    {
+      "id": "dial-keys/tap-is-replayed",
+      "about": "A Dial Key tapped without a gesture reaches Lightroom as a complete key press.",
+      "steps": [
+        { "down": "Q", "decision": "consume" },
+        { "up": "Q", "decision": ["Q↓", "Q↑"], "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "dial-keys/hold-and-scroll",
+      "about": "Hold + wheel moves the slider; the gesture starts on the first notch and ends on release.",
+      "steps": [
+        { "down": "Q", "decision": "consume", "state": { "engaged": true, "activeParameter": "develop/Exposure" } },
+        { "wheel": 1, "decision": "consume", "intents": [{ "gestureBegan": "develop/Exposure" }, { "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "wheel": -2, "intents": [{ "adjust": "develop/Exposure", "delta": -0.1 }] },
+        { "up": "Q", "decision": "consume", "intents": [{ "gestureEnded": "develop/Exposure" }], "state": { "engaged": false, "activeParameter": null } }
+      ]
+    },
+    {
+      "id": "dial-keys/shift-selects-the-large-step",
+      "steps": [
+        { "down": "Q" },
+        { "wheel": 1, "modifiers": ["Shift"], "lastIntent": { "adjust": "develop/Exposure", "delta": 0.33 } }
+      ]
+    },
+    {
+      "id": "dial-keys/large-step-by-default",
+      "about": "The swap option makes the large step the default and Shift the small one.",
+      "keymap": { "input": { "swapNormalAndCoarse": true } },
+      "steps": [
+        { "down": "Q" },
+        { "wheel": 1, "lastIntent": { "adjust": "develop/Exposure", "delta": 0.33 } },
+        { "wheel": 1, "modifiers": ["Shift"], "lastIntent": { "adjust": "develop/Exposure", "delta": 0.05 } }
+      ]
+    },
+    {
+      "id": "dial-keys/inverted-wheel",
+      "keymap": { "input": { "invertWheel": true } },
+      "steps": [
+        { "down": "Q" },
+        { "wheel": 1, "lastIntent": { "adjust": "develop/Exposure", "delta": -0.05 } }
+      ]
+    },
+    {
+      "id": "dial-keys/custom-steps",
+      "keymap": { "slots": { "develop/Contrast": { "normalStep": 3 } } },
+      "steps": [
+        { "down": "W" },
+        { "wheel": 2, "lastIntent": { "adjust": "develop/Contrast", "delta": 6 } }
+      ]
+    },
+    {
+      "id": "dial-keys/reveal-panel-when-a-gesture-starts",
+      "keymap": { "input": { "revealPanels": true } },
+      "steps": [
+        { "down": "Q" },
+        { "wheel": 1, "intents": [{ "gestureBegan": "develop/Exposure" }, { "revealPanel": "develop/Exposure" }, { "adjust": "develop/Exposure", "delta": 0.05 }] }
+      ]
+    },
+    {
+      "id": "dial-keys/typing-releases-the-held-key-first",
+      "about": "Another key while a Dial Key is held means the user is typing: both keys reach Lightroom in order.",
+      "steps": [
+        { "down": "Q" },
+        { "down": "H", "decision": ["Q↓", "H↓"] },
+        { "up": "Q", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "dial-keys/auto-repeat-while-held-is-swallowed",
+      "steps": [
+        { "down": "Q" },
+        { "down": "Q", "repeat": true, "decision": "consume", "intents": [] },
+        { "down": "Q", "repeat": true, "intents": [] }
+      ]
+    },
+    {
+      "id": "dial-keys/reserved-modifiers-and-unbound-keys-pass",
+      "about": "Chords with Primary/Control/Alt and unbound keys pass without asking about text focus.",
+      "steps": [
+        { "down": "Primary+Q", "decision": "pass", "focusQueries": 0 },
+        { "down": "H", "decision": "pass", "focusQueries": 0 }
+      ]
+    },
+    {
+      "id": "dial-keys/text-fields-keep-their-keys",
+      "steps": [
+        { "down": "Q", "textFocused": true, "decision": "pass", "focusQueries": 1 }
+      ]
+    },
+    {
+      "id": "dial-keys/losing-lightroom-delivers-the-held-key",
+      "steps": [
+        { "down": "Q" },
+        { "down": "H", "in": "away", "decision": ["Q↓", "H↓"], "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "dial-keys/other-modules-pass",
+      "about": "Modules other than Develop and Library only get system keys; Tab stays Lightroom's there.",
+      "steps": [
+        { "down": "Q", "in": "map", "decision": "pass" },
+        { "down": "Tab", "in": "map", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "dial-keys/plain-key-reference-toggle-works-in-every-module",
+      "keymap": { "systemKeys": { "keyReferenceToggle": "Shift+LeftOf1" } },
+      "steps": [
+        { "down": "Shift+LeftOf1", "in": "map", "intents": ["toggleKeyReference"] }
+      ]
+    },
+    {
+      "id": "dial-keys/inertia-never-starts-a-gesture",
+      "about": "Momentum scrolling does not turn a tap into a gesture, and after a gesture the leftover momentum is swallowed.",
+      "steps": [
+        { "down": "Q" },
+        { "swipe": 40, "momentum": true, "decision": "pass" },
+        { "up": "Q", "decision": ["Q↓", "Q↑"] },
+        { "down": "Q" },
+        { "swipe": 24 },
+        { "up": "Q", "state": { "needsScrollEvents": true } },
+        { "swipe": 200, "momentum": true, "decision": "consume" },
+        { "swipe": 5, "decision": "pass", "state": { "needsScrollEvents": false } }
+      ]
+    },
+    {
+      "id": "dial-keys/trackpad-travel-comes-from-the-keymap",
+      "keymap": { "input": { "trackpadPointsPerStep": 6 } },
+      "steps": [
+        { "down": "Q" },
+        { "swipe": 12, "lastIntent": { "adjust": "develop/Exposure", "delta": 0.1 } }
+      ]
+    },
+    {
+      "id": "dial-keys/keymap-updates-apply",
+      "steps": [
+        { "setKeymap": { "slots": { "develop/Exposure": { "dial": "H" } } } },
+        { "down": "H" },
+        { "wheel": 1, "lastIntent": { "adjust": "develop/Exposure", "delta": 0.05 }, "state": { "heldEvents": [] } }
+      ]
+    },
+    {
+      "id": "dial-keys/a-key-pressed-before-the-new-module-is-known-follows-it",
+      "about": "Lightroom reports a module change a moment late: Q went down while the app still knew Library, and the wheel turns once Develop is known.",
+      "steps": [
+        { "down": "Q", "in": "library", "decision": "consume", "state": { "activeParameter": "library/Exposure" } },
+        { "wheel": 1, "decision": "consume", "intents": [{ "gestureBegan": "develop/Exposure" }, { "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "up": "Q", "intents": [{ "gestureEnded": "develop/Exposure" }], "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "dial-keys/a-gesture-moves-to-the-new-module",
+      "about": "The module changes during a gesture: it ends on the old slider and begins again on the new one.",
+      "steps": [
+        { "down": "Q", "in": "library" },
+        { "wheel": 1, "in": "library", "intents": [{ "gestureBegan": "library/Exposure" }, { "adjust": "library/Exposure", "delta": 0.33 }] },
+        { "wheel": 1, "intents": [{ "gestureEnded": "library/Exposure" }, { "gestureBegan": "develop/Exposure" }, { "adjust": "develop/Exposure", "delta": 0.05 }], "state": { "activeParameter": "develop/Exposure" } },
+        { "up": "Q", "intents": [{ "gestureEnded": "develop/Exposure" }] }
+      ]
+    },
+    {
+      "id": "dial-keys/a-key-without-a-slider-in-the-new-module-keeps-its-own",
+      "about": "6 is Dehaze in Develop and nothing in Library: it keeps Dehaze, and Lightroom says why it cannot move it.",
+      "steps": [
+        { "down": "6" },
+        { "wheel": 1, "in": "library", "lastIntent": { "adjust": "develop/Dehaze", "delta": 1 }, "state": { "activeParameter": "develop/Dehaze" } },
+        { "up": "6", "in": "library", "intents": [{ "gestureEnded": "develop/Dehaze" }] }
+      ]
+    }
+  ]
+}

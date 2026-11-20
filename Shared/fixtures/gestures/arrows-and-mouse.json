@@ -1,0 +1,117 @@
+{
+  "group": "arrows-and-mouse",
+  "cases": [
+    {
+      "id": "arrows-and-mouse/arrows-step-the-held-slider",
+      "steps": [
+        { "down": "Q" },
+        { "down": "ArrowRight", "decision": "consume", "intents": [{ "gestureBegan": "develop/Exposure" }, { "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "down": "Shift+ArrowLeft", "intents": [{ "adjust": "develop/Exposure", "delta": -0.33 }] },
+        { "up": "ArrowRight", "decision": "consume" },
+        { "up": "ArrowLeft", "decision": "consume" },
+        { "up": "Q", "intents": [{ "gestureEnded": "develop/Exposure" }] }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/arrows-are-typing-when-the-option-is-off",
+      "keymap": { "input": { "arrowKeysAdjust": false } },
+      "steps": [
+        { "down": "Q" },
+        { "down": "ArrowRight", "decision": ["Q↓", "ArrowRight↓"] }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/drag-needs-the-left-button-by-default",
+      "about": "Sensitivity 25 means 31 − 25 = 6 points of travel per step; the pointer returns after release.",
+      "steps": [
+        { "down": "Q" },
+        { "move": 100, "decision": "pass", "intents": [] },
+        { "click": "left", "decision": "consume" },
+        { "move": 6, "decision": "consume", "intents": [{ "gestureBegan": "develop/Exposure" }, { "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "move": 13, "intents": [{ "adjust": "develop/Exposure", "delta": 0.1 }] },
+        { "move": -7, "intents": [{ "adjust": "develop/Exposure", "delta": -0.05 }] },
+        { "release": "left", "decision": "consume" },
+        { "up": "Q", "intents": [{ "gestureEnded": "develop/Exposure" }, "restorePointer"] }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/drag-without-the-button-when-allowed",
+      "keymap": { "input": { "requireMouseDown": false, "returnCursorAfterRelease": false } },
+      "steps": [
+        { "down": "Q" },
+        { "move": 6, "decision": "pass", "lastIntent": { "adjust": "develop/Exposure", "delta": 0.05 } },
+        { "up": "Q", "intents": [{ "gestureEnded": "develop/Exposure" }] }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/double-click-and-middle-click-reset",
+      "about": "A reset is not a gesture, and the key is not replayed afterwards.",
+      "steps": [
+        { "down": "Q" },
+        { "click": "left" },
+        { "release": "left" },
+        { "click": "left", "count": 2, "decision": "consume", "intents": [{ "reset": "develop/Exposure" }] },
+        { "release": "left" },
+        { "up": "Q", "decision": "consume", "intents": [] },
+        { "down": "W" },
+        { "click": "middle", "intents": [{ "reset": "develop/Contrast" }] },
+        { "release": "middle", "decision": "consume" },
+        { "up": "W", "decision": "consume" }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/click-resets-can-be-turned-off",
+      "keymap": { "input": { "middleClickReset": false, "doubleClickReset": false } },
+      "steps": [
+        { "down": "Q" },
+        { "click": "middle", "decision": "pass" },
+        { "click": "left", "count": 2, "intents": [] }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/right-button-leaves-the-step-alone",
+      "steps": [
+        { "down": "Q" },
+        { "click": "right", "decision": "pass" },
+        { "wheel": 1, "lastIntent": { "adjust": "develop/Exposure", "delta": 0.05 } },
+        { "release": "right", "decision": "pass" },
+        { "wheel": 1, "lastIntent": { "adjust": "develop/Exposure", "delta": 0.05 } }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/clicks-pass-when-no-dial-key-is-held",
+      "steps": [
+        { "click": "left", "decision": "pass" },
+        { "release": "left", "decision": "pass" },
+        { "click": "right", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/back-and-forward-buttons-change-photo",
+      "steps": [
+        { "click": "back", "decision": "consume", "intents": [{ "action": { "command": "previousPhoto" } }] },
+        { "release": "back", "decision": "consume" },
+        { "click": "forward", "in": "library", "intents": [{ "action": { "command": "nextPhoto" } }] },
+        { "click": "forward", "in": "map", "decision": "pass" },
+        { "click": "forward", "in": "away", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/back-and-forward-can-be-turned-off",
+      "keymap": { "input": { "mouseBackForward": false } },
+      "steps": [
+        { "click": "back", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "arrows-and-mouse/a-drag-follows-the-new-module",
+      "steps": [
+        { "down": "Q", "in": "library" },
+        { "click": "left", "in": "library", "decision": "consume" },
+        { "move": 6, "decision": "consume", "intents": [{ "gestureBegan": "develop/Exposure" }, { "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "release": "left", "decision": "consume" },
+        { "up": "Q", "intents": [{ "gestureEnded": "develop/Exposure" }, "restorePointer"] }
+      ]
+    }
+  ]
+}

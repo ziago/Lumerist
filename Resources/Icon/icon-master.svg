@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Lumerist icon, Galerist theme: a key cap whose face is a Lightroom slider.
+       Hold the key, the slider moves: ink outline, grey key face, the moved part
+       of the track in blue and the knob in the REC red. Body drawn on the macOS
+       icon grid (824 px rounded square centred in 1024). -->
+  <defs>
+    <clipPath id="body"><rect x="64" y="64" width="896" height="896" rx="200"/></clipPath>
+  </defs>
+  <g transform="translate(100 100) scale(0.919643) translate(-64 -64)">
+    <rect x="64" y="64" width="896" height="896" rx="200" fill="#FFFFFF"/>
+    <g clip-path="url(#body)">
+      <rect x="64" y="640" width="896" height="320" fill="#F4F4F4"/>
+      <path d="M64 640h896" stroke="#E7E7E7" stroke-width="6"/>
+    </g>
+    <rect x="64" y="64" width="896" height="896" rx="200" fill="none" stroke="#DCDCDC" stroke-width="6"/>
+    <rect x="262" y="214" width="500" height="470" rx="72" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="28"/>
+    <rect x="312" y="256" width="400" height="352" rx="44" fill="#F4F4F4"/>
+    <path d="M362 470h300" stroke="#0A0A0A" stroke-width="16" stroke-linecap="round"/>
+    <path d="M512 470h112" stroke="#1A66D9" stroke-width="22" stroke-linecap="round"/>
+    <path d="M362 398v34M437 410v22M512 392v40M587 410v22M662 398v34" stroke="#8A8A8A" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="624" cy="470" r="44" fill="#E11D2A" stroke="#FFFFFF" stroke-width="12"/>
+  </g>
+</svg>

@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Windows app: input hooks, tray icon, Lightroom plug-in install.
+    Builds on any system (EnableWindowsTargeting) but runs only on Windows 10/11.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <UseWPF>true</UseWPF>
+    <!-- Only for the tray icon (NotifyIcon); every window is WPF. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>Lumerist.App</RootNamespace>
+    <AssemblyName>Lumerist</AssemblyName>
+    <Product>Lumerist</Product>
+    <Company>Lumerist</Company>
+    <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../../VERSION').Trim())</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Lumerist.ico</ApplicationIcon>
+    <StartupObject>Lumerist.App.Program</StartupObject>
+    <!-- DPI awareness comes from app.manifest, as WPF expects; the WinForms analyzer only knows its own API. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WPF and WinForms share names (Application, MessageBox…): no implicit WinForms usings. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <!-- WPF leaves System.IO out (System.Windows.Shapes.Path); this app draws no shapes. -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lumerist.Core\Lumerist.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Lumerist.ico" LogicalName="Lumerist.ico" />
+    <!-- Static weights of Inter, Outfit and JetBrains Mono (Scripts/make-windows-fonts.py) and Chakra Petch. -->
+    <Resource Include="Assets\Fonts\*.ttf" />
+    <Resource Include="..\..\Resources\Fonts\ChakraPetch-*.ttf" LinkBase="Assets\Fonts" />
+    <!-- The fonts' SIL Open Font Licence travels with them. -->
+    <None Include="..\..\Resources\Fonts\*-OFL.txt" LinkBase="Licenses" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The plug-in ships next to Lumerist.exe, like Contents/Resources on the Mac. -->
+    <None Include="..\..\Lightroom\Lumerist.lrplugin\**\*" LinkBase="Lumerist.lrplugin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
