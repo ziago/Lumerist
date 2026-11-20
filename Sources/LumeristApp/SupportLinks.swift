@@ -4,7 +4,7 @@ import LumeristCore
 /// Every external link the app shows, in one place.
 ///
 /// Donation accounts: set each username below once the account exists.
-/// Until then the matching button stays disabled with "coming soon".
+/// Until then the app leaves that service's button out.
 enum SupportLinks {
     static let repository = URL(string: "https://github.com/ziago/Lumerist")!
     static let releases = URL(string: "https://github.com/ziago/Lumerist/releases")!
@@ -25,15 +25,15 @@ enum SupportLinks {
     /// The "Privacy" link in the "Stay in touch" sheet's notice.
     static let galeristPrivacy = GaleristOptIn.privacyURL
 
-    // MARK: Donations — PLACEHOLDERS until the owner creates the accounts.
+    // MARK: Donations. nil: no account yet, so no button.
 
-    /// PLACEHOLDER: Buy Me a Coffee username (buymeacoffee.com/<username>).
-    static let buyMeACoffeeUsername: String? = nil
-    /// PLACEHOLDER: Ko-fi username (ko-fi.com/<username>).
+    /// Buy Me a Coffee username (buymeacoffee.com/<username>).
+    static let buyMeACoffeeUsername: String? = "lumerist"
+    /// Ko-fi username (ko-fi.com/<username>).
     static let koFiUsername: String? = nil
-    /// PLACEHOLDER: PayPal.me name (paypal.me/<name>).
+    /// PayPal.me name (paypal.me/<name>).
     static let payPalMeName: String? = nil
-    /// PLACEHOLDER: GitHub Sponsors account (github.com/sponsors/<account>),
+    /// GitHub Sponsors account (github.com/sponsors/<account>),
     /// usable once GitHub has approved the Sponsors profile.
     static let gitHubSponsorsAccount: String? = nil
 
@@ -61,6 +61,9 @@ enum SupportLinks {
                      url: gitHubSponsorsAccount.flatMap { URL(string: "https://github.com/sponsors/\($0)") }),
         ]
     }
+
+    /// The buttons the app shows: only the services with an account.
+    static var availableDonations: [Donation] { donations.filter { $0.url != nil } }
 
     /// The running app's version (from Info.plist, stamped from VERSION at build time).
     static var appVersion: String {

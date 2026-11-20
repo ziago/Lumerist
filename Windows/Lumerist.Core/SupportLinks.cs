@@ -5,7 +5,7 @@ namespace Lumerist.Core;
 /// </summary>
 /// <remarks>
 /// Donation accounts: set each username below once the account exists. Until
-/// then the matching button stays disabled with "coming soon".
+/// then the app leaves that service's button out.
 /// </remarks>
 public static class SupportLinks
 {
@@ -35,19 +35,18 @@ public static class SupportLinks
     /// <summary>The "Privacy" link in the "Stay in touch" notice.</summary>
     public static Uri GaleristPrivacy => GaleristOptIn.PrivacyUrl;
 
-    // Donations: PLACEHOLDERS until the owner creates the accounts (the same
-    // as on the Mac).
+    // Donations, the same as on the Mac. null: no account yet, so no button.
 
-    /// <summary>PLACEHOLDER: Buy Me a Coffee username (buymeacoffee.com/&lt;username&gt;).</summary>
-    public const string? BuyMeACoffeeUsername = null;
+    /// <summary>Buy Me a Coffee username (buymeacoffee.com/&lt;username&gt;).</summary>
+    public const string? BuyMeACoffeeUsername = "lumerist";
 
-    /// <summary>PLACEHOLDER: Ko-fi username (ko-fi.com/&lt;username&gt;).</summary>
+    /// <summary>Ko-fi username (ko-fi.com/&lt;username&gt;).</summary>
     public const string? KoFiUsername = null;
 
-    /// <summary>PLACEHOLDER: PayPal.me name (paypal.me/&lt;name&gt;).</summary>
+    /// <summary>PayPal.me name (paypal.me/&lt;name&gt;).</summary>
     public const string? PayPalMeName = null;
 
-    /// <summary>PLACEHOLDER: GitHub Sponsors account (github.com/sponsors/&lt;account&gt;), usable once the Sponsors profile is approved.</summary>
+    /// <summary>GitHub Sponsors account (github.com/sponsors/&lt;account&gt;), usable once the Sponsors profile is approved.</summary>
     public const string? GitHubSponsorsAccount = null;
 
     /// <summary>One donation button: <see cref="Url"/> is null until the account exists.</summary>
@@ -56,6 +55,9 @@ public static class SupportLinks
 
     public static IReadOnlyList<Donation> Donations =>
         DonationsFor(BuyMeACoffeeUsername, KoFiUsername, PayPalMeName, GitHubSponsorsAccount);
+
+    /// <summary>The buttons the app shows: only the services with an account.</summary>
+    public static IReadOnlyList<Donation> AvailableDonations => [.. Donations.Where(donation => donation.Url is not null)];
 
     /// <summary>The donation buttons for the given accounts (null: not created yet).</summary>
     public static IReadOnlyList<Donation> DonationsFor(string? coffee, string? kofi, string? payPal, string? sponsors) =>

@@ -111,7 +111,7 @@ internal sealed class AboutSupportSection : LiveView
         return stack;
     }
 
-    /// <summary>Text above, buttons below: four buttons beside the text would squeeze it.</summary>
+    /// <summary>Text above, buttons below: several buttons beside the text would squeeze it.</summary>
     private static UIElement Donations()
     {
         var stack = new StackPanel();
@@ -120,16 +120,11 @@ internal sealed class AboutSupportSection : LiveView
         line.Margin = new Thickness(0, Theme.Space.S, 0, 0);
         stack.Children.Add(line);
         var buttons = new WrapPanel { Margin = new Thickness(0, Theme.Space.S + 2, 0, 0) };
-        foreach (var donation in SupportLinks.Donations)
+        foreach (var donation in SupportLinks.AvailableDonations)
         {
-            var url = donation.Url;
-            var button = GuideKit.Button(donation.Title, GuideButtonKind.Secondary, () =>
-            {
-                if (url is not null) GuideKit.Open(url);
-            }, IconFor(donation.Id));
-            button.IsEnabled = url is not null;
-            button.ToolTip = url is null ? $"{donation.Detail} — link coming soon" : donation.Detail;
-            ToolTipService.SetShowOnDisabled(button, true);
+            var url = donation.Url!;
+            var button = GuideKit.Button(donation.Title, GuideButtonKind.Secondary, () => GuideKit.Open(url), IconFor(donation.Id));
+            button.ToolTip = donation.Detail;
             button.Margin = new Thickness(0, 0, Theme.Space.S, Theme.Space.XS);
             buttons.Children.Add(button);
         }

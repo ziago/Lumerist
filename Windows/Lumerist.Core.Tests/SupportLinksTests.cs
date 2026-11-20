@@ -26,14 +26,16 @@ public class SupportLinksTests
     }
 
     [Fact]
-    public void DonationButtonsWaitForTheirAccounts()
+    public void DonationButtonsLinkTheAccountsThatExist()
     {
         var donations = SupportLinks.Donations;
         Assert.Equal(["coffee", "kofi", "paypal", "sponsors"], donations.Select(donation => donation.Id));
         Assert.Equal(["Buy me a coffee", "Ko-fi", "PayPal", "GitHub Sponsors"], donations.Select(donation => donation.Title));
         Assert.Equal(["Buy Me a Coffee", "A one-off tip", "Send a pizza", "Support on GitHub"], donations.Select(donation => donation.Detail));
-        // Placeholders until the accounts exist, as on the Mac.
-        Assert.All(donations, donation => Assert.Null(donation.Url));
+        // The same accounts as on the Mac; a service without one has no button.
+        Assert.Equal(["https://buymeacoffee.com/lumerist", null, null, null],
+            donations.Select(donation => donation.Url?.AbsoluteUri));
+        Assert.Equal(["coffee"], SupportLinks.AvailableDonations.Select(donation => donation.Id));
     }
 
     [Fact]

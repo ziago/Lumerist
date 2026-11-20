@@ -35,9 +35,9 @@ the keyboard, the other on the mouse wheel, and the sliders follow you without
 hunting for them in a panel. When I went back to Lightroom Classic I missed
 that flow every single day — dragging tiny sliders with the pointer felt slow.
 
-So I built Lumerist: a small Mac app plus a Lightroom Classic plug-in that
-bring that **hold-a-key, turn-the-wheel** way of editing to Lightroom Classic.
-It is free, open source, and runs entirely on your Mac.
+So I built Lumerist: a small app for Mac and Windows plus a Lightroom Classic
+plug-in that bring that **hold-a-key, turn-the-wheel** way of editing to
+Lightroom Classic. It is free, open source, and runs entirely on your computer.
 
 Lumerist is made by the creator of [Galerist](https://galerist.photo/c/lk-readme),
 online galleries where photographers and videographers deliver their work to
@@ -396,9 +396,9 @@ together. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Support the project
 
-Lumerist is free and will stay free. Links to offer a coffee or a pizza, if
-it saves you time and you'd like to say thanks, will appear here soon — a
-gift, never a payment, and never required. 🍕☕
+Lumerist is free and will stay free. If it saves you time and you'd like to
+say thanks, you can [buy me a coffee](https://buymeacoffee.com/lumerist), or a
+pizza. It's a gift, never a payment, and never required. 🍕☕
 
 Starring the repository and telling other photographers about it helps too.
 

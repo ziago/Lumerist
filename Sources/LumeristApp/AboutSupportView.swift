@@ -173,7 +173,7 @@ struct AboutSupportSection: View {
                 link("Visit Galerist", SupportLinks.galeristFromSettings)
                     .help(SupportLinks.galeristFromSettings.absoluteString)
             }
-            // Text above, buttons below: four buttons beside the text would
+            // Text above, buttons below: several buttons beside the text would
             // squeeze it at the minimum window width.
             VStack(alignment: .leading, spacing: Synth.Space.s) {
                 Text("Buy me a coffee — or a pizza")
@@ -181,15 +181,14 @@ struct AboutSupportSection: View {
                 Text("If Lumerist saves you time, a small gift keeps it growing.")
                     .synthBody(12, color: Synth.steel)
                 HStack(spacing: Synth.Space.s) {
-                    ForEach(SupportLinks.donations) { donation in
+                    ForEach(SupportLinks.availableDonations) { donation in
                         Button {
                             if let url = donation.url { NSWorkspace.shared.open(url) }
                         } label: {
                             Label(donation.title, systemImage: donation.systemImage)
                         }
                         .buttonStyle(.neonSecondary)
-                        .disabled(donation.url == nil)
-                        .help(donation.url == nil ? "\(donation.detail) — link coming soon" : donation.detail)
+                        .help(donation.detail)
                     }
                 }
                 .padding(.top, 2)
