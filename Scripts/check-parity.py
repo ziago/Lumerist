@@ -16,6 +16,10 @@ It fails when
 """
 import argparse, json, pathlib, re, sys
 
+# The Windows console may not be UTF-8 (cp1252 on the CI runner): the report prints ✔ and ✘.
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
 root = pathlib.Path(__file__).resolve().parent.parent
 fixtures = root / "Shared/fixtures"
 contract = json.loads((root / "Shared/contract.json").read_text(encoding="utf-8"))
