@@ -10,7 +10,7 @@ jobs:
     name: macOS app and plug-in
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Toolchain
         run: |
@@ -40,9 +40,9 @@ jobs:
     name: Windows app
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -65,7 +65,7 @@ jobs:
       # Built from this exact commit (BUILD-COMMIT), so a release Mac can use
       # them: gh run download <run> -n windows-packages -D build/release (it fills <version>/windows)
       - name: Upload the packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-packages
           path: |
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload the screens
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-screens
           path: ${{ runner.temp }}/snapshots
