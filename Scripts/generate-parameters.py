@@ -7,7 +7,7 @@ python3 Scripts/generate-parameters.py [--check]
 import json, pathlib, sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
-catalog = json.loads((root / "Shared/parameters.json").read_text())
+catalog = json.loads((root / "Shared/parameters.json").read_text(encoding="utf-8"))
 params = catalog["parameters"]
 
 def check(p):
@@ -94,11 +94,11 @@ targets = {
     root / "Windows/Lumerist.Core/ParameterCatalogData.g.cs": cs_text,
 }
 if "--check" in sys.argv:
-    stale = [str(p) for p, t in targets.items() if not p.exists() or p.read_text() != t]
+    stale = [str(p) for p, t in targets.items() if not p.exists() or p.read_text(encoding="utf-8") != t]
     if stale:
         print("Out of date: " + ", ".join(stale)); sys.exit(1)
     print("Generated parameter files are up to date."); sys.exit(0)
 for path, text in targets.items():
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8", newline="\n")
     print("Wrote", path.relative_to(root))

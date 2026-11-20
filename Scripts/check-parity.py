@@ -18,7 +18,7 @@ import argparse, json, pathlib, re, sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
 fixtures = root / "Shared/fixtures"
-contract = json.loads((root / "Shared/contract.json").read_text())
+contract = json.loads((root / "Shared/contract.json").read_text(encoding="utf-8"))
 problems: list[str] = []
 passes: list[str] = []
 
@@ -37,7 +37,7 @@ def case_ids(group: str) -> tuple[set[str], float]:
     files = sorted((fixtures / group).glob("*.json"))
     ids: set[str] = set()
     for path in files:
-        for case in json.loads(path.read_text())["cases"]:
+        for case in json.loads(path.read_text(encoding="utf-8"))["cases"]:
             if case["id"] in ids:
                 bad(f"{path.relative_to(root)}: duplicate case id {case['id']}")
             ids.add(case["id"])
@@ -58,7 +58,7 @@ def check_runs(side: str):
         if not listing.exists():
             bad(f"{side}: no run of the {group} cases (run `{RUNNERS[side]}` first)")
             continue
-        ran = set(listing.read_text().split())
+        ran = set(listing.read_text(encoding="utf-8").split())
         missing, unknown = sorted(expected - ran), sorted(ran - expected)
         if listing.stat().st_mtime < newest:
             bad(f"{side}: the {group} run is older than the cases (run `{RUNNERS[side]}` again)")
@@ -133,7 +133,7 @@ def check_values(side: str):
 
 def check_feature_spec():
     path = root / "docs/feature-spec.md"
-    lines = path.read_text().splitlines()
+    lines = path.read_text(encoding="utf-8").splitlines()
     tables = rows = 0
     header = None
     for number, line in enumerate(lines, 1):
@@ -173,8 +173,8 @@ def palettes(text: str, start: str) -> dict[str, dict[str, int]]:
 
 def check_theme_palettes():
     """The Windows themes use exactly the Mac's colours."""
-    swift = (root / "Sources/LumeristApp/Design/Theme.swift").read_text()
-    csharp = (root / "Windows/Lumerist.App/Design/ThemePalette.cs").read_text()
+    swift = (root / "Sources/LumeristApp/Design/Theme.swift").read_text(encoding="utf-8")
+    csharp = (root / "Windows/Lumerist.App/Design/ThemePalette.cs").read_text(encoding="utf-8")
     mac = palettes(swift, r"static let (\w+) = SynthPalette\(")
     windows = palettes(csharp, r"public static readonly ThemePalette (\w+) = new\(")
     if not mac:

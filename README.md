@@ -92,7 +92,7 @@ clients.
 ### On the Mac
 
 1. **Download** `Lumerist-<version>.dmg` from the
-   [latest release](https://github.com/ziago/Lumerist/releases/latest).
+   [releases page](https://github.com/ziago/Lumerist/releases).
 2. **Drag** Lumerist into your **Applications** folder and open it. The app
    is signed and notarized by Apple, so it opens like any other Mac app.
 3. **Follow the first-run guide.** It installs the Lightroom Classic plug-in
@@ -104,7 +104,7 @@ clients.
 ### On Windows
 
 1. **Download** `Lumerist-<version>-windows-x64-setup.exe` from the
-   [latest release](https://github.com/ziago/Lumerist/releases/latest)
+   [releases page](https://github.com/ziago/Lumerist/releases)
    (`arm64` for ARM PCs; *Settings → System → About → System type* tells you
    which). A portable `.zip` is there too, if you prefer not to install.
 2. **Run the installer.** It installs Lumerist for your user only, with no
