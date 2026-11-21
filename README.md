@@ -18,6 +18,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/images/hero.gif" alt="Hold Q and turn the mouse wheel: the photo gets brighter, Lightroom's Exposure slider follows and the Value HUD shows the new value; then W does the same for Contrast" width="100%">
+</p>
+
+<p align="center">
   <a href="#install-in-three-steps">Install</a> ·
   <a href="#what-it-does">Features</a> ·
   <a href="#the-standard-layout">Layout</a> ·
@@ -46,12 +50,7 @@ clients.
 ## What it does
 
 <p align="center">
-  <img src="docs/images/value-hud.gif" alt="Value HUD while turning the wheel: Exposure moves along a scale from −5 to +5 EV" width="60%">
-</p>
-
-<p align="center">
-  <img src="docs/images/hud-ruler.png" alt="Value HUD, Ruler style: Exposure +0.35 EV with a scale from −5 to +5" width="42%">
-  <img src="docs/images/hud-compact.png" alt="Value HUD, Compact style" width="42%">
+  <img src="docs/images/value-hud.png" alt="The Value HUD on a photo: Ruler style on Lightroom's screen (Exposure +0.35 EV) and Compact style under the pointer (Contrast +12)" width="100%">
 </p>
 
 - **Dial Keys** — hold a key and turn the mouse wheel (or swipe on a
@@ -83,11 +82,19 @@ clients.
   sliders. Every key, step size, and option can be changed.
 
 <p align="center">
+  <img src="docs/images/palette-masks.gif" alt="Hold the Palette key, click Radial: a radial mask appears, and Q with the wheel brightens only the inside of the mask" width="100%">
+</p>
+
+<p align="center">
   <img src="docs/images/screenshot-develop.png" alt="The Lumerist window: Develop page with Dial and Nudge columns for every slider" width="49%">
   <img src="docs/images/screenshot-keyboard.png" alt="The Keyboard tab: every Dial Key drawn on the keyboard, with the slider it moves" width="49%">
 </p>
 
 ## Install in three steps
+
+<p align="center">
+  <img src="docs/images/install.png" alt="Ready in three steps: download, open Lumerist and let its guide install the Lightroom plug-in, then hold Q and turn the wheel" width="100%">
+</p>
 
 ### On the Mac
 
@@ -168,6 +175,10 @@ Lightroom's Crop tool anyway, and **T**, right next to it, zooms the crop.
 Lightroom has no Levels, so the tone curve sits where Capture One keeps them,
 dark to light from **X** to **B**.
 
+<p align="center">
+  <img src="docs/images/dial-keys.gif" alt="The standard layout on the keyboard: 1 changes the white balance, A the highlights, S the shadows, and Shift with Q takes the larger Exposure step" width="100%">
+</p>
+
 | Develop | | | | | |
 | --- | --- | --- | --- | --- | --- |
 | **1** Temperature | **2** Tint | **3** Vibrance | **4** Texture | **5** Clarity | **6** Dehaze |
@@ -184,6 +195,10 @@ controls it has — 1, 2, 3, 4, 5, Q, W, E, A, S, D, F.
 **Combos (hold Tab)** in Develop: **Tab + A** Auto Tone · **Tab + W** Auto
 White Balance · **Tab + R** Reset all · **Tab + Q** Paste Settings from
 Previous (Lightroom's own ⌥⌘V). A, W, R and Q on their own stay Dial Keys.
+
+<p align="center">
+  <img src="docs/images/combos.gif" alt="Hold Tab and the keys change: Tab + A Auto Tone, Tab + W Auto White Balance, Tab + H the Key Reference, Tab + R Reset all" width="100%">
+</p>
 
 **System keys:**
 - **Tab** (hold) is the Combo Key: hold it and press another key for a combo,
@@ -206,6 +221,10 @@ key. You can add Nudge and Command Keys, make any of them a combo (hold Tab
 while you press the key), change the step of each slider, make the larger step
 the default, reverse the wheel, and export or import your layout.
 
+<p align="center">
+  <img src="docs/images/customize.png" alt="The Keyboard view in Lumerist: click a key cap and press the new key; set the step per notch for each slider; export and import your layout" width="100%">
+</p>
+
 ## Compatibility
 
 | | |
@@ -217,6 +236,10 @@ the default, reverse the wheel, and export or import your layout.
 | Keyboards | any layout; keys are stored by physical position |
 
 ## Privacy
+
+<p align="center">
+  <img src="docs/images/privacy.png" alt="How it works: keys and wheel, Lumerist, the plug-in and Lightroom Classic all on your computer, linked by a local connection; no account, no tracking, no ads" width="100%">
+</p>
 
 Lumerist has no telemetry, and nothing about your photos, your catalog, or
 your keystrokes ever leaves your computer: the app and the plug-in talk to
@@ -264,7 +287,7 @@ The Value HUD and the floating panels stay dark in every theme, so they never
 glare over a photo. The Dock icon follows the theme.
 
 <p align="center">
-  <img src="docs/images/themes.png" alt="The Develop page in the three looks: Galerist light, Galerist dark and Miami" width="100%">
+  <img src="docs/images/themes.gif" alt="The Develop page in the three looks: Galerist light, Galerist dark and Miami" width="100%">
 </p>
 
 ## FAQ & troubleshooting
