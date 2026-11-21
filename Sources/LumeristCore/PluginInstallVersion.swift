@@ -64,7 +64,7 @@ public struct SemanticVersion: Comparable, Hashable, Sendable, CustomStringConve
 
     /// The version in a Lightroom plug-in's `Info.lua`, read from its
     /// `VERSION = { major = …, minor = …, revision = … }` table (key order free).
-    public static func fromPluginInfo(_ infoLua: String) -> SemanticVersion? {
+    static func fromPluginInfo(_ infoLua: String) -> SemanticVersion? {
         guard let start = infoLua.range(of: "VERSION"),
               let open = infoLua[start.upperBound...].firstIndex(of: "{"),
               let close = infoLua[open...].firstIndex(of: "}") else { return nil }

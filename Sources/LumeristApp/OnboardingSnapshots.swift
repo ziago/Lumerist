@@ -109,10 +109,7 @@ enum OnboardingSnapshots {
         NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)?.performAsCurrentDrawingAppearance {
             rendered = renderer.nsImage
         }
-        guard let image = rendered,
-              let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let png = bitmap.representation(using: .png, properties: [:]) else { return }
+        guard let png = rendered?.pngData else { return }
         try? png.write(to: directory.appending(path: "\(name).png"))
     }
 }

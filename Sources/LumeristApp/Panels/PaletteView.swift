@@ -8,7 +8,7 @@ import LumeristCore
 /// as with selections in Photoshop: none creates a new mask, ⇧ adds to the
 /// selected mask, ⌥ subtracts from it, ⇧⌥ intersects with it. Without a
 /// selected mask a click always creates a new mask.
-enum PaletteMaskMode: CaseIterable, Sendable {
+enum PaletteMaskMode: Sendable {
     case new, add, subtract, intersect
 
     init(modifiers: NSEvent.ModifierFlags, masking: Bool) {
@@ -429,7 +429,8 @@ private extension PaletteEntry {
         kind == .tool && (LightroomCommandName(rawValue: id)?.takesMask ?? false)
     }
 
-    /// Galerist rows: a mask tool shows its own symbol, a preset the sliders.
+    /// The symbol of a favourite row in the Galerist look: a mask tool shows
+    /// its own, a preset the sliders.
     var symbolName: String {
         switch kind {
         case .preset: "slider.horizontal.3"

@@ -15,9 +15,10 @@ namespace Lumerist.App.Design.Controls;
 /// sees it (<see cref="ComponentDispatcher.ThreadFilterMessage"/> runs before
 /// the windows' own keyboard processing, which hangs off
 /// ThreadPreprocessMessage): key downs are swallowed, so they never type
-/// into a field, move the focus (Tab) or press a button; key ups go on. The scan code comes from the message's lParam, so
-/// the chord names the physical key whatever the layout. The input hook
-/// leaves these keys alone: it only acts while Lightroom is in front.
+/// into a field, move the focus (Tab) or press a button; key ups go on. The
+/// scan code comes from the message's lParam, so the chord names the
+/// physical key whatever the layout. The input hook leaves these keys alone:
+/// it only acts while Lightroom is in front.
 /// </remarks>
 internal sealed partial class ChordRecorder
 {

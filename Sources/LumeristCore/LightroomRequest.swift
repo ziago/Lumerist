@@ -106,7 +106,7 @@ public struct LightroomRequest: Sendable, Hashable {
     }
 
     /// The parameter a request touches, if any.
-    public var parameterKey: ParameterKey? {
+    var parameterKey: ParameterKey? {
         switch kind {
         case .adjust(let scope, let parameter, _), .reset(let scope, let parameter):
             ParameterKey(scope: scope, id: parameter)
@@ -117,7 +117,7 @@ public struct LightroomRequest: Sendable, Hashable {
         }
     }
 
-    public func validate() throws {
+    private func validate() throws {
         switch kind {
         case .ping, .query:
             return
@@ -175,7 +175,7 @@ public struct LightroomRequest: Sendable, Hashable {
 }
 
 /// The JSON-lines wire form of a request (sorted keys, newline-terminated).
-public enum RequestCodec {
+enum RequestCodec {
     struct Wire: Codable, Equatable {
         var version: Int
         var id: Int
@@ -188,7 +188,7 @@ public enum RequestCodec {
         var argument: String?
     }
 
-    public static func encodeLine(_ request: LightroomRequest, id: Int) throws -> Data {
+    static func encodeLine(_ request: LightroomRequest, id: Int) throws -> Data {
         var wire = Wire(version: LightroomRequest.protocolVersion, id: id, kind: "ping")
         switch request.kind {
         case .ping:
@@ -219,8 +219,8 @@ public enum RequestCodec {
         return try encoder.encode(wire) + Data([0x0A])
     }
 
-    /// Decodes a request line (used by tests and diagnostics).
-    public static func decodeLine(_ data: Data) throws -> (id: Int, request: LightroomRequest) {
+    /// Decodes a request line (used by the tests).
+    static func decodeLine(_ data: Data) throws -> (id: Int, request: LightroomRequest) {
         let trimmed = data.last == 0x0A ? data.dropLast() : data[...]
         let wire = try JSONDecoder().decode(Wire.self, from: Data(trimmed))
         guard wire.version == LightroomRequest.protocolVersion else {
@@ -255,7 +255,7 @@ public enum RequestCodec {
         return (wire.id, try LightroomRequest(kind))
     }
 
-    public enum DecodingError: Error, Equatable, Sendable {
+    enum DecodingError: Error, Equatable, Sendable {
         case unsupportedVersion(Int)
         case malformed
     }

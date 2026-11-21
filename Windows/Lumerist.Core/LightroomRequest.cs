@@ -301,7 +301,7 @@ public sealed record LightroomRequest
 }
 
 /// <summary>The JSON-lines wire form of a request (sorted keys, newline-terminated).</summary>
-public static class RequestCodec
+internal static class RequestCodec
 {
     /// <summary>One UTF-8 JSON object with sorted keys, absent fields left out, ending with "\n".</summary>
     public static byte[] EncodeLine(LightroomRequest request, long id)

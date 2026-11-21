@@ -1,10 +1,11 @@
 # Security policy
 
 Lumerist reads keyboard, scroll and mouse events (on the Mac with the
-Accessibility permission you grant it) and talks to its Lightroom Classic plug-in over
-`127.0.0.1` only. If you find a way to abuse that — for example another
-process sending commands to the plug-in, events leaking outside Lightroom, or a
-problem with how the app or plug-in is installed — please report it privately.
+Accessibility permission you grant it) and talks to its Lightroom Classic
+plug-in over `127.0.0.1` only. If you find a way to abuse that — for example
+another process sending commands to the plug-in, events leaking outside
+Lightroom, or a problem with how the app or plug-in is installed — please
+report it privately.
 
 ## Reporting a vulnerability
 
@@ -12,10 +13,10 @@ Use GitHub's private reporting:
 [**Report a vulnerability**](https://github.com/ziago/Lumerist/security/advisories/new).
 Please do not open a public issue for security problems.
 
-Include the Lumerist version, macOS or Windows version, Lightroom Classic version and the
-steps to reproduce. You can expect a first answer within a week. Fixes are
-released as soon as possible and credited in the changelog unless you prefer
-otherwise.
+Include the Lumerist version, macOS or Windows version, Lightroom Classic
+version and the steps to reproduce. You can expect a first answer within a
+week. Fixes are released as soon as possible and credited in the changelog
+unless you prefer otherwise.
 
 ## Verifying a download
 

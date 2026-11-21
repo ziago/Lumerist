@@ -331,55 +331,26 @@ public sealed partial class Keymap
         return [];
     }
 
-    /// <summary>The Dial Keys and Nudge Keys of one scope, for the key overview.</summary>
-    public AssignmentSummary Summary(ParameterScope scope, AssignmentSummary.Sort sort = AssignmentSummary.Sort.Parameter)
+    /// <summary>The Dial Keys and Nudge Keys of one scope, in catalog order, for the key overview.</summary>
+    public AssignmentSummary Summary(ParameterScope scope)
     {
-        var order = new Dictionary<ParameterKey, int>();
-        foreach (var (descriptor, index) in ParameterCatalog.All.Select((descriptor, index) => (descriptor, index)))
-            order.TryAdd(descriptor.Key, index);
-
-        var entries = new List<AssignmentSummary.Entry>();
-        foreach (var (id, slot) in Slots(scope).OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            if (ParameterCatalog.Descriptor(scope, id) is { } descriptor) entries.Add(new(descriptor, slot));
-        }
-
-        List<AssignmentSummary.Entry> Sorted(IEnumerable<AssignmentSummary.Entry> list, Func<AssignmentSummary.Entry, KeyChord?> key) =>
-            sort switch
-            {
-                AssignmentSummary.Sort.Parameter =>
-                    list.OrderBy(entry => entry.Descriptor.Label, StringComparer.CurrentCultureIgnoreCase).ToList(),
-                AssignmentSummary.Sort.Key =>
-                    list.OrderBy(entry => key(entry)?.DisplayText ?? "", StringComparer.Ordinal).ToList(),
-                _ => list.OrderBy(entry => order.GetValueOrDefault(entry.Descriptor.Key)).ToList(),
-            };
-
+        var slots = Slots(scope);
+        var entries = ParameterCatalog.All
+            .Where(descriptor => descriptor.Scope == scope && slots.ContainsKey(descriptor.Id))
+            .Select(descriptor => new AssignmentSummary.Entry(descriptor, slots[descriptor.Id]))
+            .ToList();
         return new AssignmentSummary(
             scope,
-            Sorted(entries.Where(entry => entry.Slot.Dial is not null), entry => entry.Slot.Dial),
-            Sorted(entries.Where(entry => entry.Slot.NudgeDown is not null || entry.Slot.NudgeUp is not null),
-                entry => entry.Slot.NudgeDown ?? entry.Slot.NudgeUp));
+            [.. entries.Where(entry => entry.Slot.Dial is not null)],
+            [.. entries.Where(entry => entry.Slot.NudgeDown is not null || entry.Slot.NudgeUp is not null)]);
     }
 }
 
-/// <summary>The Dial Keys and Nudge Keys of one scope, sorted for the key overview.</summary>
+/// <summary>The Dial Keys and Nudge Keys of one scope, for the key overview.</summary>
 public sealed record AssignmentSummary(
     ParameterScope Scope,
     IReadOnlyList<AssignmentSummary.Entry> DialKeys,
     IReadOnlyList<AssignmentSummary.Entry> NudgeKeys)
 {
-    public enum Sort
-    {
-        Parameter,
-        Key,
-        Section,
-    }
-
     public sealed record Entry(ParameterDescriptor Descriptor, ParameterSlot Slot);
-
-    public int DialKeyCount => DialKeys.Count;
-
-    /// <summary>Individual Nudge Key bindings (decrease and increase count separately).</summary>
-    public int NudgeKeyCount =>
-        NudgeKeys.Sum(entry => (entry.Slot.NudgeDown is null ? 0 : 1) + (entry.Slot.NudgeUp is null ? 0 : 1));
 }

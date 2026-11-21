@@ -120,7 +120,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @MainActor
 @Observable
 final class CommandStore {
-    private(set) var status = "Connecting to Lightroom plug-in…"
     private(set) var responses: [LightroomAck] = []
     private(set) var errors: [String] = []
     private(set) var isConnected = false
@@ -177,7 +176,6 @@ final class CommandStore {
                     case .ready:
                         let wasConnected = self.isConnected
                         self.isConnected = true
-                        self.status = "Connected to Lumerist plug-in on 127.0.0.1:50550"
                         DebugLog.write("Bridge connected")
                         if !wasConnected {
                             self.send(.query(.context))
@@ -186,9 +184,6 @@ final class CommandStore {
                         if self.isConnected { DebugLog.write("Bridge lost: \(error)") }
                         self.isConnected = false
                         self.dispatcher?.connectionLost()
-                        self.status = LightroomLifecycle.isLightroomRunning
-                            ? "Waiting for the Lumerist plug-in in Lightroom Classic…"
-                            : "Lightroom Classic is closed. Lumerist connects as soon as it opens."
                     }
                 }
             },
@@ -200,20 +195,14 @@ final class CommandStore {
         )
         client.start()
         self.client = client
-        lifecycle = LightroomLifecycle(preferences: preferences) { [weak self] message in
-            self?.status = message
-        }
+        lifecycle = LightroomLifecycle(preferences: preferences)
         DebugLog.write("Lumerist started")
         // A newer plug-in came with this version: in place now if Lightroom is
         // closed, otherwise as soon as it quits.
         PluginInstaller.shared.updateIfOutdated()
 
-        if shortcutsWanted {
-            if AccessibilityPermission.isGranted {
-                startShortcutMonitor()
-            } else {
-                status = "Shortcuts were on, but macOS no longer grants Lumerist permission. Click Enable shortcuts."
-            }
+        if shortcutsWanted && AccessibilityPermission.isGranted {
+            startShortcutMonitor()
         }
     }
 
@@ -236,7 +225,6 @@ final class CommandStore {
 
     func reconnect() {
         client?.reconnect()
-        status = "Reconnecting to the Lumerist plug-in…"
     }
 
     func toggleShortcuts() {
@@ -244,14 +232,12 @@ final class CommandStore {
             monitor.stop()
             self.monitor = nil
             shortcutsWanted = false
-            status = "Keyboard + scroll shortcuts are disabled"
             return
         }
         if let permissionWait {
             permissionWait.cancel()
             self.permissionWait = nil
             shortcutsWanted = false
-            status = "Shortcut activation cancelled"
             return
         }
         shortcutsWanted = true
@@ -259,7 +245,6 @@ final class CommandStore {
             // macOS lists the app in Privacy & Security → Accessibility and
             // shows its prompt; the shortcuts start by themselves once allowed.
             AccessibilityPermission.request()
-            status = "Allow Lumerist in System Settings → Privacy & Security → Accessibility (on macOS 27: “Device control and data access”). If it does not start within a few seconds, quit and reopen Lumerist."
             permissionWait = Task { [weak self] in
                 for _ in 0..<300 {
                     try? await Task.sleep(for: .seconds(1))
@@ -271,7 +256,6 @@ final class CommandStore {
                     }
                 }
                 self?.permissionWait = nil
-                self?.status = "Accessibility permission was not granted; shortcuts stay off"
             }
             return
         }
@@ -289,9 +273,8 @@ final class CommandStore {
         do {
             try monitor.start()
             self.monitor = monitor
-            status = "Keyboard + scroll shortcuts are active while Lightroom Classic is frontmost"
         } catch {
-            Self.prepend(error.localizedDescription, to: &errors)
+            recordError(error.localizedDescription)
         }
     }
 
@@ -301,7 +284,7 @@ final class CommandStore {
             try keymap.mutate(change)
             monitor?.update(keymap: keymap.keymap)
         } catch {
-            Self.prepend(error.localizedDescription, to: &errors)
+            recordError(error.localizedDescription)
         }
     }
 
@@ -311,11 +294,11 @@ final class CommandStore {
             try operation(keymap)
             monitor?.update(keymap: keymap.keymap)
         } catch {
-            Self.prepend(error.localizedDescription, to: &errors)
+            recordError(error.localizedDescription)
         }
     }
 
-    // MARK: Palette and Key Reference (panels arrive with the next UI pass)
+    // MARK: Palette and Key Reference
 
     private func openPalette() {
         isPaletteOpen = true
@@ -335,8 +318,8 @@ final class CommandStore {
         isKeyReferenceVisible = visible
     }
 
-    /// Runs a Command Key action (commands, presets, shortcuts, macros), e.g.
-    /// from the Palette or an "Run" button in the Actions screen.
+    /// Runs a Command Key action (command, preset, shortcut or macro), e.g.
+    /// from the Palette or a Run button in the Commands tab.
     func perform(_ action: CommandKey.Action) {
         dispatcher?.handle([.action(action)])
     }
@@ -351,7 +334,7 @@ final class CommandStore {
         do {
             send(try make())
         } catch {
-            Self.prepend(error.localizedDescription, to: &errors)
+            recordError(error.localizedDescription)
         }
     }
 
@@ -359,20 +342,20 @@ final class CommandStore {
     private func send(_ request: LightroomRequest) -> Int? {
         DebugLog.write("Send \(RequestRecord(request).summary)")
         guard let client else {
-            Self.prepend("The local command client is not available.", to: &errors)
+            recordError("The local command client is not available.")
             return nil
         }
         let id = client.send(request) { [weak self] result in
             if case .failure(let error) = result {
                 Task { @MainActor in
-                    self?.errorOccurred(error.localizedDescription)
+                    self?.recordError(error.localizedDescription)
                 }
             }
         }
         return id
     }
 
-    private func errorOccurred(_ message: String) {
+    private func recordError(_ message: String) {
         Self.prepend(message, to: &errors)
     }
 
@@ -403,7 +386,7 @@ final class CommandStore {
         if !newContext.isMasking && isPaletteOpen { closePalette() }
     }
 
-    /// Keeps the on-screen history short: a scroll gesture sends many requests per second.
+    /// Keeps the response and error lists short: a scroll gesture sends many requests per second.
     private static let historyLimit = 100
 
     private static func prepend<Element>(_ element: Element, to list: inout [Element]) {
@@ -424,18 +407,14 @@ final class CommandStore {
                 overlay.showNotice(ack.message ?? "Lightroom rejected the change", settings: overlaySettings)
             }
         }
-        if ack.accepted {
-            status = "Lightroom accepted \(ack.parameter ?? "the request")"
-        } else {
-            let message = ack.message ?? "The plug-in rejected the request."
-            Self.prepend(message, to: &errors)
-            status = "Lightroom rejected \(ack.parameter ?? "the request"): \(message)"
+        if !ack.accepted {
+            recordError(ack.message ?? "The plug-in rejected the request.")
         }
     }
 }
 
-/// One sent request, as listed in the Status screen.
-struct RequestRecord: Hashable {
+/// One sent request in a few words, for the debug log.
+private struct RequestRecord {
     let title: String
     let detail: String?
 
@@ -470,6 +449,11 @@ enum AccessibilityPermission {
     static func request() {
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
+        openSettings()
+    }
+
+    /// Opens System Settings → Privacy & Security → Accessibility.
+    static func openSettings() {
         if let pane = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(pane)
         }

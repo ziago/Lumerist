@@ -150,7 +150,6 @@ internal static class Icons
     public const string ArrowDown = "\uE74B";
     public const string Warning = "\uE7BA";
     public const string Error = "\uE783";
-    public const string Lock = "\uE72E";
     public const string Link = "\uE71B";
     public const string Power = "\uE7E8";
     public const string Palette = "\uE790";
@@ -168,14 +167,9 @@ internal static class Icons
     public const string Touchpad = "\uEFA5";
     public const string Drag = "\uE7C2";
     public const string Hourglass = "\uE916";
-    public const string Heart = "\uEB51";
-    public const string Download = "\uE896";
-    public const string Circle = "\uEA3A";
-    public const string CircleFilled = "\uEA3B";
     public const string DashedCircle = "\uF16B";
     public const string CircleCheck = "\uEC61";
     public const string Shield = "\uEA18";
     public const string RadioOn = "\uECCB";
     public const string RadioOff = "\uECCA";
-    public const string Folder = "\uE838";
 }

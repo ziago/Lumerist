@@ -47,9 +47,8 @@ def main() -> None:
         for weight, style in WEIGHTS.items():
             font = TTFont(SOURCE / file)
             instance = instantiateVariableFont(font, {"wght": weight})
-            for table in ("STAT",):
-                if table in instance:
-                    del instance[table]
+            if "STAT" in instance:
+                del instance["STAT"]
             set_names(instance, family, style, weight)
             out = TARGET / f"{family.replace(' ', '')}-{style}.ttf"
             instance.save(out)

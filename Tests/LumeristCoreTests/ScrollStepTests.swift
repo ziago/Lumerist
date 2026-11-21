@@ -57,6 +57,14 @@ struct ScrollStepAccumulatorTests {
         #expect(accumulator.steps(lineDelta: 0, pointDelta: 2, isContinuous: true, isMomentum: false) == 1)
     }
 
+    @Test func sensitivityChangesTheStepSizeWithinItsRange() {
+        var accumulator = ScrollStepAccumulator()
+        accumulator.pointsPerStep = 6
+        #expect(accumulator.steps(lineDelta: 0, pointDelta: 12, isContinuous: true, isMomentum: false) == 2)
+        accumulator.pointsPerStep = 1
+        #expect(accumulator.pointsPerStep == ScrollStepAccumulator.pointsPerStepRange.lowerBound)
+    }
+
     @Test func resetDiscardsTheResidual() {
         var accumulator = ScrollStepAccumulator()
         #expect(accumulator.steps(lineDelta: 0, pointDelta: 10, isContinuous: true, isMomentum: false) == 0)

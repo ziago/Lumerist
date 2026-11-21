@@ -267,8 +267,6 @@ internal sealed class StayInTouchModel
     /// <summary>A result for screen readers (the dialog changes under them).</summary>
     public event Action<string>? Announcement;
 
-    public bool IsPreview => isPreview;
-
     public bool IsSending => State is Phase.Sending;
 
     public bool IsSubscribed => State is Phase.Subscribed;

@@ -22,7 +22,9 @@ internal sealed class KeySlot : ContentControl
     private readonly KeyChord? comboKey;
     private readonly Action<KeyChord> onSet;
     private readonly Action onClear;
+    private Button? clearButton;
     private bool isHovering;
+    private bool shownRecording;
 
     /// <param name="id">Unique per box, so only one records at a time.</param>
     /// <param name="comboKey">The keymap's Combo Key: combos read "Tab + K", and holding it records a combo.</param>
@@ -46,8 +48,6 @@ internal sealed class KeySlot : ContentControl
         Refresh();
     }
 
-    private Button? clearButton;
-
     private void SetHover(bool hovering)
     {
         isHovering = hovering;
@@ -57,8 +57,6 @@ internal sealed class KeySlot : ContentControl
             clearButton.Opacity = hovering ? 1 : 0.55;
         }
     }
-
-    private bool shownRecording;
 
     /// <summary>Only the box that starts or stops recording draws again.</summary>
     private void OnRecorderChanged()

@@ -429,7 +429,7 @@ public struct Keymap: Codable, Sendable, Hashable {
     }
 
     /// Stores a slot; an empty slot is removed.
-    public mutating func setSlot(_ slot: ParameterSlot?, for key: ParameterKey) {
+    private mutating func setSlot(_ slot: ParameterSlot?, for key: ParameterKey) {
         let value = (slot?.isEmpty ?? true) ? nil : slot
         switch key.scope {
         case .develop: develop[key.id] = value
@@ -471,7 +471,7 @@ public struct Keymap: Codable, Sendable, Hashable {
     // MARK: Masks
 
     /// Develop parameter → the selected mask's equivalent (Lightroom 16 masking panel).
-    public static let localParameterMap: [String: String] = [
+    static let localParameterMap: [String: String] = [
         "Exposure": "local_Exposure", "Contrast": "local_Contrast",
         "Highlights": "local_Highlights", "Shadows": "local_Shadows",
         "Whites": "local_Whites", "Blacks": "local_Blacks",
@@ -485,7 +485,7 @@ public struct Keymap: Codable, Sendable, Hashable {
 
     /// The mask parameter a develop key controls while a mask is selected,
     /// or nil when the parameter has no mask equivalent.
-    public static func localKey(for key: ParameterKey) -> ParameterKey? {
+    static func localKey(for key: ParameterKey) -> ParameterKey? {
         guard key.scope == .develop else { return nil }
         if key.id.hasPrefix("local_") { return key }
         guard let local = localParameterMap[key.id] else { return nil }
@@ -503,8 +503,8 @@ public struct Keymap: Codable, Sendable, Hashable {
     /// Decodes a stored keymap. Strict on purpose: an unknown format, or a
     /// top-level, slot, Command Key or system key field this build does not
     /// know, throws instead of silently loading empty key slots (callers then
-    /// fall back to the standard layout). Fields of older files that this
-    /// build still reads (the Layer Key flags, now combos) are accepted.
+    /// fall back to the standard layout). Fields of older files that are
+    /// still read (the Layer Key flags, turned into combos) are accepted.
     public static func decodeStored(_ data: Data) throws -> Keymap {
         let decoder = JSONDecoder()
         guard let format = (try? decoder.decode(FormatProbe.self, from: data))?.format else {
@@ -554,22 +554,20 @@ extension Keymap {
         Dictionary(uniqueKeysWithValues: pairs.map { ($0.0, ParameterSlot(dial: KeyChord($0.1))) })
     }
 
-    /// Lumerist's standard layout, built on Capture One's Speed Edit keys and
-    /// translated to Lightroom Classic. The left hand stays on the keyboard,
-    /// the right hand on the mouse:
+    /// Lumerist's standard layout. The left hand stays on the keyboard, the
+    /// right hand on the mouse:
     ///
     ///     1 Temp     2 Tint      3 Vibrance  4 Texture   5 Clarity  6 Dehaze
     ///     Q Exposure W Contrast  E Saturation R Straighten T Crop zoom
     ///     A Highl.   S Shadows   D Whites    F Blacks
     ///                X Shadows   C Darks     V Lights    B Highlights  (tone curve)
     ///
-    /// 1 2, Q W and A S D F are Capture One's own keys. R straightens because
-    /// a tap on R opens Lightroom's Crop tool, and T, next to it, zooms the
-    /// crop. Vibrance, Texture, Clarity and Dehaze run along the number row,
-    /// with Saturation on E. Lightroom has no Levels, so the parametric tone
-    /// curve sits where Capture One keeps them, dark to light from X to B.
-    /// P and M are the preset and mask amounts. Library uses the same keys for
-    /// its Quick Develop controls.
+    /// White balance is on 1 and 2, the main tone sliders on Q W and A S D F.
+    /// R straightens because a tap on R opens Lightroom's Crop tool, and T,
+    /// next to it, zooms the crop. Vibrance, Texture, Clarity and Dehaze run
+    /// along the number row, with Saturation on E. The parametric tone curve
+    /// runs dark to light from X to B. P and M are the preset and mask
+    /// amounts. Library uses the same keys for its Quick Develop controls.
     ///
     /// Four combos are preset in Develop (hold Tab): Tab + A Auto Tone,
     /// Tab + W Auto White Balance, Tab + R Reset all, and Tab + Q Lightroom's
@@ -840,9 +838,8 @@ extension Keymap {
 
 // MARK: - Key overview
 
+/// The Dial Keys and Nudge Keys of one scope, in catalog order.
 public struct AssignmentSummary: Sendable {
-    public enum Sort: String, Sendable, CaseIterable { case parameter, key, section }
-
     public struct Entry: Sendable, Hashable {
         public let descriptor: ParameterDescriptor
         public let slot: ParameterSlot
@@ -851,37 +848,19 @@ public struct AssignmentSummary: Sendable {
     public let scope: ParameterScope
     public let dialKeys: [Entry]
     public let nudgeKeys: [Entry]
-
-    public var dialKeyCount: Int { dialKeys.count }
-    /// Individual nudge key bindings (decrease and increase count separately).
-    public var nudgeKeyCount: Int {
-        nudgeKeys.reduce(0) { $0 + ($1.slot.nudgeDown == nil ? 0 : 1) + ($1.slot.nudgeUp == nil ? 0 : 1) }
-    }
 }
 
 extension Keymap {
-    public func summary(for scope: ParameterScope, sortedBy sort: AssignmentSummary.Sort = .parameter) -> AssignmentSummary {
-        let order = Dictionary(uniqueKeysWithValues: ParameterCatalog.all.enumerated().map { ($0.element.key, $0.offset) })
-        var entries: [AssignmentSummary.Entry] = []
-        for (id, slot) in slots(for: scope) {
-            guard let descriptor = ParameterCatalog.descriptor(scope: scope, id: id) else { continue }
-            entries.append(.init(descriptor: descriptor, slot: slot))
-        }
-        func sorted(_ list: [AssignmentSummary.Entry], key: (AssignmentSummary.Entry) -> KeyChord?) -> [AssignmentSummary.Entry] {
-            switch sort {
-            case .parameter:
-                list.sorted { $0.descriptor.label.localizedCaseInsensitiveCompare($1.descriptor.label) == .orderedAscending }
-            case .key:
-                list.sorted { (key($0)?.displayText ?? "") < (key($1)?.displayText ?? "") }
-            case .section:
-                list.sorted { (order[$0.descriptor.key] ?? 0) < (order[$1.descriptor.key] ?? 0) }
-            }
+    public func summary(for scope: ParameterScope) -> AssignmentSummary {
+        let slots = slots(for: scope)
+        let entries = ParameterCatalog.all.compactMap { descriptor -> AssignmentSummary.Entry? in
+            guard descriptor.scope == scope, let slot = slots[descriptor.id] else { return nil }
+            return AssignmentSummary.Entry(descriptor: descriptor, slot: slot)
         }
         return AssignmentSummary(
             scope: scope,
-            dialKeys: sorted(entries.filter { $0.slot.dial != nil }, key: { $0.slot.dial }),
-            nudgeKeys: sorted(entries.filter { $0.slot.nudgeDown != nil || $0.slot.nudgeUp != nil },
-                            key: { $0.slot.nudgeDown ?? $0.slot.nudgeUp })
+            dialKeys: entries.filter { $0.slot.dial != nil },
+            nudgeKeys: entries.filter { $0.slot.nudgeDown != nil || $0.slot.nudgeUp != nil }
         )
     }
 }

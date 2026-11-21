@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Microsoft.Win32;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using Lumerist.App.Input;
 using Lumerist.App.Panels;
 using Lumerist.App.Services;
@@ -67,8 +67,6 @@ internal sealed class AppController : IDisposable
 
     public string Status { get; private set; } = "Connecting to the Lumerist plug-in…";
 
-    public string? LastNotice { get; private set; }
-
     public bool IsConnected => isConnected;
 
     public bool ShortcutsEnabled => hook is not null;
@@ -92,7 +90,7 @@ internal sealed class AppController : IDisposable
 
     public PluginInstallStatus? PluginStatus => installer.Status();
 
-    // For the windows (Fase 3) -------------------------------------------------
+    // For the windows and panels -------------------------------------------------
 
     /// <summary>The floating panels (Value HUD, Palette, Key Reference); set once at startup.</summary>
     public IPanelHost? Panels { get; set; }
@@ -114,8 +112,6 @@ internal sealed class AppController : IDisposable
 
     /// <summary>Develop presets from the last <see cref="RequestPresets"/>.</summary>
     public IReadOnlyList<PresetItem> Presets { get; private set; } = [];
-
-    public bool PresetsTruncated { get; private set; }
 
     public event Action? PresetsChanged;
 
@@ -242,7 +238,7 @@ internal sealed class AppController : IDisposable
     {
         if (installer.Status() is not { UpdatesAutomatically: true } || LightroomWindow.IsRunning) return;
         Log.Write("Updating the plug-in by itself");
-        LastNotice = installer.Install();
+        installer.Install();
         Changed?.Invoke();
     }
 
@@ -413,7 +409,6 @@ internal sealed class AppController : IDisposable
 
     private void ShowNotice(string text)
     {
-        LastNotice = text;
         Log.Write($"Notice: {text}");
         Panels?.ShowNotice(text);
         Changed?.Invoke();
@@ -469,10 +464,9 @@ internal sealed class AppController : IDisposable
             case LightroomMessage.Result(LightroomResult.Context(_, var newContext)):
                 Apply(newContext);
                 break;
-            case LightroomMessage.Result(LightroomResult.Presets(_, var items, var truncated)):
+            case LightroomMessage.Result(LightroomResult.Presets(_, var items, _)):
                 Log.Write($"Presets: {items.Count}");
                 Presets = items;
-                PresetsTruncated = truncated;
                 PresetsChanged?.Invoke();
                 break;
             case LightroomMessage.Result(LightroomResult.Catalog(_, var unsupported, var skipped) catalog):

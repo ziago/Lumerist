@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json.Nodes;
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -13,11 +12,11 @@ public sealed class PluginLinkTests : IDisposable
 {
     private const string WindowsExe = "C:\\Users\\Test\\AppData\\Local\\Programs\\Lumerist\\Lumerist.exe";
 
-    private readonly string _folder = Path.Combine(Path.GetTempPath(), "lumerist-link-" + Guid.NewGuid().ToString("N"), "Lumerist");
+    private readonly string folder = Path.Combine(Path.GetTempPath(), "lumerist-link-" + Guid.NewGuid().ToString("N"), "Lumerist");
 
     public void Dispose()
     {
-        try { Directory.Delete(Path.GetDirectoryName(_folder)!, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { Directory.Delete(Path.GetDirectoryName(folder)!, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     /// <summary>The Lua tests' linkJSON helper.</summary>
@@ -32,7 +31,7 @@ public sealed class PluginLinkTests : IDisposable
     public void UsesTheContractFileName()
     {
         Assert.Equal("plugin-link.json", Contract.PluginLinkFileName);
-        Assert.Equal(Path.Combine(_folder, "plugin-link.json"), PluginLink.PathIn(_folder));
+        Assert.Equal(Path.Combine(folder, "plugin-link.json"), PluginLink.PathIn(folder));
     }
 
     [Fact]
@@ -136,30 +135,30 @@ public sealed class PluginLinkTests : IDisposable
     [Fact]
     public void SavesAtomicallyAndReadsBack()
     {
-        Assert.Equal(PluginLinkProblem.Missing, PluginLink.Load(_folder).Problem);
+        Assert.Equal(PluginLinkProblem.Missing, PluginLink.Load(folder).Problem);
 
         var link = new PluginLink("C:\\Users\\Zoë\\AppData\\Local\\Programs\\Lumerist\\Lumerist.exe", OpenWithLightroom: true);
-        var path = link.Save(_folder);
-        Assert.Equal(PluginLink.PathIn(_folder), path);
-        Assert.Equal(new PluginLinkReading(link, PluginLinkProblem.None), PluginLink.Load(_folder));
+        var path = link.Save(folder);
+        Assert.Equal(PluginLink.PathIn(folder), path);
+        Assert.Equal(new PluginLinkReading(link, PluginLinkProblem.None), PluginLink.Load(folder));
 
         var changed = link with { OpenWithLightroom = false };
-        changed.Save(_folder);
-        Assert.Equal(changed, PluginLink.Load(_folder).Link);
+        changed.Save(folder);
+        Assert.Equal(changed, PluginLink.Load(folder).Link);
         // Only the file itself: no temporary files left behind.
-        Assert.Equal(new[] { "plugin-link.json" }, Directory.EnumerateFileSystemEntries(_folder).Select(entry => Path.GetFileName(entry)).ToArray());
+        Assert.Equal(new[] { "plugin-link.json" }, Directory.EnumerateFileSystemEntries(folder).Select(entry => Path.GetFileName(entry)).ToArray());
     }
 
     [Fact]
     public void LoadReportsUnreadableAndInvalidFiles()
     {
-        Directory.CreateDirectory(_folder);
-        File.WriteAllText(PluginLink.PathIn(_folder), "not json");
-        Assert.Equal(PluginLinkProblem.Unreadable, PluginLink.Load(_folder).Problem);
-        File.WriteAllText(PluginLink.PathIn(_folder), LinkJson("C:\\Tools\\other.exe", true));
-        Assert.Equal(PluginLinkProblem.Invalid, PluginLink.Load(_folder).Problem);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(PluginLink.PathIn(folder), "not json");
+        Assert.Equal(PluginLinkProblem.Unreadable, PluginLink.Load(folder).Problem);
+        File.WriteAllText(PluginLink.PathIn(folder), LinkJson("C:\\Tools\\other.exe", true));
+        Assert.Equal(PluginLinkProblem.Invalid, PluginLink.Load(folder).Problem);
         // A byte order mark is refused by the plug-in's decoder, so here too.
-        File.WriteAllBytes(PluginLink.PathIn(_folder), [0xEF, 0xBB, 0xBF, .. Encoding.ASCII.GetBytes(LinkJson(WindowsExe, true))]);
-        Assert.Equal(PluginLinkProblem.Unreadable, PluginLink.Load(_folder).Problem);
+        File.WriteAllBytes(PluginLink.PathIn(folder), [0xEF, 0xBB, 0xBF, .. Encoding.ASCII.GetBytes(LinkJson(WindowsExe, true))]);
+        Assert.Equal(PluginLinkProblem.Unreadable, PluginLink.Load(folder).Problem);
     }
 }

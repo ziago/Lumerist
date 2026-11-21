@@ -85,7 +85,7 @@ final class ChordRecorder {
         handler?(chord)
     }
 
-    static func modifiers(of flags: NSEvent.ModifierFlags) -> KeyModifiers {
+    private static func modifiers(of flags: NSEvent.ModifierFlags) -> KeyModifiers {
         var result: KeyModifiers = []
         if flags.contains(.shift) { result.insert(.shift) }
         if flags.contains(.control) { result.insert(.control) }

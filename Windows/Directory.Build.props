@@ -6,11 +6,11 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <InvariantGlobalization>true</InvariantGlobalization>
     <!--
-      Since .NET 8, invariant mode throws for any culture name but the
-      invariant one, and WPF asks for "en" and others the first time it lays
-      out text (MS.Internal.FontCache.MajorLanguages): every window with text
-      failed. Named cultures are allowed again and still behave like the
-      invariant one, so numbers keep "." and "," everywhere.
+      Invariant mode throws for any culture name but the invariant one, and
+      WPF asks for "en" and others the first time it lays out text
+      (MS.Internal.FontCache.MajorLanguages), so every window with text would
+      fail. This allows named cultures; they still behave like the invariant
+      one, so numbers keep "." and "," everywhere.
     -->
     <PredefinedCulturesOnly>false</PredefinedCulturesOnly>
   </PropertyGroup>

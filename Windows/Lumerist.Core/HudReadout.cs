@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Lumerist.Core;
 
 /// <summary>The colour family of a Value HUD read-out.</summary>
@@ -22,20 +24,6 @@ public enum HudNoticeIcon
     Info,
     Checkmark,
     Cross,
-}
-
-/// <summary>The step a key drove: normal, or the larger one used with Shift.</summary>
-public enum HudStepMode
-{
-    Normal,
-
-    /// <summary>The larger step, used with Shift.</summary>
-    Coarse,
-}
-
-public static class HudStepModes
-{
-    public static string Label(this HudStepMode mode) => mode == HudStepMode.Coarse ? "Coarse" : "Normal";
 }
 
 /// <summary>
@@ -147,7 +135,7 @@ public sealed record HudReadout
         Bar = HudBar.Create(0.35, -5, 5, "EV"),
         RangeText = ("-5.00", "+5.00"),
         KeyLabel = "Q",
-        StepLabel = HudStepMode.Normal.Label(),
+        StepLabel = "Normal",
     };
 
     /// <summary>Catalog label when known; otherwise "local_LuminanceNoise" → "Luminance Noise".</summary>
@@ -159,7 +147,7 @@ public sealed record HudReadout
             ?? ParameterCatalog.Descriptor(ParameterScope.Develop, id)
             ?? ParameterCatalog.Descriptor(ParameterScope.Develop, plain);
         if (descriptor is not null) return descriptor.Label;
-        var words = new System.Text.StringBuilder();
+        var words = new StringBuilder();
         foreach (var character in plain)
         {
             if (char.IsUpper(character) && words.Length > 0 && words[^1] != ' ') words.Append(' ');

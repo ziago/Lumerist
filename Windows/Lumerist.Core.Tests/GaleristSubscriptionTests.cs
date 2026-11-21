@@ -2,7 +2,6 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -82,7 +81,6 @@ public class GaleristSubscriptionTests
         Assert.Equal("https://galerist.photo/", GaleristOptIn.ProductionBaseUrl.AbsoluteUri);
         Assert.Equal("https://galerist.photo/en/legal/privacy#lumenkeys", GaleristOptIn.PrivacyUrl.AbsoluteUri);
         Assert.Equal("lumerist.galerist.subscribed-at", GaleristOptIn.SubscribedAtDefaultsKey);
-        Assert.Equal("https://galerist.photo/c/lk-onboarding", GaleristOptIn.TrackedLink.Onboarding.Url().AbsoluteUri);
         Assert.Equal("https://galerist.photo/c/lk-settings", GaleristOptIn.TrackedLink.Settings.Url().AbsoluteUri);
         Assert.Equal("https://galerist.photo/c/lk-menu", GaleristOptIn.TrackedLink.Menu.Url().AbsoluteUri);
         Assert.Equal("https://galerist.photo/c/lk-readme", GaleristOptIn.TrackedLink.Readme.Url().AbsoluteUri);
@@ -438,17 +436,13 @@ public class GaleristSubscriptionTests
     // Client (fake handler, never the network)
 
     /// <summary>Answers every request itself and records what it was sent.</summary>
-    private sealed class FakeHandler : HttpMessageHandler
+    private sealed class FakeHandler(Func<HttpRequestMessage, HttpResponseMessage> reply) : HttpMessageHandler
     {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _reply;
-
         public FakeHandler(int status, string body) : this(_ => new HttpResponseMessage((HttpStatusCode)status)
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json"),
         })
         { }
-
-        public FakeHandler(Func<HttpRequestMessage, HttpResponseMessage> reply) => _reply = reply;
 
         public List<(HttpRequestMessage Request, byte[] Body)> Requests { get; } = [];
 
@@ -456,7 +450,7 @@ public class GaleristSubscriptionTests
         {
             var body = request.Content is null ? [] : await request.Content.ReadAsByteArrayAsync(cancellationToken);
             Requests.Add((request, body));
-            return _reply(request);
+            return reply(request);
         }
     }
 

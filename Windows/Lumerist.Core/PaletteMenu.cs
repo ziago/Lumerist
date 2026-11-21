@@ -68,15 +68,6 @@ public static class PaletteMaskModes
         _ => null,
     };
 
-    /// <summary>The screen-reader action that does the same without modifiers.</summary>
-    public static string ActionName(this PaletteMaskMode mode) => mode switch
-    {
-        PaletteMaskMode.Add => "Add to the selected mask",
-        PaletteMaskMode.Subtract => "Subtract from the selected mask",
-        PaletteMaskMode.Intersect => "Intersect with the selected mask",
-        _ => "New mask",
-    };
-
     /// <summary>"Shift Add", "Alt Subtract", "Shift+Alt Intersect".</summary>
     public static string HintText(this PaletteMaskMode mode) => $"{mode.Keys()} {mode.Title()}";
 }
@@ -131,9 +122,6 @@ public static class PaletteMenu
 
     public static PaletteMaskTool? MaskTool(string? id) => id is null ? null : MaskTools.FirstOrDefault(tool => tool.Id == id);
 
-    /// <summary>The tool's title, or its id when the app does not know it.</summary>
-    public static string MaskToolTitle(string id) => MaskTool(id)?.Title ?? id;
-
     /// <summary>A mask tool favourite: New / Add / Subtract / Intersect come from the click.</summary>
     public static bool IsMaskTool(PaletteEntry entry)
     {
@@ -143,7 +131,7 @@ public static class PaletteMenu
             LightroomCommandName.SubtractFromMask or LightroomCommandName.IntersectWithMask;
     }
 
-    /// <summary>Galerist rows: a mask tool shows its own symbol, a preset the sliders.</summary>
+    /// <summary>A favourite row's symbol: a mask tool shows its own, a preset the sliders.</summary>
     public static string Symbol(PaletteEntry entry)
     {
         ArgumentNullException.ThrowIfNull(entry);
@@ -178,7 +166,7 @@ public static class PaletteMenu
     {
         ArgumentNullException.ThrowIfNull(context);
         if (context.IsMasking) return "Mask selected";
-        return context.Module.Length == 0 ? null : Capitalized(context.Module);
+        return context.Module.Length == 0 ? null : CommandTitles.Capitalized(context.Module);
     }
 
     /// <summary>The panel's last line names its own key, e.g. "Hold ` for a look · tap it to keep it open".</summary>
@@ -190,9 +178,4 @@ public static class PaletteMenu
             ? $"Pinned · press {key} or × to close"
             : $"Hold {key} for a look · tap it to keep it open";
     }
-
-    /// <summary>Each word with a capital first letter and the rest in lower case ("develop" → "Develop").</summary>
-    internal static string Capitalized(string text) =>
-        string.Join(' ', text.Split(' ').Select(word =>
-            word.Length == 0 ? word : char.ToUpperInvariant(word[0]) + word[1..].ToLowerInvariant()));
 }

@@ -2,7 +2,7 @@ import SwiftUI
 import LumeristCore
 
 /// Which key of a parameter slot is being edited.
-enum SlotRole: String, CaseIterable {
+enum SlotRole: String {
     case dial
     case nudgeDown
     case nudgeUp
@@ -41,7 +41,7 @@ enum SlotRole: String, CaseIterable {
 }
 
 extension KeyUsage {
-    /// "Dial Key of Exposure", "Nudge + of Contrast", "Command Key “Auto Tone”".
+    /// "the Dial Key of Exposure", "the Nudge + key of Contrast", "the Command Key “Auto Tone”".
     var label: String {
         switch self {
         case .dial(let key): "the Dial Key of \(Self.parameterLabel(key))"
@@ -110,12 +110,6 @@ extension Keymap {
     /// Error conflicts that involve `chord` in `scope` (or system keys).
     func blockingConflicts(for chord: KeyChord, in scope: ParameterScope?) -> [KeyConflict] {
         conflicts().filter { $0.severity == .error && $0.chord == chord && ($0.scope == nil || $0.scope == scope) }
-    }
-
-    /// The message to show on a slot whose chord is in conflict, if any.
-    func conflictMessage(for usage: KeyUsage, chord: KeyChord?, scope: ParameterScope) -> String? {
-        guard let chord else { return nil }
-        return conflicts().first { $0.chord == chord && $0.scope == scope && $0.usages.contains(usage) }?.message
     }
 }
 
@@ -343,15 +337,6 @@ extension CommandKey.Action {
         case .preset(_, let name): return "Preset: \(name)"
         case .shortcut(let chord): return "Lightroom shortcut \(chord.displayText)" // never a combo
         case .macro(let steps): return "Macro · \(steps.count) step\(steps.count == 1 ? "" : "s")"
-        }
-    }
-
-    var kindTitle: String {
-        switch self {
-        case .command: "Command"
-        case .preset: "Preset"
-        case .shortcut: "Shortcut"
-        case .macro: "Macro"
         }
     }
 }

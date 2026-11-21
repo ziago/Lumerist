@@ -1,7 +1,3 @@
-import Foundation
-
-extension KeyModifiers: Codable {}
-
 /// A physical key plus the modifiers held with it. Stored as a hardware key
 /// code, so a chord follows the physical key whatever the keyboard layout.
 public struct KeyChord: Codable, Sendable, Hashable, CustomStringConvertible {
@@ -28,9 +24,6 @@ public struct KeyChord: Codable, Sendable, Hashable, CustomStringConvertible {
 
     public var description: String { displayText }
 
-    /// The same key without modifiers.
-    public var plain: KeyChord { KeyChord(keyCode) }
-
     /// True when the chord works only while the Combo Key is held.
     public var isCombo: Bool { modifiers.contains(.combo) }
 
@@ -42,7 +35,7 @@ public struct KeyChord: Codable, Sendable, Hashable, CustomStringConvertible {
 
     /// True when ⌘, ⌃ or ⌥ is part of the chord (these belong to macOS and
     /// Lightroom unless a binding names them explicitly).
-    public var usesReservedModifiers: Bool { modifiers.reservesKey }
+    var usesReservedModifiers: Bool { modifiers.reservesKey }
 
     // MARK: Common keys
 
@@ -51,7 +44,6 @@ public struct KeyChord: Codable, Sendable, Hashable, CustomStringConvertible {
     public static let grave = KeyChord(50)
     /// Left of 1 on ISO keyboards (on ANSI ones that key is `grave`).
     public static let isoSection = KeyChord(10)
-    public static let shiftGrave = KeyChord(50, .shift)
     /// Combo Key + H ("H for help"): the default Key Reference toggle.
     public static let comboH = KeyChord(4, .combo)
     public static let controlEscape = KeyChord(53, .control)

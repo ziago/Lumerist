@@ -21,7 +21,7 @@ internal sealed record ThemePalette(
     uint Ice, uint Body, uint Steel, uint Disabled, uint Error, uint Success, uint Live,
     uint Chrome, uint OnTeal, uint Tint)
 {
-    /// <summary>The original neon theme. Text colours are ≥ 4.5:1 on Abyss, Panel and PanelRaised.</summary>
+    /// <summary>The neon theme. Text colours are ≥ 4.5:1 on Abyss, Panel and PanelRaised.</summary>
     public static readonly ThemePalette Miami = new(
         Abyss: 0x070B18, Night: 0x0B0F24, Dusk: 0x1A0C2A, Panel: 0x0D1428, PanelRaised: 0x111A33,
         GridLine: 0x1B2A4A, Outline: 0x2A3B63,

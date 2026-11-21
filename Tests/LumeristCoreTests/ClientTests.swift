@@ -97,7 +97,7 @@ struct ClientTests {
         let id = try await send(.ping, with: client)
         _ = try await commandReceiver.nextMessage()
 
-        // A preset list well over the old 16 KB limit, split across many reads.
+        // A preset list of more than 200 KB, split across many reads.
         let items = (0..<3_000).map { PresetItem(id: "UUID-\($0)", name: "Preset number \($0) with a long name", group: "Folder \($0 % 7)") }
         let ack = try LightroomAck(id: id, accepted: true, message: "Lumerist plug-in ready (protocol 3)")
         var payload = try MessageCodec.encodeLine(.context(LightroomContext(module: "develop", tool: "masking")))
@@ -114,7 +114,6 @@ struct ClientTests {
         #expect(received[0] == .context(LightroomContext(module: "develop", tool: "masking")))
         #expect(received[1] == .ack(ack))
         #expect(received[2] == .result(.presets(id: 99, items: items, truncated: false)))
-
     }
 
     @Test(.timeLimit(.minutes(1)))
@@ -523,7 +522,7 @@ private final class LoopbackLineReceiver: @unchecked Sendable {
         listener.newConnectionHandler = { [continuation = stream.continuation] connection in
             connection.start(queue: .global(qos: .userInitiated))
             let buffer = LineBuffer()
-            func read() {
+            @Sendable func read() {
                 connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { data, _, isComplete, error in
                     if let data {
                         for line in buffer.append(data) { continuation.yield(line) }

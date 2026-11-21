@@ -29,8 +29,7 @@ Bridge.SOCKET_STALL_SECONDS = 20
 -- Scripts of one loaded plug-in share `_G`, but "Reload plug-in" creates a new
 -- Lua environment (Adobe SDK guide) while tasks from the old one can keep
 -- running. Plug-in preferences survive across environments, so they carry the
--- two facts every environment must agree on: the bridge's status and which
--- start "owns" it.
+-- one fact every environment must agree on: which start "owns" the bridge.
 -- Opened lazily and defensively: a failure here must never stop the bridge.
 -- Without shared prefs the bridge still works within its own environment.
 local prefsHandle = nil
@@ -64,14 +63,12 @@ local function isCurrent(generation)
     return not _G.lumeristStopping and sharedPrefs().bridgeGeneration == generation
 end
 
+--- Logs the bridge's state when it changes.
 local function setStatus(value)
     if _G.lumeristBridgeStatus == value then
         return -- Rebinding repeats the same states every few seconds.
     end
     _G.lumeristBridgeStatus = value
-    pcall(function()
-        sharedPrefs().bridgeStatus = value
-    end)
     logger:info(value)
 end
 
@@ -268,8 +265,6 @@ local function runQueue(queue)
 end
 
 local function startWorker(generation)
-    _G.lumeristWorkerRunning = true
-    _G.lumeristWorkerGeneration = generation
     LrTasks.startAsyncTask(function()
         -- LrTasks.pcall (not pcall) because the loop yields in LrTasks.sleep.
         local ran, loopError = LrTasks.pcall(function()
@@ -297,11 +292,7 @@ local function startWorker(generation)
                 end
             end
         end)
-        if _G.lumeristWorkerGeneration == generation then
-            _G.lumeristWorkerRunning = false
-        end
         if not ran then
-            -- The flag is cleared, so the next Bridge.start() can restart it.
             setStatus("command worker stopped: " .. tostring(loopError))
         end
     end)
@@ -438,20 +429,17 @@ local function runSockets(generation)
     if not _G.lumeristStopping and sharedPrefs().bridgeGeneration ~= generation then
         logger:info("bridge generation " .. generation .. " handed over to a newer start")
     end
-    if sharedPrefs().bridgeGeneration == generation then
-        _G.lumeristBridgeRunning = false
-    end
 end
 
---- Starts the bridge (called by Init.lua). Starting again, from any script
---- environment, supersedes the previous bridge instead of adding a second one.
+--- Starts the bridge (called by Init.lua, and by the worker when the socket
+--- loop stalls). Starting again, from any script environment, supersedes the
+--- previous bridge instead of adding a second one.
 function Bridge.start()
     local generation = claimGeneration()
     _G.lumeristStopping = false
     _G.lumeristQueue = {}
     _G.lumeristLastContext = nil
     _G.lumeristContextDirty = true
-    _G.lumeristBridgeRunning = true
     _G.lumeristBridgeStatus = nil
     _G.lumeristSocketHeartbeat = LrDate.currentTime()
     setStatus("bridge starting on localhost:" .. REQUEST_PORT .. " (protocol " .. Actions.protocolVersion .. ")")
@@ -460,12 +448,6 @@ function Bridge.start()
         runSockets(generation)
     end)
     return generation
-end
-
---- The status as last reported by the running bridge, whichever script
---- environment it lives in.
-function Bridge.status()
-    return sharedPrefs().bridgeStatus or _G.lumeristBridgeStatus or "bridge has not started"
 end
 
 --- Stops the bridge (called by Shutdown.lua, also on Plug-in Manager reload).

@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using Lumerist.App.Design;
 using Lumerist.App.Guide;
 using Lumerist.Core;
 
@@ -26,8 +27,8 @@ internal static class GuideSnapshots
 
         // The Mac's general-support also shows the plug-in section, which the
         // main window's General screen draws on Windows.
-        SnapshotRegistry.Add("general-support", 860, 860, controller =>
-            Page(GuideHost.SupportPage(new UpdateChecker(null), StayInTouchPrompter.Preview(new StayInTouchSchedule()))));
+        SnapshotRegistry.Add("general-support", 860, 860, _ =>
+            Page(SupportPage(new UpdateChecker(null), StayInTouchPrompter.Preview(new StayInTouchSchedule()))));
         SnapshotRegistry.Add("general-support-stay-in-touch", 860, 600, _ =>
             About(StayInTouchPrompter.Preview(new StayInTouchSchedule())));
         SnapshotRegistry.Add("general-support-subscribed", 860, 600, _ =>
@@ -47,7 +48,18 @@ internal static class GuideSnapshots
         SnapshotRegistry.Add($"stay-in-touch-{state}", 480, height, _ => new StayInTouchView(model));
 
     private static FrameworkElement About(StayInTouchPrompter prompter) =>
-        Page(new Border { Padding = new Thickness(Design.Theme.Space.XXL), Child = new AboutSupportSection(prompter) });
+        Page(new Border { Padding = new Thickness(Theme.Space.XXL), Child = new AboutSupportSection(prompter) });
+
+    /// <summary>The Updates and About &amp; Support sections one under the other, with the Mac's page padding.</summary>
+    private static FrameworkElement SupportPage(UpdateChecker updates, StayInTouchPrompter stayInTouch)
+    {
+        var about = new AboutSupportSection(stayInTouch) { Margin = new Thickness(0, Theme.Space.XL, 0, 0) };
+        return new Border
+        {
+            Padding = new Thickness(Theme.Space.XXL),
+            Child = new StackPanel { Children = { new UpdatesSection(updates), about } },
+        };
+    }
 
     /// <summary>
     /// The window background behind a page (Miami's gradient). Heights leave

@@ -5,15 +5,14 @@ import UniformTypeIdentifiers
 import LumeristCore
 
 /// Development aid: renders the Value HUD styles (and the sample shown by
-/// "Place the HUD") to PNG files without showing any window, installing the
-/// event tap, or connecting to Lightroom. Every image is made once per theme,
-/// with the theme in its name (`ruler-exposure-galerist.png`,
-/// `ruler-exposure-miami.png`…).
+/// "Place the HUD") to PNG files, plus an animated GIF of a Ruler gesture.
+/// Every image is made once per theme, with the theme in its name
+/// (`ruler-exposure-galerist.png`, `ruler-exposure-miami.png`…).
 /// Also renders the floating panels (`panels-*.png`: Palette, Palette over a
 /// selected mask with ⇧ held, Key Reference) and the settings that show them
 /// (`keyboard-*`, `hud-settings-*`, `palette-settings-*`; Galerist in light
-/// and dark). The store is created but never started: no event tap, no
-/// Lightroom connection.
+/// and dark). No window is shown and the store is never started: no event
+/// tap, no Lightroom connection.
 /// Run the app binary with `LUMERIST_RENDER_HUD=<folder>`.
 @MainActor
 enum HUDSnapshots {
@@ -103,16 +102,12 @@ enum HUDSnapshots {
     private static func writePNG(_ view: some View, to url: URL) {
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
-        guard let image = renderer.nsImage,
-              let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let png = bitmap.representation(using: .png, properties: [:]) else { return }
+        guard let png = renderer.nsImage?.pngData else { return }
         try? png.write(to: url)
     }
 
-    /// Animated GIF of an exposure gesture in the Ruler style (README hero image).
-    static func renderAnimations(to directory: URL, suffix: String = "") {
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    /// Animated GIF of an exposure gesture in the Ruler style.
+    private static func renderAnimations(to directory: URL, suffix: String) {
         // A short scroll: up past +1.5 EV, back down below zero, settling at +0.35.
         var values: [Double] = []
         func sweep(from start: Double, to end: Double, step: Double) {
@@ -126,19 +121,17 @@ enum HUDSnapshots {
         sweep(from: 0, to: 1.5, step: 0.05)
         sweep(from: 1.45, to: -0.8, step: 0.05)
         sweep(from: -0.75, to: 0.35, step: 0.05)
-        for style in [OverlaySettings.Style.ruler] {
-            var frames: [CGImage] = []
-            for value in values {
-                let content = sample("Exposure", value: value, text: OverlayFormatting.number(value, unit: "EV"),
-                                     unit: "EV", minimum: -5, maximum: 5)
-                let view = OverlayView(content: content, style: style, backgroundOpacity: 0.88)
-                    .background(Color(white: 0.55))
-                let renderer = ImageRenderer(content: view)
-                renderer.scale = 2
-                if let image = renderer.cgImage { frames.append(image) }
-            }
-            writeGIF(frames, holdLast: 1.6, to: directory.appending(path: "value-hud-\(style.rawValue)\(suffix).gif"))
+        var frames: [CGImage] = []
+        for value in values {
+            let content = sample("Exposure", value: value, text: OverlayFormatting.number(value, unit: "EV"),
+                                 unit: "EV", minimum: -5, maximum: 5)
+            let view = OverlayView(content: content, style: .ruler, backgroundOpacity: 0.88)
+                .background(Color(white: 0.55))
+            let renderer = ImageRenderer(content: view)
+            renderer.scale = 2
+            if let image = renderer.cgImage { frames.append(image) }
         }
+        writeGIF(frames, holdLast: 1.6, to: directory.appending(path: "value-hud-ruler\(suffix).gif"))
     }
 
     private static func writeGIF(_ frames: [CGImage], holdLast: Double, to url: URL) {
@@ -173,5 +166,13 @@ enum HUDSnapshots {
         var content = OverlayContent(notice: text)
         content.title = "Vibrance"
         return content
+    }
+}
+
+extension NSImage {
+    /// The image as PNG data, for the development renders.
+    var pngData: Data? {
+        guard let tiff = tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff) else { return nil }
+        return bitmap.representation(using: .png, properties: [:])
     }
 }

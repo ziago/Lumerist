@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Lumerist.App.Design;
@@ -124,7 +123,7 @@ internal static class PanelLook
             _ => new TextBlock
             {
                 Text = Glyph(symbol),
-                FontFamily = IconFont,
+                FontFamily = Design.Controls.Icons.Font,
                 FontSize = size,
                 Foreground = color,
                 TextAlignment = TextAlignment.Center,
@@ -135,8 +134,6 @@ internal static class PanelLook
         icon.SnapsToDevicePixels = true;
         return icon;
     }
-
-    private static readonly FontFamily IconFont = new("Segoe Fluent Icons, Segoe MDL2 Assets");
 
     private static string Glyph(string symbol) => symbol switch
     {

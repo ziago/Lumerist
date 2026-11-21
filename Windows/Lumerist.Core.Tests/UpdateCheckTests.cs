@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -8,7 +7,8 @@ namespace Lumerist.Core.Tests;
 /// <summary>
 /// The update check (the Mac's UpdateChecker): the newest non-draft release
 /// against the running version, only github.com release pages are opened,
-/// only real answers count as a check, and the weekly check is opt-in.
+/// only real answers count as a check, and the automatic check runs at most
+/// once a day unless turned off.
 /// </summary>
 public class UpdateCheckTests
 {
@@ -154,11 +154,7 @@ public class UpdateCheckTests
     [Fact]
     public async Task ReadsThePublicFeedWithAPlainRequest()
     {
-        var handler = new FakeHandler(request =>
-        {
-            var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Feed) };
-            return response;
-        });
+        var handler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Feed) });
         var (state, counts) = await new UpdateFeedClient(handler).CheckAsync("0.9.0");
         Assert.Equal("0.9.1", Assert.IsType<UpdateCheckState.Available>(state).Version);
         Assert.True(counts);

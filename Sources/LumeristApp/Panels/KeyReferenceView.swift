@@ -11,7 +11,7 @@ struct KeyReferenceView: View {
 
     private static let pageSize = 14
 
-    struct Entry: Identifiable, Hashable {
+    struct Entry: Identifiable {
         let id: String
         /// Combos show only their own key: the group title names the Combo Key.
         let keys: [String]
@@ -156,7 +156,7 @@ struct KeyReferenceView: View {
             // A System Key may itself be a combo ("Tab + H"): spelled out in full here.
             regular.append(Entry(id: "system.\(role.rawValue)", keys: [keymap.displayText(for: chord)], title: role.title, kind: "System"))
         }
-        let summary = keymap.summary(for: scope, sortedBy: .section)
+        let summary = keymap.summary(for: scope)
         for entry in summary.dialKeys {
             guard let chord = entry.slot.dial else { continue }
             regular.append(Entry(id: "dial.\(entry.descriptor.id)", keys: [chord.displayText],

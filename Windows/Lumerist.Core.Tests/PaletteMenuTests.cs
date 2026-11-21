@@ -1,4 +1,3 @@
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -30,16 +29,14 @@ public class PaletteMenuTests
         Assert.Equal(["", "Shift", "Alt", "Shift+Alt"], Enum.GetValues<PaletteMaskMode>().Select(mode => mode.Keys()));
         Assert.Equal([null, "+", "−", "∩"], Enum.GetValues<PaletteMaskMode>().Select(mode => mode.Badge()));
         Assert.Equal(["Shift Add", "Alt Subtract", "Shift+Alt Intersect"], PaletteMaskModes.Modifying.Select(mode => mode.HintText()));
-        Assert.Equal("Intersect with the selected mask", PaletteMaskMode.Intersect.ActionName());
-        Assert.Equal("New mask", PaletteMaskMode.New.ActionName());
     }
 
     [Fact]
     public void TheMenuOffersEightToolsWithLightroomsNames()
     {
         Assert.Equal(["Subject", "Sky", "Background", "People", "Objects", "Brush", "Linear", "Radial"],
-            PaletteMenu.MenuToolIds.Select(PaletteMenu.MaskToolTitle));
-        Assert.Equal("aiSelection/unknown", PaletteMenu.MaskToolTitle("aiSelection/unknown"));
+            PaletteMenu.MenuToolIds.Select(id => PaletteMenu.MaskTool(id)?.Title));
+        Assert.Null(PaletteMenu.MaskTool("aiSelection/unknown"));
         Assert.Equal(12, PaletteMenu.MaskTools.Count);
     }
 

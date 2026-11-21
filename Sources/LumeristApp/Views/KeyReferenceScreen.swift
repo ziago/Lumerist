@@ -11,14 +11,7 @@ struct KeyReferenceScreen: View {
                         footer: "Move it by its title bar.") {
             SettingRow(title: "Key Reference key",
                        detail: "Press it in Develop or Library to show or hide the list. Click the box and press another key, or hold Tab with it for a combo.") {
-                KeySlot(
-                    id: "system.\(SystemKeys.Role.keyReferenceToggle.rawValue)",
-                    chord: store.keymap.keymap.systemKeys.keyReferenceToggle,
-                    minWidth: 64,
-                    accessibilityName: SystemKeys.Role.keyReferenceToggle.title,
-                    onSet: { KeymapEditor.shared.setSystem(store, role: .keyReferenceToggle, chord: $0) },
-                    onClear: { KeymapEditor.shared.setSystem(store, role: .keyReferenceToggle, chord: nil) }
-                )
+                SystemKeySlot(store: store, role: .keyReferenceToggle)
             }
             SettingRow(title: "Show the Key Reference",
                        detail: "A list of the keys that work in Lightroom's current module, floating above Lightroom. Clicking it leaves Lightroom in front.") {

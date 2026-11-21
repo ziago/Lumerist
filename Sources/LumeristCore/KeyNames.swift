@@ -1,5 +1,3 @@
-import Foundation
-
 /// Human-readable names for macOS hardware key codes.
 ///
 /// Keys are stored as key codes, so a binding follows the physical key. The
@@ -14,7 +12,8 @@ public enum KeyNames {
     /// Key codes whose printed character depends on the keyboard layout
     /// (letters, digits, punctuation, and the ISO key next to left Shift).
     public static let layoutDependentKeyCodes: Set<Int64> = Set((0...50).map(Int64.init))
-        .subtracting([36, 48, 49])
+        .subtracting([36, 48, 49]) // Return, Tab, Space
+
     private static let names: [Int64: String] = [
         0: "A", 1: "S", 2: "D", 3: "F", 4: "H", 5: "G", 6: "Z", 7: "X", 8: "C", 9: "V",
         11: "B", 12: "Q", 13: "W", 14: "E", 15: "R", 16: "Y", 17: "T",
@@ -42,12 +41,13 @@ public enum KeyNames {
         return text
     }
 
+    /// The key's name on the active layout: "Q", "Tab", "Num *".
     public static func name(for keyCode: Int64) -> String {
         name(for: keyCode, layout: layoutName)
     }
 
     /// Name using an explicit layout lookup (testable without global state).
-    public static func name(for keyCode: Int64, layout: ((Int64) -> String?)?) -> String {
+    static func name(for keyCode: Int64, layout: ((Int64) -> String?)?) -> String {
         if layoutDependentKeyCodes.contains(keyCode),
            let name = layout?(keyCode), !name.isEmpty {
             return name
@@ -56,19 +56,7 @@ public enum KeyNames {
     }
 
     /// The US (ANSI) name, independent of the active layout.
-    public static func ansiName(for keyCode: Int64) -> String {
+    static func ansiName(for keyCode: Int64) -> String {
         names[keyCode] ?? (keyCode == 10 ? "§" : "Key \(keyCode)")
     }
-
-    /// Keys offered when the user adds a Dial Key, in a comfortable order
-    /// for the left hand (the mouse stays in the right).
-    public static let suggestedDialKeys: [Int64] = [
-        12, 13, 14, 15, 17, 16, 32, 34,  // Q W E R T Y U I
-        0, 1, 2, 3, 5, 4,                // A S D F G H
-        6, 7, 8, 9, 11,                  // Z X C V B
-        18, 19, 20, 21, 23,              // 1 2 3 4 5
-    ]
-
-    /// Keys a Dial Key must never take: they would break typing or Lightroom.
-    public static let reservedKeyCodes: Set<Int64> = [36, 48, 49, 51, 53]
 }

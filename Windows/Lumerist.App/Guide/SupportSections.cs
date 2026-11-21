@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Automation;
 using System.Windows.Controls;
 using Lumerist.App.Design;
 using Lumerist.App.Design.Controls;
@@ -107,7 +106,7 @@ internal sealed class AboutSupportSection : LiveView
         var since = GuideKit.Text($"Since {DisplayDates.Abbreviated(date.ToLocalTime())}", 11, nameof(ThemePalette.Steel));
         since.HorizontalAlignment = HorizontalAlignment.Right;
         since.Margin = new Thickness(0, 4, 0, 0);
-        var stack = new StackPanel { Children = { GuideKit.Pill(GaleristOptIn.Copy.AboutSubscribed, PillTone.Good), since } };
+        var stack = new StackPanel { Children = { GuideKit.Pill(GaleristOptIn.Copy.AboutSubscribed), since } };
         return stack;
     }
 
@@ -141,49 +140,4 @@ internal sealed class AboutSupportSection : LiveView
     };
 
     private static Button Link(string title, Uri url) => GuideKit.Button(title, GuideButtonKind.Quiet, () => GuideKit.Open(url));
-}
-
-/// <summary>
-/// "About &amp; Support" as a window of its own, opened from the tray menu
-/// ("Support Lumerist…"): the Updates and About &amp; Support sections the Mac
-/// shows at the end of General.
-/// </summary>
-internal sealed class AboutWindow : Window
-{
-    private static AboutWindow? open;
-
-    public static void ShowOrActivate(UpdateChecker updates, StayInTouchPrompter stayInTouch)
-    {
-        open ??= new AboutWindow(updates, stayInTouch);
-        open.Show();
-        if (open.WindowState == WindowState.Minimized) open.WindowState = WindowState.Normal;
-        open.Activate();
-    }
-
-    private AboutWindow(UpdateChecker updates, StayInTouchPrompter stayInTouch)
-    {
-        SetResourceReference(StyleProperty, "Synth.Window");
-        Title = "About & Support";
-        Width = 860;
-        SizeToContent = SizeToContent.Height;
-        MaxHeight = SystemParameters.WorkArea.Height;
-        WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        Content = new ScrollViewer
-        {
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            Focusable = false,
-            Content = GuideHost.SupportPage(updates, stayInTouch),
-        };
-        UpdateBackground();
-        Theme.Changed += UpdateBackground;
-        SourceInitialized += (_, _) => Theme.ApplyTitleBar(this);
-        Closed += (_, _) =>
-        {
-            Theme.Changed -= UpdateBackground;
-            open = null;
-        };
-    }
-
-    private void UpdateBackground() => Background = GuideKit.WindowBackground();
 }

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Lumerist.Core;
 
 /// <summary>One scale mark of the Value HUD.</summary>
@@ -43,7 +45,7 @@ public sealed record HudBar(double Fraction, double? Zero, IReadOnlyList<HudTick
 /// OverlayContent.Scale). Kelvin uses a logarithmic scale, like Lightroom's
 /// white-balance slider.
 /// </summary>
-public sealed class HudScale(double minimum, double maximum, string? unit)
+internal sealed class HudScale(double minimum, double maximum, string? unit)
 {
     private static readonly double[] KelvinMajors = [2_000, 3_000, 4_000, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000];
     private static readonly HashSet<double> KelvinLabelled = [3_000, 5_000, 10_000, 20_000, 50_000];
@@ -134,7 +136,7 @@ public sealed class HudScale(double minimum, double maximum, string? unit)
         if (Math.Abs(value) < 0.0001) return "0";
         var whole = Math.Abs(value - HudNumberText.RoundAwayFromZero(value)) < 0.0001;
         var number = whole
-            ? ((long)HudNumberText.RoundAwayFromZero(value)).ToString(System.Globalization.CultureInfo.InvariantCulture)
+            ? ((long)HudNumberText.RoundAwayFromZero(value)).ToString(CultureInfo.InvariantCulture)
             : HudNumberText.Printf(value, 1);
         return value > 0 ? "+" + number : number.Replace("-", "−", StringComparison.Ordinal);
     }

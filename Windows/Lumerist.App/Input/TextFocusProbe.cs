@@ -10,12 +10,11 @@ namespace Lumerist.App.Input;
 /// <remarks>
 /// Asked from inside the keyboard hook, so it must be quick. First the cheap
 /// signs (a caret, a standard edit control), then UI Automation on a pool
-/// thread with a 30 ms budget, like the Mac's Accessibility timeout. Which
-/// signs Lightroom's own fields give is to be checked on Windows.
+/// thread with a 30 ms budget, like the Mac's Accessibility timeout.
 /// </remarks>
 internal static class TextFocusProbe
 {
-    public static readonly TimeSpan AutomationBudget = TimeSpan.FromMilliseconds(30);
+    private static readonly TimeSpan AutomationBudget = TimeSpan.FromMilliseconds(30);
 
     private static readonly HashSet<string> EditClasses = new(StringComparer.OrdinalIgnoreCase)
     {

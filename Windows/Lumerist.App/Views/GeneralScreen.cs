@@ -165,17 +165,16 @@ internal sealed class GeneralScreen(ScreenContext context) : Screen(context)
                 : SynthControls.StatusPill("Waiting", Icons.Hourglass, SynthControls.Tone.Waiting),
             SynthControls.Button("Reconnect", SynthControls.Kind.Secondary, Controller.Reconnect));
 
-        var check = SynthControls.Button("Check connection", SynthControls.Kind.Secondary, () => LinkTests.CheckConnection?.Invoke(Controller));
-        check.IsEnabled = LinkTests.CheckConnection is not null;
+        var check = SynthControls.Button("Check connection", SynthControls.Kind.Secondary, Controller.SendConnectionCheck);
+        check.IsEnabled = !Context.IsSnapshot;
         var exposure = SynthControls.Button("Send test exposure…", SynthControls.Kind.Quiet, () =>
         {
-            if (LinkTests.SendTestExposure is not { } send) return;
             if (SynthDialog.Confirm(View, "Send a test exposure?",
                     "Lightroom raises the Exposure of the selected photo by 0.1. It works in the Develop module, and Undo takes it back.",
                     "Add +0.1 EV", isDestructive: true))
-                send(Controller);
+                Controller.SendTestExposure();
         });
-        exposure.IsEnabled = LinkTests.SendTestExposure is not null;
+        exposure.IsEnabled = !Context.IsSnapshot;
 
         var hz = Controller.Settings.UpdateRateHz;
         var smoothness = SynthControls.Segmented(SettingsChoices.AllSmoothness, SettingsChoices.Nearest(hz), SettingsChoices.Title, choice =>
@@ -385,18 +384,4 @@ internal sealed class GeneralScreen(ScreenContext context) : Screen(context)
             "The log notes link changes, the commands sent and Lightroom's answers. Never photos or catalog contents.",
             Surfaces.SettingRow("Debug log", path, Layout.HStack(Theme.Space.M, reveal, toggle)));
     }
-}
-
-/// <summary>
-/// General → Lightroom → "Try the link". The controller does not offer these
-/// two requests yet; until it does, the buttons stay disabled. Set once at
-/// startup (main session).
-/// </summary>
-internal static class LinkTests
-{
-    /// <summary>Sends a ping and reports the plug-in's answer.</summary>
-    public static Action<AppController>? CheckConnection { get; set; }
-
-    /// <summary>Adds +0.1 EV to the selected photo in Develop.</summary>
-    public static Action<AppController>? SendTestExposure { get; set; }
 }

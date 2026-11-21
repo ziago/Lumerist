@@ -3,7 +3,7 @@ using Lumerist.Core;
 
 namespace Lumerist.App.Services;
 
-/// <summary>The first-run guide, the update check and "Stay in touch" (part C).</summary>
+/// <summary>The first-run guide, the update check and "Stay in touch".</summary>
 internal sealed partial class AppSettings
 {
     /// <summary>The first-run guide was finished or skipped (the Mac's lumerist.onboarding.completed).</summary>

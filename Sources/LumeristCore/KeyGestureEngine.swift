@@ -85,26 +85,33 @@ public struct KeyGestureEngine<Event> {
 
     /// A Palette key released sooner than this, without other input, is a tap:
     /// the Palette stays open until the key is pressed again.
-    public static var tapThreshold: TimeInterval { 0.25 }
+    private static var tapThreshold: TimeInterval { 0.25 }
 
     // MARK: State
 
     private struct Held {
-        let keyCode: Int64
         /// The chord as pressed, to look the key up again when the module changes.
         let chord: KeyChord
         let keyDown: Event
         var target: ParameterKey
         var tapAction: CommandKey.Action?
+
+        var keyCode: Int64 { chord.keyCode }
+
+        /// The key is no longer a tap: it now controls its slider.
+        func adjusting(began: Bool, didDrag: Bool) -> Active {
+            Active(chord: chord, target: target, began: began, didDrag: didDrag)
+        }
     }
 
     private struct Active {
-        let keyCode: Int64
         let chord: KeyChord
         var target: ParameterKey
         /// gestureBegan was emitted (a click-only reset does not start a gesture).
         var began: Bool
         var didDrag: Bool
+
+        var keyCode: Int64 { chord.keyCode }
     }
 
     private struct PaletteHold {
@@ -148,7 +155,7 @@ public struct KeyGestureEngine<Event> {
     }
 
     public private(set) var keymap: Keymap
-    public private(set) var isPaused = false
+    private(set) var isPaused = false
     private var phase: Phase = .idle
     private var comboKeyHold: ComboKeyHold?
     private var palettePinned = false
@@ -194,8 +201,8 @@ public struct KeyGestureEngine<Event> {
         return palettePinned
     }
 
-    /// The parameter a held Dial Key currently controls (for the overlay).
-    public var activeParameter: ParameterKey? {
+    /// The parameter a held Dial Key currently controls.
+    var activeParameter: ParameterKey? {
         switch phase {
         case .held(let held): held.target
         case .adjusting(let active): active.target
@@ -277,13 +284,7 @@ public struct KeyGestureEngine<Event> {
         switch phase {
         case .held(let held):
             if chord.keyCode == held.keyCode { return Outcome(.consume) }
-            if let direction = arrowDirection(chord) {
-                var intents = followContext(context)
-                intents += beginGesture()
-                intents += adjust(direction: direction, coarse: isCoarse(shift: chord.modifiers.contains(.shift)))
-                consumedKeyUps.insert(chord.keyCode)
-                return Outcome(.consume, intents)
-            }
+            if let direction = arrowDirection(chord) { return arrowStep(direction, chord: chord, context: context) }
             // Another key first: the user is typing. Release the held key ahead
             // of this one so characters stay in order.
             phase = .idle
@@ -291,13 +292,7 @@ public struct KeyGestureEngine<Event> {
 
         case .adjusting(let active):
             if chord.keyCode == active.keyCode { return Outcome(.consume) }
-            if let direction = arrowDirection(chord) {
-                var intents = followContext(context)
-                intents += beginGesture()
-                intents += adjust(direction: direction, coarse: isCoarse(shift: chord.modifiers.contains(.shift)))
-                consumedKeyUps.insert(chord.keyCode)
-                return Outcome(.consume, intents)
-            }
+            if let direction = arrowDirection(chord) { return arrowStep(direction, chord: chord, context: context) }
             return Outcome(.pass)
 
         case .blocked(let blocked):
@@ -397,8 +392,7 @@ public struct KeyGestureEngine<Event> {
             }
             scroll.reset()
             dragResidual = 0
-            phase = .held(Held(keyCode: chord.keyCode, chord: chord, keyDown: event, target: target,
-                               tapAction: tapAction?.action))
+            phase = .held(Held(chord: chord, keyDown: event, target: target, tapAction: tapAction?.action))
             return Outcome(.consume)
         }
         consumedKeyUps.insert(chord.keyCode)
@@ -528,12 +522,9 @@ public struct KeyGestureEngine<Event> {
         switch button {
         case .left:
             consumedMouseUps.insert(.left)
-            if clickCount >= 2 && keymap.input.doubleClickReset {
-                enterAdjustingSilently()
-                return Outcome(.consume, followed + [.reset(target)])
-            }
             enterAdjustingSilently()
-            return Outcome(.consume, followed)
+            let resets = clickCount >= 2 && keymap.input.doubleClickReset
+            return Outcome(.consume, resets ? followed + [.reset(target)] : followed)
         case .middle where keymap.input.middleClickReset:
             consumedMouseUps.insert(.middle)
             enterAdjustingSilently()
@@ -618,24 +609,32 @@ public struct KeyGestureEngine<Event> {
         }
     }
 
-    private func step(for key: ParameterKey, coarse: Bool) -> Double? {
-        guard let steps = keymap.steps(for: key) else { return nil }
-        return coarse ? steps.coarse : steps.normal
+    /// ← or → while a Dial Key is held: one step on its slider.
+    private mutating func arrowStep(_ direction: Double, chord: KeyChord, context: EngineContext) -> Outcome {
+        var intents = followContext(context)
+        intents += beginGesture()
+        intents += adjust(direction: direction, coarse: isCoarse(shift: chord.modifiers.contains(.shift)))
+        consumedKeyUps.insert(chord.keyCode)
+        return Outcome(.consume, intents)
     }
 
     /// `direction` whole steps on the active gesture's slider.
     private func adjust(direction: Double, coarse: Bool) -> [KeyIntent] {
-        guard let target = activeParameter, let step = step(for: target, coarse: coarse) else { return [] }
-        let delta = IntentCoalescer.round(direction * step)
-        return delta == 0 ? [] : [.adjust(target, delta: delta)]
+        guard let target = activeParameter else { return [] }
+        return adjustment(of: target, direction: direction, coarse: coarse)
     }
 
     private func nudgeStep(id: String, scope: ParameterScope, direction: Double, coarse: Bool,
-                         context: EngineContext) -> [KeyIntent] {
+                           context: EngineContext) -> [KeyIntent] {
         let key = ParameterKey(scope: scope, id: id)
         guard let target = resolve(key, context: context) else { return [.unavailableInMask(key)] }
-        guard let step = step(for: target, coarse: coarse) else { return [] }
-        let delta = IntentCoalescer.round(direction * step)
+        return adjustment(of: target, direction: direction, coarse: coarse)
+    }
+
+    /// `direction` whole steps on `target`; nothing when that rounds to zero.
+    private func adjustment(of target: ParameterKey, direction: Double, coarse: Bool) -> [KeyIntent] {
+        guard let steps = keymap.steps(for: target) else { return [] }
+        let delta = IntentCoalescer.round(direction * (coarse ? steps.coarse : steps.normal))
         return delta == 0 ? [] : [.adjust(target, delta: delta)]
     }
 
@@ -643,8 +642,7 @@ public struct KeyGestureEngine<Event> {
     private mutating func beginGesture() -> [KeyIntent] {
         switch phase {
         case .held(let held):
-            phase = .adjusting(Active(keyCode: held.keyCode, chord: held.chord, target: held.target,
-                                      began: true, didDrag: false))
+            phase = .adjusting(held.adjusting(began: true, didDrag: false))
             return began(held.target)
         case .adjusting(var active) where !active.began:
             active.began = true
@@ -698,15 +696,13 @@ public struct KeyGestureEngine<Event> {
     /// slider gesture has started yet.
     private mutating func enterAdjustingSilently() {
         if case .held(let held) = phase {
-            phase = .adjusting(Active(keyCode: held.keyCode, chord: held.chord, target: held.target,
-                                      began: false, didDrag: false))
+            phase = .adjusting(held.adjusting(began: false, didDrag: false))
         }
     }
 
     private mutating func markDragged() {
         if case .held(let held) = phase {
-            phase = .adjusting(Active(keyCode: held.keyCode, chord: held.chord, target: held.target,
-                                      began: false, didDrag: true))
+            phase = .adjusting(held.adjusting(began: false, didDrag: true))
         } else if case .adjusting(var active) = phase {
             active.didDrag = true
             phase = .adjusting(active)

@@ -53,8 +53,6 @@ internal sealed unsafe class InputHook : IDisposable
         this.log = log;
     }
 
-    public bool IsRunning => thread is not null;
-
     /// <exception cref="InvalidOperationException">Another hook is running, or Windows refused the hooks.</exception>
     public void Start()
     {

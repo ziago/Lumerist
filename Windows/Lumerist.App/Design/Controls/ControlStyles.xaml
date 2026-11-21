@@ -4,7 +4,7 @@
   hairlines, mono small caps) and ".Neon" for Miami (rounded outlines, glow).
   Code picks the key with Theme.IsFlat (see SynthControls); windows are
   rebuilt on a theme change, and every colour is a DynamicResource token.
-  Implicit styles at the end (scroll bars, tool tips, menus) apply where this
+  The implicit styles at the end (scroll bars, tool tips) apply where this
   dictionary is merged into a window's resources.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

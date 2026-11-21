@@ -45,8 +45,6 @@ internal sealed class TrackedText : FrameworkElement, IHasBaseline
         System.Windows.Automation.AutomationProperties.SetName(this, text);
     }
 
-    public string Text => text;
-
     public double Baseline => baseline;
 
     protected override Size MeasureOverride(Size availableSize)

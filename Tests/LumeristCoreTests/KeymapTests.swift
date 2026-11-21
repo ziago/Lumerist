@@ -2,11 +2,8 @@ import Foundation
 import Testing
 @testable import LumeristCore
 
-private func dev(_ id: String) -> ParameterKey { ParameterKey(scope: .develop, id: id) }
-private func lib(_ id: String) -> ParameterKey { ParameterKey(scope: .library, id: id) }
-
 struct KeymapDefaultsTests {
-    @Test func standardLayoutFollowsCaptureOnesSpeedEditKeys() throws {
+    @Test func standardLayoutDialKeys() throws {
         let keymap = Keymap.standardLayout
         let expected: [String: String] = [
             "Temperature": "1", "Tint": "2", "Vibrance": "3", "Texture": "4", "Clarity": "5", "Dehaze": "6",
@@ -42,7 +39,7 @@ struct KeymapDefaultsTests {
         #expect(keymap.systemKeys.paletteKey == KeyChord(50))
         #expect(keymap.systemKeys.keyReferenceToggle == KeyChord(4, .combo))
         #expect(keymap.systemKeys.pauseToggle?.displayText == "⌃Esc")
-        #expect(keymap.summary(for: .library).nudgeKeyCount == 0)
+        #expect(keymap.summary(for: .library).nudgeKeys.isEmpty)
     }
 
     @Test func fourCombosArePresetInDevelop() throws {
@@ -91,6 +88,7 @@ struct KeymapPersistenceTests {
         keymap.palette.keepVisible = true
         keymap.palette.favourites = [PaletteEntry(kind: .tool, id: "createMask", argument: "aiSelection/sky", title: "Sky")]
         keymap.input.swapNormalAndCoarse = true
+        keymap.input.trackpadPointsPerStep = 20
         keymap.commandKeys.append(CommandKey(scope: .develop, chord: KeyChord(4, [.option, .combo]),
                                            title: "Flag and next", action: .macro([
                                                MacroStep(action: .command(name: "flagPick", argument: nil), delay: 0.2),
@@ -158,8 +156,8 @@ struct KeymapPersistenceTests {
     }
 
     @Test func storedKeymapsWithUnknownFieldsAreRejectedNotLoadedEmpty() throws {
-        // A slot written with a field this build does not know must not decode
-        // as an empty slot (that once silently disabled every key).
+        // A slot with a field this build does not know must not decode as an
+        // empty slot: that would silently disable every key.
         let oldSlot = #"{"format":3,"develop":{"Exposure":{"speed":{"keyCode":12,"modifiers":0}}}}"#
         #expect(throws: KeymapError.unknownFields(["speed"])) {
             _ = try Keymap.decodeStored(Data(oldSlot.utf8))
@@ -215,6 +213,8 @@ struct KeymapValidationTests {
         #expect(throws: KeymapError.invalidOption("drag sensitivity")) { try keymap.validate() }
         keymap.input.dragSensitivity = 25
         keymap.input.trackpadPointsPerStep = 2
+        #expect(throws: KeymapError.invalidOption("trackpad sensitivity")) { try keymap.validate() }
+        keymap.input.trackpadPointsPerStep = 100
         #expect(throws: KeymapError.invalidOption("trackpad sensitivity")) { try keymap.validate() }
     }
 
@@ -417,23 +417,19 @@ private extension Keymap {
 }
 
 struct KeymapSummaryTests {
-    @Test func countsAndSorting() throws {
+    @Test func listsTheKeysInCatalogOrder() {
         var keymap = Keymap.standardLayout
-        keymap.updateSlot(for: dev("Exposure")) { $0.nudgeDown = KeyChord(33); $0.nudgeUp = KeyChord(30) }
         keymap.updateSlot(for: dev("GrainAmount")) { $0.nudgeUp = KeyChord(39) }
-        let summary = keymap.summary(for: .develop, sortedBy: .parameter)
-        #expect(summary.dialKeyCount == 21)
-        #expect(summary.nudgeKeyCount == 3)
-        #expect(summary.nudgeKeys.count == 2)
-        let labels = summary.dialKeys.map(\.descriptor.label)
-        #expect(labels == labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending })
+        keymap.updateSlot(for: dev("Exposure")) { $0.nudgeDown = KeyChord(33); $0.nudgeUp = KeyChord(30) }
+        let summary = keymap.summary(for: .develop)
+        #expect(summary.nudgeKeys.map(\.descriptor.id) == ["Exposure", "GrainAmount"])
 
-        let byKey = keymap.summary(for: .develop, sortedBy: .key).dialKeys.compactMap { $0.slot.dial?.displayText }
-        #expect(byKey == byKey.sorted())
-
-        let bySection = keymap.summary(for: .develop, sortedBy: .section).dialKeys.map(\.descriptor.id)
-        #expect(bySection.first == "Temperature")
-        #expect(keymap.summary(for: .library).dialKeyCount == 12)
+        let dialIDs = summary.dialKeys.map(\.descriptor.id)
+        #expect(dialIDs.count == 21)
+        #expect(dialIDs.first == "Temperature")
+        let catalogOrder = ParameterCatalog.all.filter { $0.scope == .develop }.map(\.id)
+        #expect(dialIDs == catalogOrder.filter(dialIDs.contains))
+        #expect(keymap.summary(for: .library).dialKeys.count == 12)
     }
 
     @Test func effectiveStepsFallBackToTheCatalog() {
@@ -477,7 +473,6 @@ struct KeyChordTests {
         #expect(KeyChord(92).displayText == "Num 9")
         #expect(KeyChord(82).displayText == "Num 0")
         #expect(KeyChord(42).displayText == "\\")
-        #expect(KeyChord(12, [.shift]).plain == KeyChord(12))
     }
 
     @Test func combosNameTheComboKey() {
@@ -547,6 +542,11 @@ struct IntentCoalescerTests {
         coalescer.add(.adjust(dev("Tint"), delta: 2))
         coalescer.add(.adjust(dev("Tint"), delta: -2))
         #expect(coalescer.flush().isEmpty)
+    }
+
+    @Test func updateRateRangeIsSensible() {
+        #expect(IntentCoalescer.rateRange.contains(IntentCoalescer.defaultRate))
+        #expect(IntentCoalescer.rateRange.lowerBound >= 1)
     }
 
     @Test func otherIntentsAskForAnImmediateFlushInOrder() {

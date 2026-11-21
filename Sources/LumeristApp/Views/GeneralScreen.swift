@@ -121,7 +121,7 @@ struct GeneralScreen: View {
         SettingsSection(title: "Profile", systemImage: "doc.text",
                         footer: "A profile holds Dial, Nudge and Command Keys, System Keys, steps, the Palette, and the mouse, trackpad and Lightroom options.") {
             SettingRow(title: "Profile file",
-                       detail: "Save everything to a JSON file, or load one. Dial Key backups from older versions are converted as they load.") {
+                       detail: "Save everything to a JSON file, or load one.") {
                 HStack(spacing: Synth.Space.s) {
                     Button("Export…") { exportProfile() }.buttonStyle(.neonSecondary)
                     Button("Import…") { importProfile() }.buttonStyle(.neonSecondary)
@@ -193,8 +193,6 @@ private struct PermissionSection: View {
     /// second while the screen is visible.
     @State private var allowed = AccessibilityPermission.isGranted
 
-    private static let accessibilityPane = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
-
     var body: some View {
         SettingsSection(title: "macOS permission", systemImage: "lock.shield") {
             SettingRow(title: "Accessibility", detail: allowed
@@ -206,10 +204,8 @@ private struct PermissionSection: View {
                     } else {
                         StatusPill(text: "Not allowed yet", systemImage: "lock", tone: .waiting)
                     }
-                    Button("Open Privacy & Security…") {
-                        if let pane = Self.accessibilityPane { NSWorkspace.shared.open(pane) }
-                    }
-                    .buttonStyle(.neonQuiet)
+                    Button("Open Privacy & Security…") { AccessibilityPermission.openSettings() }
+                        .buttonStyle(.neonQuiet)
                 }
             }
             SettingRow(title: "Shortcuts", detail: shortcutsDetail) {

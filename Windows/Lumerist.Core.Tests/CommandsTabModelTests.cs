@@ -1,4 +1,3 @@
-using Lumerist.Core;
 using Xunit;
 using static Lumerist.Core.Tests.KeymapTestSupport;
 
@@ -47,14 +46,15 @@ public sealed class CommandsTabModelTests
         var one = new CommandAction.Macro([new MacroStep(new CommandAction.Command("undo"))]);
         Assert.Equal("Macro · 1 step", one.Summary());
         Assert.Equal("Macro · 2 steps", new CommandAction.Macro([.. one.Steps, .. one.Steps]).Summary());
-        Assert.Equal("Macro", one.KindTitle());
     }
 
     [Fact]
     public void CapitalizedFollowsSwift()
     {
         Assert.Equal("Develop", CommandTitles.Capitalized("develop"));
+        Assert.Equal("Slideshow", CommandTitles.Capitalized("SLIDESHOW"));
         Assert.Equal("Hello World", CommandTitles.Capitalized("hELLO world"));
+        Assert.Equal("Two Words", CommandTitles.Capitalized("two wORDS"));
     }
 
     [Fact]

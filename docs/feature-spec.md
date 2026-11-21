@@ -53,7 +53,7 @@ One plug-in serves both systems; the few differences sit behind Lightroom's
 | --- | --- | --- |
 | Protocol 3 over loopback (two `LrSocket`s), ids, acks with value/range/unit, context events (module/tool), presets and catalog queries | done | done (same plug-in) / verify |
 | Single worker task, merged adjustments, stale-read chain, generations shared through plug-in prefs, forced init at startup, send-socket rebind | done | done (same plug-in) / verify |
-| ~130 catalog parameters incl. hue wrap, choice stepping, centre zoom crop, `local_*` | done / verify names in Lightroom | done (same plug-in) / verify |
+| ~130 catalog parameters incl. hue wrap, choice stepping, Crop zoom, `local_*` | done / verify names in Lightroom | done (same plug-in) / verify |
 | One history step per gesture (`startTracking`/`stopTracking`) | verify | verify |
 | Open Lumerist (File > Plug-in Extras) and start it with Lightroom: `open` and the app's setting on macOS; on Windows the path and setting the app writes to `%APPDATA%\Lumerist\plugin-link.json` | done | plug-in done / app verify |
 
@@ -76,7 +76,7 @@ For both systems:
 
 - More themes, including calmer, more understated ones.
 - Colour grading with the mouse (X = hue, Y = saturation, wheel = luminance) and a colour-wheel HUD.
-- Crop panel and screen-zone keys (edges, corners, pan, rotate) beyond centre zoom crop.
+- Crop panel and screen-zone keys (edges, corners, pan, rotate) beyond Crop zoom.
 - Panel keys for Color & HSL.
 - Preset source global vs catalog in the presets query (needs a protocol argument).
 - UI translations.

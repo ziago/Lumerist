@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -95,7 +94,8 @@ public class ProtocolFixtureTests
                 OptionalInteger(ack["id"]), FixtureValues.Flag(ack["accepted"], "accepted"),
                 FixtureValues.OptionalText(ack["message"]), FixtureValues.OptionalText(ack["parameter"]),
                 ParameterScopes.FromWireName(FixtureValues.OptionalText(ack["scope"])),
-                OptionalNumber(ack["value"]), OptionalNumber(ack["minimum"]), OptionalNumber(ack["maximum"]),
+                FixtureValues.OptionalNumber(ack["value"]), FixtureValues.OptionalNumber(ack["minimum"]),
+                FixtureValues.OptionalNumber(ack["maximum"]),
                 FixtureValues.OptionalText(ack["unit"])));
         }
         if (obj["context"] is JsonObject context) return new LightroomMessage.Context(Context(context));
@@ -160,9 +160,6 @@ public class ProtocolFixtureTests
     private static long? OptionalInteger(JsonNode? node) =>
         node is JsonValue value && value.GetValueKind() == JsonValueKind.Number && value.TryGetValue<long>(out var number) ? number : null;
 
-    private static double? OptionalNumber(JsonNode? node) =>
-        node?.GetValueKind() == JsonValueKind.Number ? node.GetValue<double>() : null;
-
     private static List<string> OptionalTexts(JsonNode? node) =>
         node is JsonArray list && list.All(item => item?.GetValueKind() == JsonValueKind.String)
             ? list.Select(item => item!.GetValue<string>()).ToList()
@@ -199,7 +196,7 @@ public class ProtocolFixtureTests
     }
 }
 
-/// <summary>Protocol 3 requests: validation against the catalog and the wire format (LumeristCoreTests.swift).</summary>
+/// <summary>Protocol 3 requests: validation against the catalog and the wire format (ProtocolTests.swift).</summary>
 public class ProtocolTests
 {
     private static string Text(byte[] line) => Encoding.UTF8.GetString(line);

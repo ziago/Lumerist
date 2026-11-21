@@ -18,7 +18,6 @@ internal sealed class ActionEditor : Window
 {
     private readonly AppController controller;
     private readonly CommandKey original;
-    private readonly bool isNew;
     private readonly ActionDraft draft;
     private readonly TextBox titleField;
     private readonly TextBox groupField;
@@ -45,7 +44,6 @@ internal sealed class ActionEditor : Window
     {
         this.controller = controller;
         this.original = original;
-        this.isNew = isNew;
         chord = keepKey ? original.Chord : null;
         scope = original.Scope;
         draft = new ActionDraft(original.Action);

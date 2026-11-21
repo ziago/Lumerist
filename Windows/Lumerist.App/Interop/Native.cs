@@ -7,7 +7,7 @@ internal static unsafe partial class Native
 {
     public const int WH_KEYBOARD_LL = 13, WH_MOUSE_LL = 14, HC_ACTION = 0;
 
-    public const uint WM_QUIT = 0x0012, WM_TIMER = 0x0113, WM_APP = 0x8000;
+    public const uint WM_QUIT = 0x0012, WM_TIMER = 0x0113;
     public const uint PM_NOREMOVE = 0x0000;
     public const uint WM_MOUSEMOVE = 0x0200;
     public const uint WM_LBUTTONDOWN = 0x0201, WM_LBUTTONUP = 0x0202;

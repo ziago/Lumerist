@@ -16,7 +16,7 @@ struct ContentView: View {
             // chrome included: layout and fonts are chosen per theme.
             .id(store.preferences.themeKey)
             .keymapEditorAlerts()
-            .onAppear(perform: previewOverlayForDevelopment)
+            .onAppear(perform: attachFloatingPanels)
             // Asked only while the user is looking at this window (the
             // prompter checks again after a pause; see StayInTouchPrompter).
             .sheet(item: $stayInTouch.presented) { model in
@@ -69,7 +69,7 @@ struct ContentView: View {
     /// checks without clicking:
     /// - `LUMERIST_PREVIEW_PANELS=1` opens the Palette preview and the Key Reference;
     /// - `LUMERIST_PREVIEW_OVERLAY=ruler|compact` shows the Value HUD preview once.
-    private func previewOverlayForDevelopment() {
+    private func attachFloatingPanels() {
         FloatingPanels.shared.attach(store)
         let environment = ProcessInfo.processInfo.environment
         if environment["LUMERIST_PREVIEW_PANELS"] == "1" {

@@ -320,17 +320,17 @@ internal sealed class ValueHud
 
     private static HudRect ToHudRect(Rect rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
 
-    public static HudPosition PositionOf(OverlaySettings settings) =>
+    private static HudPosition PositionOf(OverlaySettings settings) =>
         new(ToBand(settings.Placement), settings.ClampedVerticalOffset, settings.ClampedHorizontalOffset);
 
-    public static HudBand ToBand(OverlaySettings.PlacementBand band) => band switch
+    private static HudBand ToBand(OverlaySettings.PlacementBand band) => band switch
     {
         OverlaySettings.PlacementBand.Center => HudBand.Center,
         OverlaySettings.PlacementBand.Top => HudBand.Top,
         _ => HudBand.Bottom,
     };
 
-    public static OverlaySettings.PlacementBand FromBand(HudBand band) => band switch
+    private static OverlaySettings.PlacementBand FromBand(HudBand band) => band switch
     {
         HudBand.Center => OverlaySettings.PlacementBand.Center,
         HudBand.Top => OverlaySettings.PlacementBand.Top,

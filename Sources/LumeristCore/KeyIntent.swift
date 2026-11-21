@@ -1,5 +1,3 @@
-import Foundation
-
 /// What the user asked for with a key, wheel or mouse gesture. The companion
 /// maps intents to bridge requests (docs/protocol-v3.md) or to its own UI.
 public enum KeyIntent: Sendable, Hashable {
@@ -23,7 +21,7 @@ public enum KeyIntent: Sendable, Hashable {
 
     /// Intents that should reach Lightroom without waiting for the next
     /// update-rate tick (everything except slider changes).
-    public var isImmediate: Bool {
+    var isImmediate: Bool {
         if case .adjust = self { return false }
         return true
     }

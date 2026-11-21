@@ -43,7 +43,7 @@ enum ThemeController {
     }
 
     /// App-wide: dark for Miami; for Galerist the user's choice, or nil to follow the Mac.
-    static var nsAppearance: NSAppearance? {
+    private static var nsAppearance: NSAppearance? {
         switch Synth.theme {
         case .miami: NSAppearance(named: .darkAqua)
         case .galerist:
@@ -55,8 +55,8 @@ enum ThemeController {
         }
     }
 
-    /// For a window configured by `SynthWindowChrome`: Miami forces dark as
-    /// it always did; Galerist windows inherit the app's appearance.
+    /// For a window configured by `SynthWindowChrome`: Miami forces dark;
+    /// Galerist windows inherit the app's appearance.
     static var windowAppearance: NSAppearance? {
         Synth.isFlat ? nil : NSAppearance(named: .darkAqua)
     }

@@ -15,7 +15,7 @@ struct KeyboardTab: View {
     @State private var confirmClear: ClearTarget?
 
     enum Layer: Hashable { case plain, combos }
-    enum ClearTarget: Hashable, Identifiable { case dial, nudge; var id: Self { self } }
+    enum ClearTarget: Hashable { case dial, nudge }
 
     var body: some View {
         let keymap = store.keymap.keymap

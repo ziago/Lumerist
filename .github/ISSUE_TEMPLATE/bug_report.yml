@@ -27,24 +27,26 @@ body:
     id: lumerist
     attributes:
       label: Lumerist version
-      description: Shown in the app (General → About) and in Lightroom's Plug-in Manager.
+      description: Shown in the app (General → About & Support) and in Lightroom's Plug-in Manager.
       placeholder: "0.9.0"
     validations:
       required: true
   - type: input
-    id: macos
+    id: system
     attributes:
-      label: macOS version
-      placeholder: "macOS 15.4"
+      label: macOS or Windows version
+      placeholder: "macOS 15.4, Windows 11 24H2"
     validations:
       required: true
   - type: dropdown
-    id: mac
+    id: computer
     attributes:
-      label: Mac
+      label: Computer
       options:
-        - Apple Silicon
-        - Intel
+        - Mac with Apple Silicon
+        - Mac with Intel
+        - Windows PC (x64)
+        - Windows PC (Arm)
     validations:
       required: true
   - type: input
@@ -69,7 +71,9 @@ body:
     attributes:
       label: Logs
       description: |
-        Turn on the debug log in Lumerist → General, reproduce the problem, then attach:
-        `~/Library/Logs/Lumerist/Lumerist.log` and
-        `~/Library/Logs/Adobe/Lightroom/LrClassicLogs/Lumerist.log`.
+        Turn on the debug log in Lumerist → General, reproduce the problem, then attach both logs:
+        on the Mac `~/Library/Logs/Lumerist/Lumerist.log` and
+        `~/Library/Logs/Adobe/Lightroom/LrClassicLogs/Lumerist.log`;
+        on Windows `%LOCALAPPDATA%\Lumerist\Logs\Lumerist.log` and
+        `%LOCALAPPDATA%\Adobe\Lightroom\Logs\LrClassicLogs\Lumerist.log`.
       render: text

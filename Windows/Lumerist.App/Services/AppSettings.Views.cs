@@ -1,6 +1,6 @@
 namespace Lumerist.App.Services;
 
-/// <summary>The main window's preferences (Fase 3, part A).</summary>
+/// <summary>The main window's preferences.</summary>
 internal sealed partial class AppSettings
 {
     /// <summary>

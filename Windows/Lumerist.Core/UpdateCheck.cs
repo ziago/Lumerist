@@ -29,8 +29,8 @@ public abstract record UpdateCheckState
 /// <summary>
 /// The rules of the update check, the same as the Mac's UpdateChecker: it only
 /// reads the public release feed, never downloads or installs anything (a
-/// newer version only opens its release page), and checks by itself only once
-/// a week when the user turned that on (off by default).
+/// newer version only opens its release page), and checks by itself at most
+/// once a day unless the user turned that off (it is on by default).
 /// </summary>
 public static class UpdateCheck
 {
@@ -43,8 +43,8 @@ public static class UpdateCheck
     internal const string UnreadableFeed = "The data couldn't be read because it isn't in the correct format.";
 
     /// <summary>
-    /// The weekly check is due: turned on, and never checked or the last real
-    /// answer is at least a week old.
+    /// The automatic check is due: turned on, and never checked or the last
+    /// real answer is at least <see cref="AutomaticInterval"/> (a day) old.
     /// </summary>
     public static bool IsDue(bool checksAutomatically, DateTimeOffset? lastCheck, DateTimeOffset now) =>
         checksAutomatically && (lastCheck is not { } last || now - last >= AutomaticInterval);
@@ -84,7 +84,7 @@ public static class UpdateCheck
     /// <summary>
     /// Maps the feed's answer. <c>Counts</c> says whether it was a real answer:
     /// only then is the time of the check remembered, so being offline or
-    /// rate-limited never silences the weekly check for 7 days.
+    /// rate-limited never silences the automatic check for a day.
     /// </summary>
     public static (UpdateCheckState State, bool Counts) FromResponse(int statusCode, ReadOnlySpan<byte> body, string current)
     {

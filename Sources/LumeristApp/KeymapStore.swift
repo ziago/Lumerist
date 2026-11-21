@@ -37,10 +37,6 @@ final class KeymapStore {
         keymap = updated
     }
 
-    func replace(with keymap: Keymap) throws {
-        try mutate { $0 = keymap }
-    }
-
     /// The standard layout for this Mac's keyboard (ISO or ANSI).
     static var standardLayout: Keymap {
         Keymap.standardLayout(isoKeyboard: KeyboardLayout.physicalShape == .iso)

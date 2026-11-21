@@ -72,9 +72,7 @@ public static class KeyUsageText
         _ => "",
     };
 
-    public static string ParameterLabel(ParameterKey key) => ParameterCatalog.Descriptor(key)?.Label ?? key.Id;
-
-    public static bool IsSystem(this KeyUsage usage) => usage is KeyUsage.SystemKey;
+    private static string ParameterLabel(ParameterKey key) => ParameterCatalog.Descriptor(key)?.Label ?? key.Id;
 
     public static string Title(this SystemKeyRole role) => role switch
     {
@@ -170,7 +168,7 @@ public static class KeymapEditing
     }
 
     /// <summary>Error conflicts that involve <paramref name="chord"/> in <paramref name="scope"/> (null: among System Keys).</summary>
-    public static IReadOnlyList<KeyConflict> BlockingConflicts(this Keymap keymap, KeyChord chord, ParameterScope? scope) =>
+    private static IReadOnlyList<KeyConflict> BlockingConflicts(this Keymap keymap, KeyChord chord, ParameterScope? scope) =>
         keymap.Conflicts()
             .Where(conflict => conflict.Severity == ConflictSeverity.Error && conflict.Chord == chord
                 && (conflict.Scope is null || conflict.Scope == scope))
@@ -181,7 +179,7 @@ public static class KeymapEditing
     /// and validates it: commit, refuse with the reason, or ask to move the
     /// keys in the way. <paramref name="current"/> is never changed.
     /// </summary>
-    public static KeymapEdit Plan(Keymap current, KeyChord? chord, ParameterScope? scope, KeyUsage? usage, Action<Keymap> change)
+    private static KeymapEdit Plan(Keymap current, KeyChord? chord, ParameterScope? scope, KeyUsage? usage, Action<Keymap> change)
     {
         var proposed = current.Clone();
         change(proposed);
@@ -196,7 +194,7 @@ public static class KeymapEditing
             var others = proposed.BlockingConflicts(key, scope).SelectMany(conflict => conflict.Usages)
                 .Where(other => other != usage).ToList();
             if (others.Count == 0) return new KeymapEdit.Refuse(error.Message);
-            var system = others.Any(other => other.IsSystem());
+            var system = others.Any(other => other is KeyUsage.SystemKey);
             var names = string.Join(", ", others.Select(other => other.Label()).Distinct().Order(StringComparer.Ordinal));
             var text = proposed.DisplayText(key);
             var message = system

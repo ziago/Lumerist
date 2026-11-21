@@ -68,8 +68,6 @@ public static class GaleristOptIn
     /// <summary>Tracked short links https://galerist.photo/c/&lt;code&gt; (production only; they carry no personal data).</summary>
     public enum TrackedLink
     {
-        /// <summary>Not shown by the app any more; the code stays valid on the server.</summary>
-        Onboarding,
         Settings,
         Menu,
         Readme,
@@ -78,7 +76,6 @@ public static class GaleristOptIn
 
     public static string Code(this TrackedLink link) => link switch
     {
-        TrackedLink.Onboarding => "lk-onboarding",
         TrackedLink.Settings => "lk-settings",
         TrackedLink.Menu => "lk-menu",
         TrackedLink.Readme => "lk-readme",
@@ -418,17 +415,17 @@ public sealed class GaleristSubscriptionClient
 
     public Uri BaseUrl { get; }
     public string AppVersion { get; }
-    private readonly HttpClient _http;
+    private readonly HttpClient http;
 
     /// <param name="handler">For tests; null uses a shared client built on <see cref="CreateHandler"/>.</param>
     public GaleristSubscriptionClient(Uri baseUrl, string appVersion, HttpMessageHandler? handler = null)
     {
         BaseUrl = baseUrl;
         AppVersion = appVersion;
-        _http = handler is null ? SharedClient.Value : new HttpClient(handler, disposeHandler: false) { Timeout = Timeout };
+        http = handler is null ? SharedClient.Value : new HttpClient(handler, disposeHandler: false) { Timeout = Timeout };
     }
 
-    internal TimeSpan HttpTimeout => _http.Timeout;
+    internal TimeSpan HttpTimeout => http.Timeout;
 
     public Uri Endpoint
     {
@@ -480,7 +477,7 @@ public sealed class GaleristSubscriptionClient
         try
         {
             using (request)
-            using (var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false))
+            using (var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false))
             {
                 var body = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
                 return GaleristSubscriptionOutcomes.FromResponse((int)response.StatusCode, body);

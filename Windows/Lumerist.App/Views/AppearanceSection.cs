@@ -109,17 +109,13 @@ internal static class AppearanceSection
 
     // Previews: fixed colours and type, they show each theme as it is ------------------
 
-    private static readonly Uri FontBase = new("pack://application:,,,/");
-    private static readonly FontFamily Outfit = new(FontBase, "./Assets/Fonts/#Outfit, Segoe UI");
-    private static readonly FontFamily ChakraPetch = new(FontBase, "./Assets/Fonts/#Chakra Petch, Segoe UI");
-
     private static SolidColorBrush Hex(uint hex) => Ink.Faded(new SolidColorBrush(Theme.FromHex(hex)), 1);
 
     private static FrameworkElement GaleristPreview()
     {
         var ink = Hex(0x0A0A0A);
         var line = Hex(0xE7E7E7);
-        var wordmark = new TextBlock { FontFamily = Outfit, FontSize = 10, FontWeight = FontWeights.SemiBold, Foreground = ink, VerticalAlignment = VerticalAlignment.Center };
+        var wordmark = new TextBlock { FontFamily = Theme.Outfit, FontSize = 10, FontWeight = FontWeights.SemiBold, Foreground = ink, VerticalAlignment = VerticalAlignment.Center };
         wordmark.Inlines.Add(new Run("Lumerist"));
         wordmark.Inlines.Add(new Run(".") { Foreground = Hex(0xE11D2A) });
         var top = new Border
@@ -160,7 +156,7 @@ internal static class AppearanceSection
             Padding = new Thickness(12),
             Background = Brushes.White,
             Child = Layout.VStack(8,
-                new TextBlock { Text = "Develop", FontFamily = Outfit, FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = ink },
+                new TextBlock { Text = "Develop", FontFamily = Theme.Outfit, FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = ink },
                 Row("Q", false),
                 Row("W", true)),
         };
@@ -183,7 +179,7 @@ internal static class AppearanceSection
             Padding = new Thickness(10, 0, 10, 0),
             BorderBrush = Hex(palette.Outline),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Child = new SpacedText { Text = "LUMERIST", FontFamily = ChakraPetch, FontSize = 10, FontWeight = FontWeights.Bold, Tracking = 1.5, Foreground = teal, VerticalAlignment = VerticalAlignment.Center },
+            Child = new SpacedText { Text = "LUMERIST", FontFamily = Theme.ChakraPetch, FontSize = 10, FontWeight = FontWeights.Bold, Tracking = 1.5, Foreground = teal, VerticalAlignment = VerticalAlignment.Center },
         };
         FrameworkElement Row(string key, bool filled)
         {
@@ -214,7 +210,7 @@ internal static class AppearanceSection
             return bar;
         }
         var body = Layout.VStack(8,
-            new SpacedText { Text = "DEVELOP", FontFamily = ChakraPetch, FontSize = 13, FontWeight = FontWeights.Bold, Tracking = 1, Foreground = Hex(palette.Ice) },
+            new SpacedText { Text = "DEVELOP", FontFamily = Theme.ChakraPetch, FontSize = 13, FontWeight = FontWeights.Bold, Tracking = 1, Foreground = Hex(palette.Ice) },
             Row("Q", false),
             Row("W", true));
         body.Margin = new Thickness(12);

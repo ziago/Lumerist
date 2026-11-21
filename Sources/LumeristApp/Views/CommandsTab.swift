@@ -183,16 +183,9 @@ struct MoreButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(MenuAnchorHost(anchor: anchor))
+        .background(MenuAnchorView(anchor: anchor))
         .accessibilityLabel(accessibilityLabel)
     }
-}
-
-/// Public wrapper so other files can anchor a MenuAnchor.
-struct MenuAnchorHost: NSViewRepresentable {
-    let anchor: MenuAnchor
-    func makeNSView(context: Context) -> NSView { let view = NSView(); anchor.view = view; return view }
-    func updateNSView(_ nsView: NSView, context: Context) { anchor.view = nsView }
 }
 
 // MARK: - Editor

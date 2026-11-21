@@ -45,10 +45,6 @@ internal sealed class PluginInstaller
     /// <summary>Set when this build has no readable bundled plug-in.</summary>
     public string? BundleProblem { get; }
 
-    public SemanticVersion? BundledVersion => operation?.BundledVersion;
-
-    public SemanticVersion? InstalledVersion => operation?.InstalledVersion;
-
     /// <summary>Null when there is nothing to compare (no bundled plug-in, unreadable folder).</summary>
     public PluginInstallStatus? Status()
     {

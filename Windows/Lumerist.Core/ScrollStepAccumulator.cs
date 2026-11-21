@@ -10,7 +10,7 @@ namespace Lumerist.Core;
 /// with them.
 /// </para>
 /// </summary>
-public sealed class ScrollStepAccumulator
+internal sealed class ScrollStepAccumulator
 {
     public const int MaximumStepsPerEvent = 10;
 

@@ -24,6 +24,7 @@ internal sealed class TrayIcon : IDisposable
     private readonly AppController controller;
     private readonly TrayMenu menu;
     private readonly Forms.NotifyIcon icon;
+    private readonly UpdateChecker updates;
     private Drawing.Icon image;
 
     public TrayIcon(AppController controller, Action quit)
@@ -44,8 +45,6 @@ internal sealed class TrayIcon : IDisposable
         icon.BalloonTipClicked += (_, _) => updates.OpenReleasePage();
         Refresh();
     }
-
-    private readonly UpdateChecker updates;
 
     /// <summary>
     /// A newer version: a line in the menu for as long as it is newer, and a
@@ -111,8 +110,8 @@ internal sealed class TrayIcon : IDisposable
 /// <summary>
 /// The tray menu: the Mac's menu bar window (link state, shortcuts, Key
 /// Reference, Open Lumerist, connection, setup guide, support, a quiet
-/// Galerist link, quit) as a native Windows menu, plus what Windows has no
-/// other place for yet: the pause state, the plug-in and the troubleshooting log.
+/// Galerist link, quit) as a native Windows menu, plus the pause state, the
+/// plug-in and the troubleshooting log.
 /// </summary>
 internal sealed class TrayMenu : IDisposable
 {
@@ -128,14 +127,6 @@ internal sealed class TrayMenu : IDisposable
     private readonly Forms.ToolStripMenuItem debugLog = new("Keep a troubleshooting log");
     private readonly Forms.ToolStripMenuItem update = new() { Visible = false };
     private Action? openUpdate;
-
-    /// <summary>"Download Lumerist 0.9.1…" while a newer version exists.</summary>
-    public void ShowUpdate(string? version, Action open)
-    {
-        openUpdate = open;
-        update.Visible = version is not null;
-        if (version is not null) update.Text = $"Download Lumerist {version}…";
-    }
 
     public Forms.ContextMenuStrip Strip { get; }
 
@@ -184,6 +175,14 @@ internal sealed class TrayMenu : IDisposable
         };
         RefreshPlugin();
         Refresh();
+    }
+
+    /// <summary>"Download Lumerist 0.9.1…" while a newer version exists.</summary>
+    public void ShowUpdate(string? version, Action open)
+    {
+        openUpdate = open;
+        update.Visible = version is not null;
+        if (version is not null) update.Text = $"Download Lumerist {version}…";
     }
 
     /// <summary>Everything but the plug-in (which reads files).</summary>

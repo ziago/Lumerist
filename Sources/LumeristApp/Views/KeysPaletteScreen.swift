@@ -15,14 +15,7 @@ struct KeysPaletteScreen: View {
             SettingsSection(title: "Palette", systemImage: "paintpalette", footer: keyNote(keymap)) {
                 SettingRow(title: "Palette Key",
                            detail: "Hold it in Develop to open the Palette under the pointer; let go to close it. Click the box and press another key to change it.") {
-                    KeySlot(
-                        id: "system.\(SystemKeys.Role.paletteKey.rawValue)",
-                        chord: keymap.systemKeys.paletteKey,
-                        minWidth: 64,
-                        accessibilityName: SystemKeys.Role.paletteKey.title,
-                        onSet: { KeymapEditor.shared.setSystem(store, role: .paletteKey, chord: $0) },
-                        onClear: { KeymapEditor.shared.setSystem(store, role: .paletteKey, chord: nil) }
-                    )
+                    SystemKeySlot(store: store, role: .paletteKey)
                 }
                 SettingRow(title: "Position",
                            detail: "If you dragged the Palette somewhere, it opens there. Reset sends it back under the pointer.") {

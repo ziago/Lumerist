@@ -69,8 +69,4 @@ enum SupportLinks {
     static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development build"
     }
-
-    static var appBuild: String? {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-    }
 }

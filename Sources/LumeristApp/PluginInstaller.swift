@@ -14,7 +14,6 @@ import Observation
 @Observable
 final class PluginInstaller {
     static let shared = PluginInstaller()
-    nonisolated static let lightroomBundleIdentifier = "com.adobe.LightroomClassicCC7"
 
     enum Phase: Equatable {
         case idle
@@ -65,7 +64,7 @@ final class PluginInstaller {
             let quits = name == NSWorkspace.didTerminateApplicationNotification
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
                 let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-                guard app?.bundleIdentifier == Self.lightroomBundleIdentifier else { return }
+                guard app?.bundleIdentifier == LightroomLifecycle.bundleIdentifier else { return }
                 MainActor.assumeIsolated {
                     self?.refreshLightroomState()
                     if quits { self?.updateIfOutdated() }
@@ -75,8 +74,6 @@ final class PluginInstaller {
         refresh()
     }
 
-    var bundledVersion: SemanticVersion? { operation?.bundledVersion }
-    var installedVersion: SemanticVersion? { operation?.installedVersion }
     var installedLocation: URL? { operation?.destination }
 
     /// True when the installed plug-in matches (or is newer than) the bundled one.
@@ -129,12 +126,7 @@ final class PluginInstaller {
     }
 
     private func performInstall() {
-        guard let operation else { return }
-        refreshLightroomState()
-        guard !isLightroomRunning else {
-            phase = .failed(PluginInstallError.lightroomIsRunning.errorDescription ?? "Quit Lightroom Classic first.")
-            return
-        }
+        guard let operation, lightroomIsClosed() else { return }
         perform("Installing the plug-in…") {
             let backup = try operation.install()
             return backup == nil
@@ -145,12 +137,7 @@ final class PluginInstaller {
 
     /// Moves the installed plug-in to the backup folder. Lightroom must be closed.
     func remove() {
-        guard let operation, !isBusy else { return }
-        refreshLightroomState()
-        guard !isLightroomRunning else {
-            phase = .failed(PluginInstallError.lightroomIsRunning.errorDescription ?? "Quit Lightroom Classic first.")
-            return
-        }
+        guard let operation, !isBusy, lightroomIsClosed() else { return }
         perform("Removing the plug-in…") {
             _ = try operation.remove()
             return "Plug-in removed from Lightroom. A copy is kept in Lumerist's backup folder."
@@ -203,7 +190,7 @@ final class PluginInstaller {
     }
 
     func openLightroom() {
-        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Self.lightroomBundleIdentifier) {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: LightroomLifecycle.bundleIdentifier) {
             openLightroom(at: url)
         } else {
             phase = .failed("Lightroom Classic was not found on this Mac.")
@@ -221,13 +208,22 @@ final class PluginInstaller {
 
     // MARK: Private
 
+    /// Files are only replaced while Lightroom is closed: false, with the
+    /// reason in `phase`, while it is open.
+    private func lightroomIsClosed() -> Bool {
+        refreshLightroomState()
+        guard isLightroomRunning else { return true }
+        phase = .failed(PluginInstallError.lightroomIsRunning.errorDescription ?? "Quit Lightroom Classic first.")
+        return false
+    }
+
     private var phaseMessage: String? {
         if case .finished(let text) = phase { return text }
         return nil
     }
 
     private static var runningLightroom: NSRunningApplication? {
-        NSRunningApplication.runningApplications(withBundleIdentifier: lightroomBundleIdentifier).first
+        NSRunningApplication.runningApplications(withBundleIdentifier: LightroomLifecycle.bundleIdentifier).first
     }
 
     private struct QuitResult {
@@ -243,7 +239,7 @@ final class PluginInstaller {
         guard let lightroom = Self.runningLightroom else {
             refreshLightroomState()
             return QuitResult(
-                appURL: NSWorkspace.shared.urlForApplication(withBundleIdentifier: Self.lightroomBundleIdentifier),
+                appURL: NSWorkspace.shared.urlForApplication(withBundleIdentifier: LightroomLifecycle.bundleIdentifier),
                 wasRunning: false
             )
         }

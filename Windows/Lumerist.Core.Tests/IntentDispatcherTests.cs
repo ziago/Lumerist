@@ -1,4 +1,3 @@
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;

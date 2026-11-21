@@ -1,5 +1,5 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -127,20 +127,23 @@ public static class FixtureValues
     public static bool IsNull(JsonNode? node) => node is null;
 
     public static string Text(JsonNode? node, string name) =>
-        node?.GetValueKind() == System.Text.Json.JsonValueKind.String ? node.GetValue<string>() : throw new FixtureException(name + " must be text");
+        node?.GetValueKind() == JsonValueKind.String ? node.GetValue<string>() : throw new FixtureException(name + " must be text");
 
     public static double Number(JsonNode? node, string name) =>
-        node?.GetValueKind() == System.Text.Json.JsonValueKind.Number ? node.GetValue<double>() : throw new FixtureException(name + " must be a number");
+        node?.GetValueKind() == JsonValueKind.Number ? node.GetValue<double>() : throw new FixtureException(name + " must be a number");
 
     public static bool Flag(JsonNode? node, string name) => node?.GetValueKind() switch
     {
-        System.Text.Json.JsonValueKind.True => true,
-        System.Text.Json.JsonValueKind.False => false,
+        JsonValueKind.True => true,
+        JsonValueKind.False => false,
         _ => throw new FixtureException(name + " must be true or false"),
     };
 
     public static string? OptionalText(JsonNode? node) =>
-        node?.GetValueKind() == System.Text.Json.JsonValueKind.String ? node.GetValue<string>() : null;
+        node?.GetValueKind() == JsonValueKind.String ? node.GetValue<string>() : null;
+
+    public static double? OptionalNumber(JsonNode? node) =>
+        node?.GetValueKind() == JsonValueKind.Number ? node.GetValue<double>() : null;
 
     /// <summary>"develop/Exposure" → the parameter key.</summary>
     public static ParameterKey Parameter(JsonNode? node)
@@ -170,7 +173,7 @@ public static class FixtureValues
 
     public static KeyIntent Intent(JsonNode? node)
     {
-        if (node?.GetValueKind() == System.Text.Json.JsonValueKind.String)
+        if (node?.GetValueKind() == JsonValueKind.String)
         {
             return node.GetValue<string>() switch
             {

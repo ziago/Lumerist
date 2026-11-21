@@ -6,7 +6,7 @@ import SwiftUI
 /// and the appearance it is drawn in, so views keep writing `Synth.teal`,
 /// `Synth.abyss`… and get the right colour for the theme:
 ///
-/// - **Miami** (the original "Synth Grid"): dark abyss background, thin neon
+/// - **Miami**: dark abyss background, thin neon
 ///   outlines, teal for primary/active, magenta for selection and the main
 ///   action, amber for warnings and focus. Always dark.
 /// - **Galerist**: the editorial monochrome of Galerist (galerist.photo):
@@ -138,12 +138,11 @@ enum AppTheme: String, CaseIterable, Identifiable, Sendable {
 }
 
 /// Light or dark, for themes that have both (Galerist). Miami is always dark.
-enum ThemeAppearance: String, CaseIterable, Identifiable, Sendable {
+enum ThemeAppearance: String, CaseIterable, Sendable {
     case system
     case light
     case dark
 
-    var id: String { rawValue }
     var title: String {
         switch self {
         case .system: "Like the Mac"
@@ -163,7 +162,7 @@ struct SynthPalette: Sendable {
     var onTeal: UInt32
     var tint: UInt32
 
-    /// The original neon theme. Text colours are ≥ 4.5:1 on `abyss`, `panel` and `panelRaised`.
+    /// The neon theme. Text colours are ≥ 4.5:1 on `abyss`, `panel` and `panelRaised`.
     static let miami = SynthPalette(
         abyss: 0x070B18, night: 0x0B0F24, dusk: 0x1A0C2A, panel: 0x0D1428, panelRaised: 0x111A33,
         gridLine: 0x1B2A4A, outline: 0x2A3B63,
@@ -227,12 +226,12 @@ extension Color {
 }
 
 extension NSColor {
-    convenience init(hex: UInt32, alpha: CGFloat = 1) {
+    convenience init(hex: UInt32) {
         self.init(
             srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
             green: CGFloat((hex >> 8) & 0xFF) / 255,
             blue: CGFloat(hex & 0xFF) / 255,
-            alpha: alpha
+            alpha: 1
         )
     }
 }

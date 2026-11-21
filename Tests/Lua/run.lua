@@ -175,6 +175,12 @@ local function sent(env, index)
     return decodeJSON(payload:sub(1, -2))
 end
 
+-- The last line the plug-in logged: the bridge logs each change of state.
+local function lastLog(env)
+    local entry = env.log[#env.log]
+    return entry and entry.message
+end
+
 -- Strict UTF-8 check (Swift's JSONDecoder rejects invalid UTF-8).
 local function isValidUTF8(text)
     local index, length = 1, #text
@@ -454,7 +460,7 @@ test("choice parameters reported as names keep Lightroom's spelling", function()
     contains(reason, "unknown", "reason")
 end)
 
-test("center zoom crop scales the crop around its centre", function()
+test("crop zoom scales the crop around its centre", function()
     local env, Actions = fresh()
     local ok, _, details = run(Actions, adjust("lumerist.cropZoom", 10))
     truthy(ok, "accepted")
@@ -468,7 +474,7 @@ test("center zoom crop scales the crop around its centre", function()
     eq(details.unit, "%", "unit")
 end)
 
-test("center zoom crop keeps the aspect ratio and stops at the image", function()
+test("crop zoom keeps the aspect ratio and stops at the image", function()
     local env, Actions = fresh()
     env.develop.values.CropLeft, env.develop.values.CropRight = 0.2, 0.6
     env.develop.values.CropTop, env.develop.values.CropBottom = 0.4, 0.6
@@ -486,7 +492,7 @@ test("center zoom crop keeps the aspect ratio and stops at the image", function(
     contains(message, "limit", "full image cannot zoom out")
 end)
 
-test("center zoom crop builds on its own queued edges", function()
+test("crop zoom builds on its own queued edges", function()
     local env, Actions = fresh()
     run(Actions, adjust("lumerist.cropZoom", 10))
     run(Actions, adjust("lumerist.cropZoom", 10)) -- getValue still reports the full image
@@ -1017,7 +1023,6 @@ test("the worker merges scroll steps and answers with the last id", function()
     near(acks[1].value, 0.15, "value")
     eq(acks[2].id, 4, "contrast ack")
     contains(acks[3].message, "protocol 3", "ping message")
-    eq(_G.lumeristWorkerRunning, false, "worker flag cleared")
 end)
 
 test("the worker answers queries with a result instead of an ack", function()
@@ -1138,9 +1143,7 @@ test("start launches one worker and one socket loop", function()
     local generation = Bridge.start()
     eq(#env.tasks, 2, "async tasks started")
     eq(env.prefs.bridgeGeneration, generation, "generation claimed in shared prefs")
-    eq(_G.lumeristBridgeRunning, true, "bridge flag")
-    eq(_G.lumeristWorkerRunning, true, "worker flag")
-    contains(Bridge.status(), "protocol 3", "status")
+    contains(lastLog(env), "protocol 3", "status")
 end)
 
 test("a second start supersedes the first instead of adding a bridge", function()
@@ -1152,7 +1155,6 @@ test("a second start supersedes the first instead of adding a bridge", function(
     env.tasks[1]()
     env.tasks[2]()
     eq(#env.sleeps, 0, "superseded loops did not poll")
-    eq(_G.lumeristWorkerRunning, true, "the newer worker still owns the flag")
 end)
 
 test("a generation claimed in another script environment stops the worker", function()
@@ -1163,7 +1165,7 @@ test("a generation claimed in another script environment stops the worker", func
     env.prefs.bridgeGeneration = generation + 1
     env.tasks[1]()
     eq(#env.responses, 0, "no work done by a superseded worker")
-    eq(_G.lumeristWorkerRunning, false, "worker flag cleared")
+    eq(#env.sleeps, 0, "the superseded worker stopped at once")
 end)
 
 test("a stuck socket loop is replaced by a fresh bridge", function()
@@ -1173,7 +1175,7 @@ test("a stuck socket loop is replaced by a fresh bridge", function()
     env.tasks[1]() -- the worker notices
     eq(env.prefs.bridgeGeneration, generation + 1, "a new generation took over")
     eq(#env.tasks, 4, "a new worker and socket loop were started")
-    contains(Bridge.status(), "bridge starting", "status after the restart")
+    contains(lastLog(env), "bridge starting", "status after the restart")
 end)
 
 test("a ticking socket loop is left alone", function()
@@ -1194,7 +1196,7 @@ test("the bridge still starts when plug-in prefs are unavailable", function()
     local env, _, Bridge = fresh()
     env.prefsError = "prefs not available here"
     eq(Bridge.start(), 1, "generation kept locally")
-    contains(Bridge.status(), "bridge starting", "status")
+    contains(lastLog(env), "bridge starting", "status")
 end)
 
 test("stop clears sockets and the queue and claims a generation", function()
@@ -1209,16 +1211,8 @@ test("stop clears sockets and the queue and claims a generation", function()
     eq(_G.lumeristStopping, true, "stopping flag")
     eq(_G.lumeristRequestSocket, nil, "request socket")
     eq(#_G.lumeristQueue, 0, "queue")
-    eq(Bridge.status(), "bridge stopped", "status")
+    eq(lastLog(env), "bridge stopped", "status")
     eq(env.prefs.bridgeGeneration, 1, "generation claimed")
-end)
-
-test("perform validates and runs a single request (menu item)", function()
-    local env, Actions = fresh()
-    local ok = Actions.perform({ version = 3, id = 0, kind = "adjust", scope = "develop", parameter = "Exposure", delta = 0.1 })
-    truthy(ok, "accepted")
-    near(env.develop.lastSet().value, 0.1, "applied")
-    falsy((Actions.perform({ version = 3, id = 0, kind = "adjust", scope = "develop", parameter = "Exposure", delta = 3 })), "validated")
 end)
 
 test("Open Lumerist opens the app by bundle id, in a task", function()
@@ -1261,7 +1255,7 @@ test("starting with Lightroom opens Lumerist in the background only when needed"
 end)
 
 -- Windows: the app writes %APPDATA%\Lumerist\plugin-link.json; the plug-in
--- reads it to find Lumerist.exe (Shared/contract.json, windowsPluginLink).
+-- reads it to find Lumerist.exe (OpenApp.lua).
 
 local WINDOWS_EXE = "C:\\Users\\Test\\AppData\\Local\\Programs\\Lumerist\\Lumerist.exe"
 local WINDOWS_LINK = "C:\\Users\\Test\\AppData\\Roaming\\Lumerist\\plugin-link.json"
@@ -1401,7 +1395,7 @@ test("macOS is unaffected by the Windows link file", function()
     eq(env.executed[1], "open -b io.github.ziago.lumerist --args --show-window", "the Mac command")
 end)
 
-test("Info.lua lists only the Configure menu item", function()
+test("Info.lua lists only the Open Lumerist menu item", function()
     local info = dofile(pluginDir .. "/Info.lua")
     eq(#info.LrExportMenuItems, 1, "menu items")
     eq(info.LrExportMenuItems[1].title, "Open Lumerist", "title")

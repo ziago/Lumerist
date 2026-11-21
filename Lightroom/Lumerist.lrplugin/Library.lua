@@ -3,10 +3,9 @@
 
 local LrApplication = import "LrApplication"
 local LrApplicationView = import "LrApplicationView"
+local Develop = require "Develop"
 
 local Library = {}
-
-local KELVIN_PER_TEMPERATURE_POINT = 50
 
 -- Catalog id -> develop-settings keys to try (process 2012+ first) and range.
 local SETTINGS = {
@@ -31,7 +30,7 @@ end
 local function resolve(id, settings, delta)
     if id == "Temperature" then
         if isFinite(settings.Temperature) then -- raw/DNG: Kelvin
-            return "Temperature", 2000, 50000, delta * KELVIN_PER_TEMPERATURE_POINT, "K"
+            return "Temperature", 2000, 50000, delta * Develop.kelvinPerTemperaturePoint, "K"
         end
         return "IncrementalTemperature", -100, 100, delta, "pt"
     end

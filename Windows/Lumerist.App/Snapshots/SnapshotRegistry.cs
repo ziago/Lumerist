@@ -6,8 +6,8 @@ using Lumerist.App.Design;
 namespace Lumerist.App.Snapshots;
 
 /// <summary>
-/// PNG renders of every screen, to set beside the Mac's (the Fase 3
-/// criterion): <c>Lumerist.exe --render-snapshots &lt;folder&gt;</c> writes
+/// PNG renders of every screen, to set beside the Mac's:
+/// <c>Lumerist.exe --render-snapshots &lt;folder&gt;</c> writes
 /// <c>&lt;name&gt;-&lt;theme&gt;.png</c> at 2× for Galerist light, Galerist dark
 /// and Miami, then quits. Nothing is started: no hooks, no connection.
 /// </summary>
@@ -17,7 +17,7 @@ namespace Lumerist.App.Snapshots;
 /// <code>
 /// [ModuleInitializer]
 /// internal static void Register() =&gt;
-///     SnapshotRegistry.Add("hud-ruler", 420, 120, controller =&gt; new ValueHudView(...));
+///     SnapshotRegistry.Add("hud-ruler", 326, 172, controller =&gt; HudView.Build(...));
 /// </code>
 /// The builder returns the screen's content (not a Window): it is measured
 /// at the given size in device-independent pixels.
@@ -27,8 +27,6 @@ internal static class SnapshotRegistry
     public sealed record Snapshot(string Name, double Width, double Height, Func<AppController, FrameworkElement> Build);
 
     private static readonly List<Snapshot> Snapshots = [];
-
-    public static IReadOnlyList<Snapshot> All => Snapshots;
 
     public static void Add(string name, double width, double height, Func<AppController, FrameworkElement> build) =>
         Snapshots.Add(new Snapshot(name, width, height, build));

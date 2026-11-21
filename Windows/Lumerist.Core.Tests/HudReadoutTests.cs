@@ -1,4 +1,3 @@
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -155,6 +154,5 @@ public class HudReadoutTests
         Assert.Equal(("-5.00", "+5.00"), sample.RangeText);
         Assert.Equal("Q", sample.KeyLabel);
         Assert.Equal("Normal", sample.StepLabel);
-        Assert.Equal("Coarse", HudStepMode.Coarse.Label());
     }
 }

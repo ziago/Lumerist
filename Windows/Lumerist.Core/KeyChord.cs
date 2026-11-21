@@ -48,9 +48,6 @@ public readonly record struct KeyChord(int ScanCode, KeyModifiers Modifiers = Ke
 
     public override string ToString() => DisplayText;
 
-    /// <summary>The same key without modifiers.</summary>
-    public KeyChord Plain => new(ScanCode);
-
     /// <summary>True when the chord works only while the Combo Key is held.</summary>
     public bool IsCombo => (Modifiers & KeyModifiers.Combo) != 0;
 
@@ -88,7 +85,7 @@ public static class ScanCodes
 /// Shift (alone or as a combo) still matches when Shift is held, because Shift
 /// selects the large step. An exact match always wins.
 /// </summary>
-public static class ChordLookup
+internal static class ChordLookup
 {
     public static bool TryMatch<TValue>(KeyChord chord, IReadOnlyDictionary<KeyChord, TValue> table,
         out TValue value, out bool extraShift)

@@ -12,8 +12,7 @@ namespace Lumerist.App.Panels;
 internal static partial class PanelNative
 {
     private const int GWL_EXSTYLE = -20;
-    public const long WS_EX_TOPMOST = 0x0000_0008, WS_EX_TRANSPARENT = 0x0000_0020, WS_EX_TOOLWINDOW = 0x0000_0080;
-    public const long WS_EX_LAYERED = 0x0008_0000, WS_EX_NOACTIVATE = 0x0800_0000;
+    public const long WS_EX_TRANSPARENT = 0x0000_0020, WS_EX_TOOLWINDOW = 0x0000_0080, WS_EX_NOACTIVATE = 0x0800_0000;
 
     private const uint SWP_NOSIZE = 0x0001, SWP_NOMOVE = 0x0002, SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010;
     private static readonly nint HWND_TOPMOST = -1;
@@ -46,8 +45,6 @@ internal static partial class PanelNative
         var updated = (style | add) & ~remove;
         if (updated != style) SetWindowLong(handle, updated);
     }
-
-    public static bool HasExtendedStyle(Window window, long style) => (GetWindowLong(Handle(window)) & style) == style;
 
     /// <summary>The window's frame in screen pixels.</summary>
     public static Rect Frame(Window window)

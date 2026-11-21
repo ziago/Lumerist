@@ -76,13 +76,9 @@ internal static partial class Theme
         public const double XS = 4, S = 8, M = 12, L = 16, XL = 20, XXL = 24;
     }
 
-    /// <summary>Outlines instead of fills.</summary>
-    public const double Stroke = 1;
-
-    /// <summary>Overlay entrance and exit, and UI state changes (the Mac's Synth.Motion).</summary>
+    /// <summary>The Value HUD's entrance and exit (the Mac's Synth.Motion).</summary>
     public static readonly TimeSpan OverlayIn = TimeSpan.FromMilliseconds(120);
     public static readonly TimeSpan OverlayOut = TimeSpan.FromMilliseconds(250);
-    public static readonly TimeSpan Quick = TimeSpan.FromMilliseconds(120);
 
     public static FontFamily DisplayFont => IsFlat ? Outfit : ChakraPetch;
     public static FontFamily TextFont => IsFlat ? Outfit : Inter;
@@ -90,9 +86,13 @@ internal static partial class Theme
 
     private static readonly Uri FontBase = new("pack://application:,,,/");
     private static readonly FontFamily Inter = new(FontBase, "./Assets/Fonts/#Inter, Segoe UI");
-    private static readonly FontFamily Outfit = new(FontBase, "./Assets/Fonts/#Outfit, Segoe UI");
-    private static readonly FontFamily ChakraPetch = new(FontBase, "./Assets/Fonts/#Chakra Petch, Segoe UI");
     private static readonly FontFamily JetBrainsMono = new(FontBase, "./Assets/Fonts/#JetBrains Mono, Consolas");
+
+    /// <summary>Galerist's font, whatever the theme in effect (the Appearance previews draw both looks).</summary>
+    public static readonly FontFamily Outfit = new(FontBase, "./Assets/Fonts/#Outfit, Segoe UI");
+
+    /// <summary>Miami's display font, whatever the theme in effect.</summary>
+    public static readonly FontFamily ChakraPetch = new(FontBase, "./Assets/Fonts/#Chakra Petch, Segoe UI");
 
     private static bool listensToSystem;
 

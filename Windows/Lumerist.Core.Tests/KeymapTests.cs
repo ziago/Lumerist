@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Lumerist.Core;
 using Xunit;
+using static Lumerist.Core.Tests.KeymapTestSupport;
 
 namespace Lumerist.Core.Tests;
 
@@ -42,8 +42,6 @@ internal static class KeymapTestSupport
 
 public class KeymapPersistenceTests
 {
-    private static ParameterKey Dev(string id) => KeymapTestSupport.Dev(id);
-
     [Fact]
     public void RoundTripsEverything()
     {
@@ -69,7 +67,7 @@ public class KeymapPersistenceTests
 
         var json = KeymapStore.Encode(keymap);
         var decoded = KeymapStore.Decode(json);
-        KeymapTestSupport.AssertSame(keymap, decoded);
+        AssertSame(keymap, decoded);
         Assert.Null(decoded.SystemKeys.ComboKey); // a cleared key stays cleared
         Assert.Equal(json, KeymapStore.Encode(decoded));
 
@@ -91,7 +89,7 @@ public class KeymapPersistenceTests
     public void TheStandardLayoutRoundTrips()
     {
         var standard = Keymap.StandardLayout();
-        KeymapTestSupport.AssertSame(standard, KeymapStore.Decode(KeymapStore.Encode(standard)));
+        AssertSame(standard, KeymapStore.Decode(KeymapStore.Encode(standard)));
     }
 
     [Fact]
@@ -129,10 +127,10 @@ public class KeymapPersistenceTests
     public void StoredKeymapsWithUnknownFieldsAreRejectedNotLoadedEmpty()
     {
         // A slot written with a field this build does not know must not decode
-        // as an empty slot (that once silently disabled every key).
+        // as an empty slot: that would silently disable every key.
         void Rejects(string json, params string[] fields)
         {
-            var error = KeymapTestSupport.Throws(KeymapErrorKind.UnknownFields, () => KeymapStore.Decode(json));
+            var error = Throws(KeymapErrorKind.UnknownFields, () => KeymapStore.Decode(json));
             Assert.Equal(fields, error.Fields);
         }
         Rejects("""{"format":1,"develop":{"Exposure":{"speed":{"scanCode":"0x10"}}}}""", "speed");
@@ -159,12 +157,12 @@ public class KeymapPersistenceTests
     [Fact]
     public void DataWithoutAFormatIsRejected()
     {
-        var error = KeymapTestSupport.Throws(KeymapErrorKind.UnsupportedFormat,
+        var error = Throws(KeymapErrorKind.UnsupportedFormat,
             () => KeymapStore.Decode("""{"bindings":[{"action":"contrast","scanCode":"0x11"}]}"""));
         Assert.Equal(0, error.Format);
-        Assert.Equal(0, KeymapTestSupport.Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode("not json")).Format);
-        Assert.Equal(0, KeymapTestSupport.Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode("[1]")).Format);
-        Assert.Equal(0, KeymapTestSupport.Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode("""{"format":"1"}""")).Format);
+        Assert.Equal(0, Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode("not json")).Format);
+        Assert.Equal(0, Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode("[1]")).Format);
+        Assert.Equal(0, Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode("""{"format":"1"}""")).Format);
     }
 
     [Fact]
@@ -172,14 +170,14 @@ public class KeymapPersistenceTests
     {
         // The Mac's format 3 never loads on Windows.
         const string mac = """{"format":3,"develop":{"Exposure":{"dial":{"keyCode":12,"modifiers":0}}}}""";
-        Assert.Equal(3, KeymapTestSupport.Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode(mac)).Format);
-        Assert.Equal(2, KeymapTestSupport.Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode("""{"format":2}""")).Format);
+        Assert.Equal(3, Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode(mac)).Format);
+        Assert.Equal(2, Throws(KeymapErrorKind.UnsupportedFormat, () => KeymapStore.Decode("""{"format":2}""")).Format);
         Assert.Equal("Unsupported keymap format: 2.",
             Assert.Throws<KeymapException>(() => KeymapStore.Decode("""{"format":2}""")).Message);
 
-        var unknown = KeymapTestSupport.Throws(KeymapErrorKind.UnknownParameter,
+        var unknown = Throws(KeymapErrorKind.UnknownParameter,
             () => KeymapStore.Decode("""{"format":1,"develop":{"NoSuchSlider":{"dial":{"scanCode":"0x10"}}}}"""));
-        Assert.Equal(KeymapTestSupport.Dev("NoSuchSlider"), unknown.Parameter);
+        Assert.Equal(Dev("NoSuchSlider"), unknown.Parameter);
         Assert.Equal("Unknown parameter develop:NoSuchSlider.", unknown.Message);
     }
 
@@ -223,13 +221,13 @@ public class KeymapPersistenceTests
     {
         // Two Dial Keys on Q: a stored keymap with conflicts does not load.
         const string json = """{"format":1,"develop":{"Exposure":{"dial":{"scanCode":"0x10"}},"Contrast":{"dial":{"scanCode":"0x10"}}}}""";
-        var error = KeymapTestSupport.Throws(KeymapErrorKind.Conflicts, () => KeymapStore.Decode(json));
+        var error = Throws(KeymapErrorKind.Conflicts, () => KeymapStore.Decode(json));
         Assert.Equal("Q is the Dial Key of more than one slider.", error.Message);
         Assert.Single(error.Conflicts);
 
         const string steps = """{"format":1,"develop":{"Exposure":{"normalStep":3}}}""";
-        Assert.Equal(KeymapTestSupport.Dev("Exposure"),
-            KeymapTestSupport.Throws(KeymapErrorKind.InvalidStep, () => KeymapStore.Decode(steps)).Parameter);
+        Assert.Equal(Dev("Exposure"),
+            Throws(KeymapErrorKind.InvalidStep, () => KeymapStore.Decode(steps)).Parameter);
     }
 
     [Fact]
@@ -243,7 +241,7 @@ public class KeymapPersistenceTests
 
             var keymap = Keymap.StandardLayout();
             KeymapStore.Save(keymap, path); // creates the folder
-            KeymapTestSupport.AssertSame(keymap, KeymapStore.Load(path)!);
+            AssertSame(keymap, KeymapStore.Load(path)!);
 
             keymap.Input.InvertWheel = true;
             KeymapStore.Save(keymap, path); // replaces the file
@@ -252,7 +250,7 @@ public class KeymapPersistenceTests
 
             // An invalid keymap never replaces a good file.
             keymap.Input.DragSensitivity = 99;
-            KeymapTestSupport.Throws(KeymapErrorKind.InvalidOption, () => KeymapStore.Save(keymap, path));
+            Throws(KeymapErrorKind.InvalidOption, () => KeymapStore.Save(keymap, path));
             Assert.Equal(25, KeymapStore.Load(path)!.Input.DragSensitivity);
             Assert.Equal(["keymap.json"], Directory.GetFiles(Path.GetDirectoryName(path)!).Select(Path.GetFileName));
         }
@@ -265,23 +263,21 @@ public class KeymapPersistenceTests
 
 public class KeymapValidationTests
 {
-    private static ParameterKey Dev(string id) => KeymapTestSupport.Dev(id);
-
     [Fact]
     public void ErrorsDescribeThemselves()
     {
         var keymap = Keymap.StandardLayout();
         keymap.UpdateSlot(Dev("GrainAmount"), slot => slot with { Dial = new KeyChord(0x25, KeyModifiers.Combo) });
-        var error = KeymapTestSupport.Throws(KeymapErrorKind.InvalidCombo, keymap.Validate);
+        var error = Throws(KeymapErrorKind.InvalidCombo, keymap.Validate);
         Assert.Contains("Dial Key can't be a combo", error.Message);
         Assert.Equal(new ComboMisuse.DialKey(Dev("GrainAmount")), error.Misuse);
 
         keymap = Keymap.StandardLayout();
         keymap.Input.DragSensitivity = 40;
         Assert.Equal("The drag sensitivity setting is out of range.",
-            KeymapTestSupport.Throws(KeymapErrorKind.InvalidOption, keymap.Validate).Message);
+            Throws(KeymapErrorKind.InvalidOption, keymap.Validate).Message);
         keymap.Input.DragSensitivity = double.NaN;
-        KeymapTestSupport.Throws(KeymapErrorKind.InvalidOption, keymap.Validate);
+        Throws(KeymapErrorKind.InvalidOption, keymap.Validate);
     }
 
     [Fact]
@@ -291,7 +287,7 @@ public class KeymapValidationTests
         {
             var keymap = Keymap.StandardLayout();
             keymap.CommandKeys = [CommandKey.Create(CommandScope.Develop, new KeyChord(ScanCodes.H), title, action)];
-            var error = KeymapTestSupport.Throws(KeymapErrorKind.InvalidCommandKey, keymap.Validate);
+            var error = Throws(KeymapErrorKind.InvalidCommandKey, keymap.Validate);
             Assert.Equal($"Invalid command key: {error.Reason}.", error.Message);
             return error.Reason!;
         }
@@ -337,8 +333,6 @@ public class KeymapValidationTests
 
 public class KeymapConflictMessageTests
 {
-    private static ParameterKey Dev(string id) => KeymapTestSupport.Dev(id);
-
     [Fact]
     public void TypingKeysAndReservedModifiersNameWindows()
     {
@@ -366,7 +360,7 @@ public class KeymapConflictMessageTests
     {
         var itself = Keymap.StandardLayout();
         itself.UpdateSlot(Dev("GrainAmount"), slot => slot with { NudgeUp = new KeyChord(ScanCodes.Tab, KeyModifiers.Shift | KeyModifiers.Combo) });
-        var conflict = KeymapTestSupport.Errors(itself)[0];
+        var conflict = Errors(itself)[0];
         Assert.Equal("Tab + Shift+Tab can't work: a combo can't use the Combo Key itself.", conflict.Message);
         Assert.Contains(new KeyUsage.SystemKey(SystemKeyRole.ComboKey), conflict.Usages);
 
@@ -374,11 +368,11 @@ public class KeymapConflictMessageTests
         pause.CommandKeys.Add(CommandKey.Create(CommandScope.Develop,
             new KeyChord(ScanCodes.Escape, KeyModifiers.Control | KeyModifiers.Combo), "Undo", new CommandAction.Command("undo")));
         Assert.Equal(["Tab + Ctrl+Esc can't work: Ctrl+Esc always pauses Lumerist."],
-            KeymapTestSupport.Errors(pause).Select(error => error.Message));
+            Errors(pause).Select(error => error.Message));
 
         var systems = Keymap.StandardLayout();
         systems.SystemKeys.PauseToggle = KeyChord.LeftOf1;
-        var twice = Assert.Single(KeymapTestSupport.Errors(systems));
+        var twice = Assert.Single(Errors(systems));
         Assert.Equal("` is used by more than one system key.", twice.Message);
         Assert.Null(twice.Scope);
         Assert.Equal([new KeyUsage.SystemKey(SystemKeyRole.PaletteKey), new KeyUsage.SystemKey(SystemKeyRole.PauseToggle)],
@@ -398,34 +392,24 @@ public class KeymapConflictMessageTests
 
 public class KeymapSummaryTests
 {
-    private static ParameterKey Dev(string id) => KeymapTestSupport.Dev(id);
-
     [Fact]
-    public void CountsAndSorting()
+    public void CountsInCatalogOrder()
     {
         var keymap = Keymap.StandardLayout();
         keymap.UpdateSlot(Dev("Exposure"), slot => slot with { NudgeDown = new KeyChord(0x1A), NudgeUp = new KeyChord(0x1B) });
         keymap.UpdateSlot(Dev("GrainAmount"), slot => slot with { NudgeUp = new KeyChord(0x28) });
-        var summary = keymap.Summary(ParameterScope.Develop, AssignmentSummary.Sort.Parameter);
+        var summary = keymap.Summary(ParameterScope.Develop);
         Assert.Equal(ParameterScope.Develop, summary.Scope);
-        Assert.Equal(21, summary.DialKeyCount);
-        Assert.Equal(3, summary.NudgeKeyCount);
-        Assert.Equal(2, summary.NudgeKeys.Count);
-        var labels = summary.DialKeys.Select(entry => entry.Descriptor.Label).ToList();
-        Assert.Equal(labels.Order(StringComparer.OrdinalIgnoreCase), labels);
+        Assert.Equal(["Exposure", "GrainAmount"], summary.NudgeKeys.Select(entry => entry.Descriptor.Id));
 
-        var byKey = keymap.Summary(ParameterScope.Develop, AssignmentSummary.Sort.Key).DialKeys
-            .Select(entry => entry.Slot.Dial!.Value.DisplayText).ToList();
-        Assert.Equal(byKey.Order(StringComparer.Ordinal), byKey);
+        var dialIds = summary.DialKeys.Select(entry => entry.Descriptor.Id).ToList();
+        Assert.Equal(21, dialIds.Count);
+        Assert.Equal("Temperature", dialIds[0]);
+        var catalogOrder = ParameterCatalog.All.Where(d => d.Scope == ParameterScope.Develop).Select(d => d.Id);
+        Assert.Equal(catalogOrder.Where(dialIds.Contains), dialIds);
 
-        var bySection = keymap.Summary(ParameterScope.Develop, AssignmentSummary.Sort.Section).DialKeys
-            .Select(entry => entry.Descriptor.Id).ToList();
-        Assert.Equal("Temperature", bySection[0]);
-        var catalogOrder = ParameterCatalog.All.Where(d => d.Scope == ParameterScope.Develop).Select(d => d.Id).ToList();
-        Assert.Equal(bySection.OrderBy(catalogOrder.IndexOf), bySection);
-
-        Assert.Equal(12, keymap.Summary(ParameterScope.Library).DialKeyCount);
-        Assert.Equal(0, keymap.Summary(ParameterScope.Library).NudgeKeyCount);
+        Assert.Equal(12, keymap.Summary(ParameterScope.Library).DialKeys.Count);
+        Assert.Empty(keymap.Summary(ParameterScope.Library).NudgeKeys);
     }
 
     [Fact]
@@ -433,7 +417,7 @@ public class KeymapSummaryTests
     {
         var keymap = Keymap.StandardLayout();
         Assert.Equal((0.05, 0.33), keymap.Steps(Dev("Exposure")));
-        Assert.Equal((5.0, 20.0), keymap.Steps(KeymapTestSupport.Lib("Temperature")));
+        Assert.Equal((5.0, 20.0), keymap.Steps(Lib("Temperature")));
         keymap.UpdateSlot(Dev("Exposure"), slot => slot with { CoarseStep = 0.5 });
         Assert.Equal((0.05, 0.5), keymap.Steps(Dev("Exposure")));
         Assert.Null(keymap.Steps(Dev("Nope")));
@@ -442,8 +426,6 @@ public class KeymapSummaryTests
 
 public class KeymapMaskTests
 {
-    private static ParameterKey Dev(string id) => KeymapTestSupport.Dev(id);
-
     [Fact]
     public void LocalEquivalents()
     {
@@ -454,7 +436,7 @@ public class KeymapMaskTests
         Assert.Equal(Dev("local_Amount"), Keymap.LocalKey(Dev("local_Amount")));
         Assert.Null(Keymap.LocalKey(Dev("Vibrance")));
         Assert.Null(Keymap.LocalKey(Dev("ParametricShadows")));
-        Assert.Null(Keymap.LocalKey(KeymapTestSupport.Lib("Exposure")));
+        Assert.Null(Keymap.LocalKey(Lib("Exposure")));
     }
 
     [Fact]
@@ -482,7 +464,6 @@ public class KeyChordTests
         Assert.Equal("Num 0", new KeyChord(0x52).DisplayText);
         Assert.Equal("\\", new KeyChord(0x2B).DisplayText);
         Assert.Equal("→", new KeyChord(ScanCodes.RightArrow).DisplayText);
-        Assert.Equal(new KeyChord(ScanCodes.Q), new KeyChord(ScanCodes.Q, KeyModifiers.Shift).Plain);
     }
 
     [Fact]

@@ -45,9 +45,6 @@ internal class NonActivatingWindow : Window
         };
     }
 
-    /// <summary>True while the window may hold the keyboard (the Key Reference's search field).</summary>
-    protected bool TakesFocus => takesFocus;
-
     /// <summary>
     /// Lets this window take the keyboard, for typing in a text field the
     /// user clicked; the next time it loses the focus it goes back to never

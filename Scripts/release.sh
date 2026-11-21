@@ -38,7 +38,7 @@ while (( $# > 0 )); do
     --final) prerelease=0 ;;
     --notary-profile) shift; profile="${1:?--notary-profile needs a name}" ;;
     --repo) shift; repo="${1:?--repo needs OWNER/NAME}" ;;
-    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,25p' "$0"; exit 0 ;;
     *) print -u2 "Unknown option: $1"; exit 64 ;;
   esac
   shift
@@ -136,8 +136,7 @@ if (( ${#windows_assets} )); then
 fi
 
 # --- Build ------------------------------------------------------------------
-rm -rf "$out/Lumerist.app" "$zip" "$dmg" "$dmg.sha256"
-mkdir -p "$out"
+rm -rf "$app" "$zip" "$dmg" "$dmg.sha256"
 if [[ -n "$identity" ]]; then
   step "Universal build, Developer ID signature, hardened runtime"
   LUMERIST_SIGN_IDENTITY="$identity" zsh "$root/Scripts/build-macos-app.sh" --release --output "$out"

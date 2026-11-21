@@ -163,11 +163,4 @@ internal static class Layout
         foreach (var element in trailing.OfType<UIElement>()) Add(element, GridLength.Auto);
         return grid;
     }
-
-    /// <summary>Sets a margin and returns the element (for inline layout).</summary>
-    public static T Padded<T>(this T element, double horizontal, double vertical) where T : FrameworkElement
-    {
-        element.Margin = new Thickness(horizontal, vertical, horizontal, vertical);
-        return element;
-    }
 }

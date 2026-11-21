@@ -1,7 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -68,7 +67,7 @@ public class GestureFixtureTests
             var contextName = FixtureValues.OptionalText(step["in"]) ?? "develop";
             var context = Contexts.GetValueOrDefault(contextName) ?? throw new FixtureException($"{label}: unknown context {contextName}");
             var modifiers = WinKeys.Modifiers(Strings(step["modifiers"]) ?? []);
-            var time = OptionalNumber(step["at"]) ?? 0;
+            var time = FixtureValues.OptionalNumber(step["at"]) ?? 0;
             var focusQueries = 0;
 
             KeyGestureEngine<string>.Outcome? outcome;
@@ -175,9 +174,6 @@ public class GestureFixtureTests
     }
 
     // Loose reads, like the Swift runner's "as? T ?? default": a value of another type counts as missing.
-
-    private static double? OptionalNumber(JsonNode? node) =>
-        node?.GetValueKind() == JsonValueKind.Number ? node.GetValue<double>() : null;
 
     private static int? OptionalInteger(JsonNode? node) =>
         node?.GetValueKind() == JsonValueKind.Number && node.AsValue().TryGetValue(out int value) ? value : null;

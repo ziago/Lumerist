@@ -221,7 +221,6 @@ internal sealed class GuideView : LiveView
         text.Children.Add(GuideKit.Text("Tell me when a new version is out", 13, nameof(ThemePalette.Ice)));
         var detail = GuideKit.Text("Lumerist asks GitHub for its list of releases when it starts, at most once a day. Nothing about you is sent.",
                                    12, nameof(ThemePalette.Steel));
-        detail.TextWrapping = TextWrapping.Wrap;
         text.Children.Add(detail);
         var choice = new CheckBox
         {
@@ -288,7 +287,7 @@ internal sealed class GuideView : LiveView
         Grid.SetColumn(texts, 1);
         grid.Children.Add(texts);
 
-        var trailing = done ? GuideKit.Pill("Done", PillTone.Good) : action as FrameworkElement;
+        var trailing = done ? GuideKit.Pill("Done") : action as FrameworkElement;
         if (trailing is not null)
         {
             trailing.Margin = new Thickness(Theme.Space.M, 0, 0, 0);

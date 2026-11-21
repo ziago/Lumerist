@@ -1,9 +1,10 @@
 <!--
-  Styles of the guide, "Stay in touch" and About & Support windows: the
-  Mac's NeonButtonStyle (primary, secondary, quiet), SynthCheckboxStyle and
-  the email field. Galerist (".Flat") and Miami (".Neon") differ in shape and
-  type, so code picks the set for the theme in effect and rebuilds on a theme
-  change; colours are DynamicResource and follow it by themselves.
+  Styles of the setup guide, "Stay in touch" and the Updates and About &
+  Support sections: the Mac's NeonButtonStyle (primary, secondary, quiet),
+  SynthCheckboxStyle and the email field. Galerist (".Flat") and Miami
+  (".Neon") differ in shape and type, so code picks the set for the theme in
+  effect and rebuilds on a theme change; colours are DynamicResource and
+  follow it by themselves.
   Button labels are upper case on both looks: code sets the text.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

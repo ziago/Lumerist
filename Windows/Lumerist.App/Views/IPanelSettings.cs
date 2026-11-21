@@ -6,8 +6,8 @@ namespace Lumerist.App.Views;
 /// What the Floating panels page needs from the panels (the Mac's
 /// <c>store.overlay</c>, <c>FloatingPanels.shared</c> and
 /// <c>store.isKeyReferenceVisible</c>). The panel host implements it next to
-/// <see cref="Panels.IPanelHost"/>; until it does, the page shows those
-/// controls disabled. Called on the UI thread.
+/// <see cref="Panels.IPanelHost"/>; without one (snapshots), the page shows
+/// those controls disabled. Called on the UI thread.
 /// </summary>
 internal interface IPanelSettings
 {

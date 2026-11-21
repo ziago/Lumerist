@@ -1,5 +1,3 @@
-import Foundation
-
 /// Where a parameter is adjusted: the Develop module (LrDevelopController,
 /// active photo) or Library Quick Develop (relative, every selected photo).
 public enum ParameterScope: String, Codable, Sendable, CaseIterable, Hashable {

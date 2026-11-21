@@ -1,4 +1,3 @@
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -70,14 +69,6 @@ public class HudFormattingTests
     [InlineData("pt", null)]
     [InlineData("temp", null)]
     public void UnitSuffixes(string unit, string? expected) => Assert.Equal(expected, HudFormatting.UnitSuffix(unit));
-
-    [Fact]
-    public void ValueTextJoinsNumberAndUnit()
-    {
-        Assert.Equal("+0.35 EV", HudFormatting.ValueText(0.35, "EV"));
-        Assert.Equal("+12", HudFormatting.ValueText(12, "pt"));
-        Assert.Equal("-3.5 °", HudFormatting.ValueText(-3.5, "deg"));
-    }
 
     [Theory]
     [InlineData(0.25, 1, "0.2")]

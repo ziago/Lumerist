@@ -34,11 +34,10 @@ public enum GaleristOptIn {
         public static let credit = "Lumerist is made by the creator of Galerist, online galleries where photographers and videographers deliver their work to clients."
     }
 
-    /// The consent texts of `lk-optin-v1`, the earlier form (never released).
-    /// The app no longer shows or sends them; they stay so the v1 drift guard
-    /// keeps matching the map the server still holds for that version.
-    /// Texts of the first form, kept verbatim (the app was then called
-    /// LumenKeys): the server stores them as proof of consent.
+    /// The consent texts of `lk-optin-v1`, the first form (never released;
+    /// the app was then called LumenKeys), kept verbatim. The app never shows
+    /// or sends them: they stay so the v1 drift guard keeps matching the map
+    /// the server still holds as proof of consent for that version.
     public enum ConsentV1 {
         public static let consentVersion = "lk-optin-v1"
         public static let lumenkeysUpdates = "Email me when a new version of LumenKeys is out."
@@ -60,11 +59,9 @@ public enum GaleristOptIn {
     /// Tracked short links `https://galerist.photo/c/<code>` (production only;
     /// they carry no personal data).
     public enum TrackedLink: String, CaseIterable, Sendable {
-        /// No longer shown by the app (the setup guide has no sign-up step any
-        /// more); the code stays valid on the server.
-        case onboarding = "lk-onboarding"
         case settings = "lk-settings"
         case menu = "lk-menu"
+        /// Used by README.md and CHANGELOG.md, not by the app.
         case readme = "lk-readme"
         case release = "lk-release"
 

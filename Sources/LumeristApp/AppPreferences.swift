@@ -109,16 +109,15 @@ final class AppPreferences {
 /// Watches Lightroom Classic launching and quitting.
 @MainActor
 final class LightroomLifecycle {
+    /// Lightroom Classic's bundle identifier, for every check of the app itself.
     nonisolated static let bundleIdentifier = "com.adobe.LightroomClassicCC7"
 
     private var observers: [NSObjectProtocol] = []
     private var pendingQuit: Task<Void, Never>?
     private let preferences: AppPreferences
-    private let onStatus: (String) -> Void
 
-    init(preferences: AppPreferences, onStatus: @escaping (String) -> Void) {
+    init(preferences: AppPreferences) {
         self.preferences = preferences
-        self.onStatus = onStatus
         let center = NSWorkspace.shared.notificationCenter
         observers.append(center.addObserver(
             forName: NSWorkspace.didTerminateApplicationNotification, object: nil, queue: .main
@@ -155,7 +154,6 @@ final class LightroomLifecycle {
         DebugLog.write("Lightroom Classic quit")
         guard preferences.quitWithLightroom, !Self.isRestartingLightroom else { return }
         let delay = preferences.quitDelaySeconds
-        onStatus("Lightroom Classic has quit; Lumerist follows in \(Int(delay)) s")
         pendingQuit?.cancel()
         pendingQuit = Task { @MainActor in
             try? await Task.sleep(for: .seconds(delay))
@@ -167,11 +165,8 @@ final class LightroomLifecycle {
 
     private func lightroomLaunched() {
         DebugLog.write("Lightroom Classic launched")
-        if pendingQuit != nil {
-            pendingQuit?.cancel()
-            pendingQuit = nil
-            onStatus("Lightroom Classic is back; Lumerist stays open")
-        }
+        pendingQuit?.cancel()
+        pendingQuit = nil
     }
 }
 

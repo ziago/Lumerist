@@ -20,14 +20,6 @@ internal enum GuideButtonKind
     Quiet,
 }
 
-/// <summary>The Mac's StatusPill tones used by these windows.</summary>
-internal enum PillTone
-{
-    Good,
-    Waiting,
-    Off,
-}
-
 /// <summary>Line icons drawn on a 16-unit grid (the Mac uses SF Symbols of the same meaning).</summary>
 internal enum GuideIcon
 {
@@ -122,27 +114,10 @@ internal static class GuideKit
         return button;
     }
 
-    /// <summary>An outlined chip that always spells its state (the Mac's StatusPill), with a check mark.</summary>
-    public static FrameworkElement Pill(string text, PillTone tone)
+    /// <summary>An outlined chip that spells a state that is done (the Mac's StatusPill, good tone), with a check mark.</summary>
+    public static FrameworkElement Pill(string text)
     {
-        string color;
-        string border;
-        if (Theme.IsFlat)
-        {
-            var strong = tone == PillTone.Good;
-            color = strong ? nameof(ThemePalette.Ice) : nameof(ThemePalette.Steel);
-            border = strong ? nameof(ThemePalette.Ice) : nameof(ThemePalette.Outline);
-        }
-        else
-        {
-            color = tone switch
-            {
-                PillTone.Good => nameof(ThemePalette.Teal),
-                PillTone.Waiting => nameof(ThemePalette.Amber),
-                _ => nameof(ThemePalette.Steel),
-            };
-            border = color;
-        }
+        var color = Theme.IsFlat ? nameof(ThemePalette.Ice) : nameof(ThemePalette.Teal);
         var label = Text(text.ToUpperInvariant(), Theme.IsFlat ? 10.5 : 11, color,
                          Theme.IsFlat ? FontWeights.Medium : FontWeights.SemiBold, "Mono");
         label.TextWrapping = TextWrapping.NoWrap;
@@ -158,7 +133,7 @@ internal static class GuideKit
             VerticalAlignment = VerticalAlignment.Center,
             Child = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { check, label } },
         };
-        pill.SetResourceReference(Border.BorderBrushProperty, $"Synth.{border}");
+        pill.SetResourceReference(Border.BorderBrushProperty, $"Synth.{color}");
         pill.SetResourceReference(Border.CornerRadiusProperty, "Synth.Radius.Control");
         AutomationProperties.SetName(pill, text);
         return pill;

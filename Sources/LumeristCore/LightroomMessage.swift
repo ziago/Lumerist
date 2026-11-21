@@ -3,8 +3,8 @@ import Foundation
 /// The plug-in's answer to one request (protocol 3). For an adjustment it may
 /// carry the parameter's resulting value, range and unit for the overlay.
 public struct LightroomAck: Sendable, Hashable {
-    public static let maximumMessageBytes = 1_024
-    public static let maximumUnitLength = 8
+    static let maximumMessageBytes = 1_024
+    static let maximumUnitLength = 8
 
     /// The request id (nil when the plug-in could not read the request).
     public let id: Int?
@@ -42,12 +42,12 @@ public struct LightroomAck: Sendable, Hashable {
     }
 
     /// The catalog entry the ack refers to, when it names one.
-    public var parameterKey: ParameterKey? {
+    var parameterKey: ParameterKey? {
         guard let parameter else { return nil }
         return ParameterKey(scope: scope ?? .develop, id: parameter)
     }
 
-    public func validate() throws {
+    private func validate() throws {
         guard message?.utf8.count ?? 0 <= Self.maximumMessageBytes else {
             throw MessageCodec.ValidationError.messageTooLong
         }
@@ -73,7 +73,6 @@ public struct LightroomContext: Sendable, Hashable {
         self.tool = tool
     }
 
-    public var isDevelop: Bool { module == "develop" }
     public var isMasking: Bool { module == "develop" && tool == "masking" }
 }
 
@@ -116,9 +115,9 @@ public enum LightroomMessage: Sendable, Hashable {
 }
 
 /// JSON-lines codec for plug-in messages (protocol 3).
-public enum MessageCodec {
+enum MessageCodec {
     /// Lines may be large (preset lists).
-    public static let maximumLineBytes = 1_048_576
+    static let maximumLineBytes = 1_048_576
 
     struct Wire: Codable {
         var version: Int
@@ -145,7 +144,7 @@ public enum MessageCodec {
 
     /// Decodes one line. Returns nil for kinds, events or results this build
     /// does not know (a newer plug-in may add them).
-    public static func decodeLine(_ data: Data) throws -> LightroomMessage? {
+    static func decodeLine(_ data: Data) throws -> LightroomMessage? {
         let trimmed = data.last == 0x0A ? data.dropLast() : data[...]
         guard trimmed.count <= maximumLineBytes else {
             throw ValidationError.lineTooLong
@@ -190,12 +189,11 @@ public enum MessageCodec {
         }
     }
 
-    /// Encodes a message as the plug-in would (used by tests and loopback tools).
-    public static func encodeLine(_ message: LightroomMessage) throws -> Data {
+    /// Encodes a message as the plug-in would (used by the tests).
+    static func encodeLine(_ message: LightroomMessage) throws -> Data {
         var wire = Wire(version: LightroomRequest.protocolVersion, kind: "ack")
         switch message {
         case .ack(let ack):
-            try ack.validate()
             wire.id = ack.id
             wire.accepted = ack.accepted
             wire.message = ack.message
@@ -233,7 +231,7 @@ public enum MessageCodec {
         return try encoder.encode(wire) + Data([0x0A])
     }
 
-    public enum ValidationError: Error, Equatable, LocalizedError, Sendable {
+    enum ValidationError: Error, Equatable, LocalizedError, Sendable {
         case unsupportedVersion(Int)
         case malformed
         case lineTooLong
@@ -241,7 +239,7 @@ public enum MessageCodec {
         case invalidNumber
         case unitTooLong
 
-        public var errorDescription: String? {
+        var errorDescription: String? {
             switch self {
             case .unsupportedVersion(let version):
                 "The plug-in speaks protocol \(version); this companion needs protocol \(LightroomRequest.protocolVersion). Update the plug-in or the app."
@@ -250,7 +248,7 @@ public enum MessageCodec {
             case .lineTooLong:
                 "The plug-in sent a message longer than 1 MB."
             case .messageTooLong:
-                "A bridge message must not exceed 1024 UTF-8 bytes."
+                "A bridge message must not exceed \(LightroomAck.maximumMessageBytes) UTF-8 bytes."
             case .invalidNumber:
                 "A bridge value must be a finite number."
             case .unitTooLong:

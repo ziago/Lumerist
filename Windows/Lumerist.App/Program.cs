@@ -2,6 +2,7 @@ using System.IO.Pipes;
 using System.Windows;
 using System.Windows.Threading;
 using Lumerist.App.Design;
+using Lumerist.App.Design.Controls;
 using Lumerist.App.Guide;
 using Lumerist.App.Panels;
 using Lumerist.App.Services;
@@ -115,10 +116,8 @@ internal sealed class LumeristApplication(IReadOnlyList<string> arguments, strin
         Theme.Apply(controller.Settings.Theme, controller.Settings.ThemeAppearance, notify: false);
         controller.Panels = new PanelHost(controller) { PaletteDidClose = controller.PaletteDidClose };
         controller.ShowWindowRequested += () => Views.MainWindow.ShowOrActivate(controller);
-        Views.LinkTests.CheckConnection = c => c.SendConnectionCheck();
-        Views.LinkTests.SendTestExposure = c => c.SendTestExposure();
         // Stay in touch never interrupts a key being recorded.
-        Guide.StayInTouchPrompter.MainWindowIsBusy = () => Design.Controls.ChordRecorder.Shared.RecordingId is not null;
+        StayInTouchPrompter.MainWindowIsBusy = () => ChordRecorder.Shared.RecordingId is not null;
         tray = new TrayIcon(controller, Shutdown);
         controller.Start(arguments);
         listening = new CancellationTokenSource();
@@ -127,7 +126,7 @@ internal sealed class LumeristApplication(IReadOnlyList<string> arguments, strin
         // As on the Mac: the window opens when the user starts Lumerist, unless
         // "Start hidden" is on; never when the plug-in starts it with Lightroom.
         if (arguments.Contains(Program.ShowWindowArgument)
-            || (Program.WantsWindow(arguments.ToArray()) && !controller.Settings.StartHidden))
+            || (Program.WantsWindow(arguments) && !controller.Settings.StartHidden))
         {
             controller.RequestMainWindow();
         }

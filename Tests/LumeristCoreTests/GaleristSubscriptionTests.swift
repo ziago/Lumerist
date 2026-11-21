@@ -41,7 +41,7 @@ struct GaleristSubscriptionTests {
                 == "4bd6382380b390149de25bed81c1639306528d76b97e6c4161cb99b6062f50b7")
     }
 
-    /// v1 is no longer shown or sent, but the server still holds its map.
+    /// The app never shows or sends v1, but the server still holds its map.
     @Test func previousConsentTextsStillMatchTheServerDriftGuard() {
         typealias V1 = GaleristOptIn.ConsentV1
         #expect(V1.consentVersion == "lk-optin-v1")
@@ -62,7 +62,6 @@ struct GaleristSubscriptionTests {
         #expect(GaleristOptIn.productionBaseURL.absoluteString == "https://galerist.photo")
         #expect(GaleristOptIn.privacyURL.absoluteString == "https://galerist.photo/en/legal/privacy#lumenkeys")
         #expect(GaleristOptIn.subscribedAtDefaultsKey == "lumerist.galerist.subscribed-at")
-        #expect(GaleristOptIn.TrackedLink.onboarding.url.absoluteString == "https://galerist.photo/c/lk-onboarding")
         #expect(GaleristOptIn.TrackedLink.settings.url.absoluteString == "https://galerist.photo/c/lk-settings")
         #expect(GaleristOptIn.TrackedLink.menu.url.absoluteString == "https://galerist.photo/c/lk-menu")
         #expect(GaleristOptIn.TrackedLink.readme.url.absoluteString == "https://galerist.photo/c/lk-readme")

@@ -12,7 +12,7 @@ namespace Lumerist.Core;
 /// The Mac formats with the user's locale; the Windows app runs with the
 /// invariant culture (InvariantGlobalization), so "." and "," always.
 /// </remarks>
-public static class HudFormatting
+internal static class HudFormatting
 {
     /// <summary>
     /// EV: sign and two decimals; K: whole kelvin; deg: one decimal; pt: sign
@@ -43,10 +43,6 @@ public static class HudFormatting
         "deg" => "°",
         _ => null,
     };
-
-    /// <summary>The value and its unit in one string ("+0.35 EV").</summary>
-    public static string ValueText(double value, string unit) =>
-        string.Join(' ', new[] { Number(value, unit), UnitSuffix(unit) }.OfType<string>());
 }
 
 /// <summary>

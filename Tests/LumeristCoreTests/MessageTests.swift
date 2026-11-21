@@ -50,7 +50,6 @@ struct MessageTests {
         #expect(message == .context(LightroomContext(module: "develop", tool: "masking")))
         guard case .context(let context)? = message else { return }
         #expect(context.isMasking)
-        #expect(context.isDevelop)
     }
 
     @Test func decodesResults() throws {

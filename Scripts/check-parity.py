@@ -11,7 +11,7 @@ It fails when
   older than the cases;
 - a value of Shared/contract.json (ports, protocol version, plug-in id,
   consent version and hash) is missing from a side or from the plug-in;
-- a row of docs/feature-spec.md has an empty macOS or Windows column.
+- a row of docs/feature-spec.md has an empty macOS or Windows column;
 - a theme colour of the Windows app differs from the Mac's.
 """
 import argparse, json, pathlib, re, sys
@@ -122,7 +122,7 @@ def check_values(side: str):
         code = sources(["Windows/Lumerist.Core/**/*.cs", "Windows/Lumerist.App/**/*.cs"])
         tests = sources(["Windows/Lumerist.Core.Tests/**/*.cs"])
         if not code.strip():
-            bad("csharp: no C# sources in Windows/Lumerist.Core yet")
+            bad("csharp: no C# sources found in Windows/Lumerist.Core or Windows/Lumerist.App")
             return
         expect(side, code, "request port", rf"RequestPort\s*=\s*{port(contract['requestPort'])}\b")
         expect(side, code, "response port", rf"ResponsePort\s*=\s*{port(contract['responsePort'])}\b")
@@ -162,7 +162,7 @@ def check_feature_spec():
     ok(f"feature spec: {rows} rows in {tables} tables have macOS and Windows status")
 
 
-# Main --------------------------------------------------------------------------
+# Theme colours -----------------------------------------------------------------
 
 def palettes(text: str, start: str) -> dict[str, dict[str, int]]:
     """Every `name = …(token: 0xRRGGBB, …)` palette in a source file, by name."""
@@ -196,6 +196,8 @@ def check_theme_palettes():
     for name in windows.keys() - mac.keys():
         bad(f"themes: {name} exists only on Windows")
 
+
+# Main --------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

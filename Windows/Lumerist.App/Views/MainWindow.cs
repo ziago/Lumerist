@@ -36,9 +36,6 @@ internal sealed class MainWindow : Window
     private bool refreshPending;
     private DispatcherTimer? retry;
 
-    /// <summary>The window, when open (other windows navigate it).</summary>
-    public static MainWindow? Current => open;
-
     /// <summary>Shows the one main window, or brings it to the front.</summary>
     public static void ShowOrActivate(AppController controller)
     {

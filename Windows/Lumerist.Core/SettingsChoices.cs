@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Lumerist.Core;
 
 // The named choices of the settings screens (General, Mouse & Trackpad,
@@ -128,5 +130,5 @@ public static class SettingsChoices
 
     /// <summary>"1.2 s".</summary>
     public static string Seconds(double value) =>
-        value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " s";
+        value.ToString("0.0", CultureInfo.InvariantCulture) + " s";
 }

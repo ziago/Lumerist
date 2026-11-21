@@ -1,13 +1,13 @@
-using Lumerist.Core;
 using Xunit;
+using static Lumerist.Core.Tests.KeymapTestSupport;
 
 namespace Lumerist.Core.Tests;
 
 // Engine behaviour lives in Shared/fixtures/gestures (GestureFixtureTests).
 // These are the checks a case cannot express: the scroll accumulator, the
 // coalescer, mouse button numbers, keymap ownership and a few queries.
-// Swift counterparts: ScrollStepTests.swift, InputSettingsTests.swift and
-// the IntentCoalescer tests in KeymapTests.swift.
+// Swift counterparts: ScrollStepTests.swift and the IntentCoalescer tests in
+// KeymapTests.swift.
 
 public class ScrollStepAccumulatorTests
 {
@@ -106,8 +106,6 @@ public class ScrollStepAccumulatorTests
 
 public class IntentCoalescerTests
 {
-    private static ParameterKey Dev(string id) => new(ParameterScope.Develop, id);
-
     [Fact]
     public void SumsConsecutiveAdjustmentsAndKeepsOrder()
     {
@@ -183,8 +181,6 @@ public class KeyGestureEngineTests
     private static readonly EngineContext Masking = new(Tool: "masking");
     private static readonly KeyChord Q = new(ScanCodes.Q);
     private static readonly KeyChord H = new(ScanCodes.H);
-
-    private static ParameterKey Dev(string id) => new(ParameterScope.Develop, id);
 
     private static KeyGestureEngine<string>.Outcome Down(KeyGestureEngine<string> engine, KeyChord chord,
         EngineContext? context = null) =>

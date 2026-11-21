@@ -30,7 +30,7 @@ final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
 @MainActor
 private final class PanelHost {
     let panel: SynthPanel
-    let positionKey: String
+    private let positionKey: String
     private var moveObserver: NSObjectProtocol?
     private let hosting: FirstMouseHostingView<AnyView>
     /// Builds the panel's SwiftUI root; called again after a theme change.
@@ -92,14 +92,14 @@ private final class PanelHost {
                        display: true)
     }
 
-    var savedOrigin: NSPoint? {
+    private var savedOrigin: NSPoint? {
         guard let value = UserDefaults.standard.string(forKey: positionKey) else { return nil }
         let point = NSPointFromString(value)
         // Ignore a position on a monitor that is no longer connected.
         return NSScreen.screens.contains { $0.frame.insetBy(dx: -20, dy: -20).contains(point) } ? point : nil
     }
 
-    func savePosition() {
+    private func savePosition() {
         guard panel.isVisible else { return }
         UserDefaults.standard.set(NSStringFromPoint(panel.frame.origin), forKey: positionKey)
     }
@@ -138,7 +138,7 @@ final class FloatingPanels {
     private var isPreviewingPalette = false
     private var themeObserver: NSObjectProtocol?
 
-    /// Called once at launch (from the menu bar item) and again harmlessly later.
+    /// Called at launch from the menu bar item; later calls do nothing.
     func attach(_ store: CommandStore) {
         guard self.store == nil else { return }
         self.store = store

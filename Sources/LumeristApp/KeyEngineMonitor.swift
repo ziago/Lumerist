@@ -7,7 +7,6 @@ import LumeristCore
 /// user has enabled shortcuts, and applies its decisions. Lightroom context
 /// (module and tool) comes from the plug-in's context events.
 final class KeyEngineMonitor: @unchecked Sendable {
-    static let lightroomBundleIdentifier = "com.adobe.LightroomClassicCC7"
     /// Marks events Lumerist posts itself so the tap lets them through.
     static let replayMarker: Int64 = 0x4C4B_5250 // "LKRP"
     private static let textInputRoles: Set<String> = [
@@ -94,19 +93,19 @@ final class KeyEngineMonitor: @unchecked Sendable {
     }
 
     /// Sends one of Lightroom's own shortcuts (Command Keys of the "shortcut"
-    /// kind and fallbacks for commands the SDK cannot perform).
-    /// Sends a shortcut only while Lightroom Classic is frontmost, so a late
-    /// fallback or a macro step can never land in another app (⌘Z, X, U…).
+    /// kind and fallbacks for commands the SDK cannot perform), only while
+    /// Lightroom Classic is frontmost, so a late fallback or a macro step can
+    /// never land in another app (⌘Z, X, U…).
     @discardableResult
     static func postToLightroom(_ chord: KeyChord) -> Bool {
-        guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == lightroomBundleIdentifier else {
+        guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == LightroomLifecycle.bundleIdentifier else {
             return false
         }
         post(chord)
         return true
     }
 
-    static func post(_ chord: KeyChord) {
+    private static func post(_ chord: KeyChord) {
         let flags = Self.flags(for: chord.modifiers)
         for down in [true, false] {
             guard let event = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(chord.keyCode), keyDown: down) else { continue }
@@ -135,7 +134,7 @@ final class KeyEngineMonitor: @unchecked Sendable {
         }
 
         let frontmost = NSWorkspace.shared.frontmostApplication
-        let isLightroomFrontmost = frontmost?.bundleIdentifier == Self.lightroomBundleIdentifier
+        let isLightroomFrontmost = frontmost?.bundleIdentifier == LightroomLifecycle.bundleIdentifier
         let modifiers = Self.modifiers(of: event.flags)
         let now = ProcessInfo.processInfo.systemUptime
 

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;

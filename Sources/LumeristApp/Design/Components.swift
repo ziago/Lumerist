@@ -91,12 +91,10 @@ private struct HorizonLine: View {
 
 /// A table or card: translucent panel fill with a 1 pt grid-line outline.
 struct NeonPanel<Content: View>: View {
-    var padding: CGFloat = 0
     @ViewBuilder var content: Content
 
     var body: some View {
         content
-            .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: Synth.Radius.container)
                     .fill(Synth.isFlat ? Synth.panel : Synth.panel.opacity(0.82))
@@ -180,15 +178,13 @@ struct SettingsSection<Content: View>: View {
 struct SettingRow<Control: View>: View {
     let title: String
     var detail: String?
-    var isEnabled = true
     @ViewBuilder var control: Control
 
     var body: some View {
         HStack(alignment: .center, spacing: Synth.Space.l) {
-            SettingText(title: title, detail: detail, isEnabled: isEnabled)
+            SettingText(title: title, detail: detail)
             Spacer(minLength: Synth.Space.m)
             control
-                .disabled(!isEnabled)
         }
         .padding(.horizontal, Synth.isFlat ? 18 : 14)
         .padding(.vertical, Synth.isFlat ? 13 : 12)
@@ -203,15 +199,14 @@ struct SettingRow<Control: View>: View {
 struct SettingText: View {
     let title: String
     var detail: String?
-    var isEnabled = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
-                .synthBody(Synth.isFlat ? 14 : 13, weight: .semibold, color: isEnabled ? Synth.ice : Synth.disabled)
+                .synthBody(Synth.isFlat ? 14 : 13, weight: .semibold, color: Synth.ice)
             if let detail {
                 Text(detail)
-                    .synthBody(Synth.isFlat ? 12.5 : 12, color: isEnabled ? Synth.steel : Synth.disabled)
+                    .synthBody(Synth.isFlat ? 12.5 : 12, color: Synth.steel)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -222,20 +217,21 @@ struct SettingText: View {
 struct SectionTitle: View {
     let title: String
     var systemImage: String?
-    var size: CGFloat = 12
+
+    private static let size: CGFloat = 12
 
     var body: some View {
         HStack(spacing: Synth.Space.s) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: size - 0.5, weight: .medium))
+                    .font(.system(size: Self.size - 0.5, weight: .medium))
                     .frame(width: 16)
                     .foregroundStyle(Synth.teal)
                     .accessibilityHidden(true)
             }
             Text(title)
-                .font(SynthFont.font(.mono, size: size, weight: .semibold))
-                .tracking(0.16 * size)
+                .font(SynthFont.font(.mono, size: Self.size, weight: .semibold))
+                .tracking(0.16 * Self.size)
                 .textCase(.uppercase)
         }
         .foregroundStyle(Synth.ice)
@@ -672,7 +668,6 @@ final class MenuAnchor {
         menu.autoenablesItems = false
         // Miami's menus are always dark; Galerist's follow the app.
         menu.appearance = Synth.isFlat ? nil : NSAppearance(named: .darkAqua)
-        var checked: NSMenuItem?
         for (index, section) in sections.enumerated() {
             if index > 0 { menu.addItem(.separator()) }
             if let title = section.title {
@@ -683,11 +678,9 @@ final class MenuAnchor {
             for entry in section.entries {
                 let item = ClosureMenuItem(title: entry.title, handler: entry.action)
                 item.state = entry.isChecked ? .on : .off
-                if entry.isChecked { checked = item }
                 menu.addItem(item)
             }
         }
-        _ = checked
         menu.minimumWidth = view.bounds.width
         let below = NSPoint(x: 0, y: view.isFlipped ? view.bounds.height + 4 : -4)
         menu.popUp(positioning: nil, at: below, in: view)
@@ -710,7 +703,8 @@ final class ClosureMenuItem: NSMenuItem {
     @objc private func run() { handler() }
 }
 
-private struct MenuAnchorView: NSViewRepresentable {
+/// The AppKit view behind a button that pops a `MenuAnchor` menu.
+struct MenuAnchorView: NSViewRepresentable {
     let anchor: MenuAnchor
 
     func makeNSView(context: Context) -> NSView {
@@ -783,7 +777,6 @@ struct StatusPill: View {
         case good
         case waiting
         case off
-        case selected
     }
 
     let text: String
@@ -798,10 +791,10 @@ struct StatusPill: View {
         }
     }
 
-    /// Galerist: mono small caps in a square box; ink for a good or chosen
-    /// state, grey for waiting or off (the REC red is kept for what is live).
+    /// Galerist: mono small caps in a square box; ink for a good state, grey
+    /// for waiting or off (the REC red is kept for what is live).
     private var flat: some View {
-        let strong = tone == .good || tone == .selected
+        let strong = tone == .good
         return Label(text, systemImage: systemImage)
             .labelStyle(PillLabelStyle())
             .font(SynthFont.font(.mono, size: 10.5, weight: .medium))
@@ -818,7 +811,6 @@ struct StatusPill: View {
         case .good: Synth.teal
         case .waiting: Synth.amber
         case .off: Synth.steel
-        case .selected: Synth.magentaLight
         }
         return Label(text, systemImage: systemImage)
             .labelStyle(PillLabelStyle())

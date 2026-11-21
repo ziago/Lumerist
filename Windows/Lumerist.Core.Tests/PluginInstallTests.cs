@@ -1,4 +1,3 @@
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -119,19 +118,19 @@ public class PluginInstallStatusTests
 
 public sealed class PluginInstallOperationTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "lumerist-install-" + Guid.NewGuid().ToString("N"));
-    private readonly PluginInstallOperation _operation;
+    private readonly string root = Path.Combine(Path.GetTempPath(), "lumerist-install-" + Guid.NewGuid().ToString("N"));
+    private readonly PluginInstallOperation operation;
 
     public PluginInstallOperationTests()
     {
-        var source = Path.Combine(_root, "bundle", "Lumerist.lrplugin");
+        var source = Path.Combine(root, "bundle", "Lumerist.lrplugin");
         WritePlugin(source, (0, 9, 0), "-- new");
-        _operation = new PluginInstallOperation(source, Path.Combine(_root, "Modules"), Path.Combine(_root, "backups"));
+        operation = new PluginInstallOperation(source, Path.Combine(root, "Modules"), Path.Combine(root, "backups"));
     }
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { Directory.Delete(root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     private static void WritePlugin(string folder, (int Major, int Minor, int Revision) version, string body)
@@ -164,137 +163,137 @@ public sealed class PluginInstallOperationTests : IDisposable
     [Fact]
     public void InstallsIntoAnEmptyModulesFolder()
     {
-        Assert.Equal(new PluginInstallStatus.NotInstalled(), _operation.Status());
-        Assert.Null(_operation.Install());
-        Assert.Equal(new PluginInstallStatus.UpToDate(V09), _operation.Status());
+        Assert.Equal(new PluginInstallStatus.NotInstalled(), operation.Status());
+        Assert.Null(operation.Install());
+        Assert.Equal(new PluginInstallStatus.UpToDate(V09), operation.Status());
         // No staging leftovers next to the plug-in.
-        var modules = Directory.EnumerateFileSystemEntries(_operation.ModulesDirectory).Select(path => Path.GetFileName(path)).ToList();
+        var modules = Directory.EnumerateFileSystemEntries(operation.ModulesDirectory).Select(path => Path.GetFileName(path)).ToList();
         Assert.Equal(new[] { "Lumerist.lrplugin" }, modules);
-        Assert.Equal("-- new", File.ReadAllText(Path.Combine(_operation.Destination, "Init.lua")));
+        Assert.Equal("-- new", File.ReadAllText(Path.Combine(operation.Destination, "Init.lua")));
     }
 
     [Fact]
     public void CopiesSubfoldersAndLeavesMacFolderMetadataBehind()
     {
-        Directory.CreateDirectory(Path.Combine(_operation.Source, "sub"));
-        File.WriteAllText(Path.Combine(_operation.Source, "sub", "Extra.lua"), "-- extra");
-        File.WriteAllBytes(Path.Combine(_operation.Source, ".DS_Store"), [0, 1, 2]);
-        _operation.Install();
-        Assert.Equal("-- extra", File.ReadAllText(Path.Combine(_operation.Destination, "sub", "Extra.lua")));
-        Assert.False(File.Exists(Path.Combine(_operation.Destination, ".DS_Store")));
-        Assert.Equal(new PluginInstallStatus.UpToDate(V09), _operation.Status());
+        Directory.CreateDirectory(Path.Combine(operation.Source, "sub"));
+        File.WriteAllText(Path.Combine(operation.Source, "sub", "Extra.lua"), "-- extra");
+        File.WriteAllBytes(Path.Combine(operation.Source, ".DS_Store"), [0, 1, 2]);
+        operation.Install();
+        Assert.Equal("-- extra", File.ReadAllText(Path.Combine(operation.Destination, "sub", "Extra.lua")));
+        Assert.False(File.Exists(Path.Combine(operation.Destination, ".DS_Store")));
+        Assert.Equal(new PluginInstallStatus.UpToDate(V09), operation.Status());
     }
 
     [Fact]
     public void UpdatingKeepsTheOldCopyAsABackup()
     {
-        WritePlugin(_operation.Destination, (0, 3, 0), "-- old");
-        Assert.Equal(new PluginInstallStatus.Outdated(new SemanticVersion(0, 3, 0), V09), _operation.Status());
+        WritePlugin(operation.Destination, (0, 3, 0), "-- old");
+        Assert.Equal(new PluginInstallStatus.Outdated(new SemanticVersion(0, 3, 0), V09), operation.Status());
 
-        var backup = _operation.Install(DateTimeOffset.FromUnixTimeSeconds(1_000));
+        var backup = operation.Install(DateTimeOffset.FromUnixTimeSeconds(1_000));
         Assert.NotNull(backup);
         Assert.Equal(new SemanticVersion(0, 3, 0), PluginInstallOperation.VersionOfPlugin(backup));
-        Assert.StartsWith(_operation.BackupDirectory, backup);
+        Assert.StartsWith(operation.BackupDirectory, backup);
         Assert.StartsWith(PluginInstallLayout.BackupPrefix, Path.GetFileName(backup));
-        Assert.Equal(V09, _operation.InstalledVersion);
+        Assert.Equal(V09, operation.InstalledVersion);
     }
 
     [Fact]
     public void ADanglingSymlinkIsMovedAsideNotTreatedAsMissing()
     {
-        Directory.CreateDirectory(_operation.ModulesDirectory);
-        if (!TryLink(() => Directory.CreateSymbolicLink(_operation.Destination, Path.Combine(_root, "a-working-copy-that-was-deleted")))) return;
-        Assert.True(_operation.IsInstalled);
+        Directory.CreateDirectory(operation.ModulesDirectory);
+        if (!TryLink(() => Directory.CreateSymbolicLink(operation.Destination, Path.Combine(root, "a-working-copy-that-was-deleted")))) return;
+        Assert.True(operation.IsInstalled);
 
-        var backup = _operation.Install(DateTimeOffset.FromUnixTimeSeconds(2_000));
+        var backup = operation.Install(DateTimeOffset.FromUnixTimeSeconds(2_000));
         Assert.NotNull(backup);
-        Assert.StartsWith(_operation.BackupDirectory, backup);
+        Assert.StartsWith(operation.BackupDirectory, backup);
         Assert.NotNull(new FileInfo(backup).LinkTarget);
-        Assert.Equal(V09, _operation.InstalledVersion);
+        Assert.Equal(V09, operation.InstalledVersion);
     }
 
     [Fact]
     public void ALinkedWorkingCopyIsMovedAsideAndLeftIntact()
     {
-        var workingCopy = Path.Combine(_root, "working-copy");
+        var workingCopy = Path.Combine(root, "working-copy");
         WritePlugin(workingCopy, (0, 9, 0), "-- a development build");
-        Directory.CreateDirectory(_operation.ModulesDirectory);
-        if (!TryLink(() => Directory.CreateSymbolicLink(_operation.Destination, workingCopy))) return;
-        Assert.Equal(new PluginInstallStatus.Modified(V09), _operation.Status());
+        Directory.CreateDirectory(operation.ModulesDirectory);
+        if (!TryLink(() => Directory.CreateSymbolicLink(operation.Destination, workingCopy))) return;
+        Assert.Equal(new PluginInstallStatus.Modified(V09), operation.Status());
 
-        var backup = _operation.Install();
+        var backup = operation.Install();
         Assert.NotNull(backup);
         Assert.NotNull(new DirectoryInfo(backup).LinkTarget);
         Assert.Equal("-- a development build", File.ReadAllText(Path.Combine(workingCopy, "Init.lua")));
-        Assert.Null(new DirectoryInfo(_operation.Destination).LinkTarget);
-        Assert.Equal(new PluginInstallStatus.UpToDate(V09), _operation.Status());
+        Assert.Null(new DirectoryInfo(operation.Destination).LinkTarget);
+        Assert.Equal(new PluginInstallStatus.UpToDate(V09), operation.Status());
     }
 
     [Fact]
     public void SameVersionWithOtherFilesIsReportedAsModified()
     {
-        WritePlugin(_operation.Destination, (0, 9, 0), "-- a development build");
-        Assert.Equal(new PluginInstallStatus.Modified(V09), _operation.Status());
+        WritePlugin(operation.Destination, (0, 9, 0), "-- a development build");
+        Assert.Equal(new PluginInstallStatus.Modified(V09), operation.Status());
         // macOS folder metadata (.DS_Store) does not count as a difference.
-        _operation.Install();
-        File.WriteAllBytes(Path.Combine(_operation.Destination, ".DS_Store"), [0, 1, 2]);
-        Assert.Equal(new PluginInstallStatus.UpToDate(V09), _operation.Status());
+        operation.Install();
+        File.WriteAllBytes(Path.Combine(operation.Destination, ".DS_Store"), [0, 1, 2]);
+        Assert.Equal(new PluginInstallStatus.UpToDate(V09), operation.Status());
     }
 
     [Fact]
     public void FingerprintsNamesAndContents()
     {
-        var copy = Path.Combine(_root, "copy", "Lumerist.lrplugin");
+        var copy = Path.Combine(root, "copy", "Lumerist.lrplugin");
         WritePlugin(copy, (0, 9, 0), "-- new");
-        var original = PluginInstallOperation.FingerprintOfPlugin(_operation.Source);
+        var original = PluginInstallOperation.FingerprintOfPlugin(operation.Source);
         Assert.Matches("^[0-9a-f]{64}$", original);
         Assert.Equal(original, PluginInstallOperation.FingerprintOfPlugin(copy));
         File.Move(Path.Combine(copy, "Init.lua"), Path.Combine(copy, "Other.lua"));
         Assert.NotEqual(original, PluginInstallOperation.FingerprintOfPlugin(copy));
-        Assert.Null(PluginInstallOperation.FingerprintOfPlugin(Path.Combine(_root, "nowhere")));
+        Assert.Null(PluginInstallOperation.FingerprintOfPlugin(Path.Combine(root, "nowhere")));
     }
 
     [Fact]
     public void RemovingMovesThePluginToTheBackupFolder()
     {
-        _operation.Install();
-        var first = _operation.Remove(DateTimeOffset.FromUnixTimeSeconds(2_000));
+        operation.Install();
+        var first = operation.Remove(DateTimeOffset.FromUnixTimeSeconds(2_000));
         Assert.NotNull(first);
-        Assert.False(_operation.IsInstalled);
-        _operation.Install();
+        Assert.False(operation.IsInstalled);
+        operation.Install();
         // Two removals in the same second never overwrite each other.
-        var second = _operation.Remove(DateTimeOffset.FromUnixTimeSeconds(2_000));
+        var second = operation.Remove(DateTimeOffset.FromUnixTimeSeconds(2_000));
         Assert.NotNull(second);
         Assert.NotEqual(first, second);
         Assert.EndsWith("-2", second);
         Assert.True(Directory.Exists(first));
         Assert.True(Directory.Exists(second));
-        Assert.Null(_operation.Remove());
+        Assert.Null(operation.Remove());
     }
 
     [Fact]
     public void RefusesAnUnreadableBundledPlugin()
     {
-        File.Delete(Path.Combine(_operation.Source, "Info.lua"));
-        var error = Assert.Throws<PluginInstallException>(() => _operation.Install());
+        File.Delete(Path.Combine(operation.Source, "Info.lua"));
+        var error = Assert.Throws<PluginInstallException>(() => operation.Install());
         Assert.Equal(PluginInstallErrorKind.BundledPluginUnreadable, error.Kind);
-        Assert.Equal(_operation.Source, error.FolderPath);
+        Assert.Equal(operation.Source, error.FolderPath);
         Assert.Contains("Download Lumerist again", error.Message);
-        Assert.Throws<PluginInstallException>(() => _operation.Status());
-        Assert.False(_operation.IsInstalled);
+        Assert.Throws<PluginInstallException>(() => operation.Status());
+        Assert.False(operation.IsInstalled);
     }
 
     [Fact]
     public void AFailedCopyPutsTheOldPluginBack()
     {
-        WritePlugin(_operation.Destination, (0, 3, 0), "-- old");
+        WritePlugin(operation.Destination, (0, 3, 0), "-- old");
         // A readable Info.lua with a file that cannot be read (a dangling link):
         // the copy fails after the old copy was moved to the backup folder.
-        var broken = _operation with { Source = Path.Combine(_root, "broken.lrplugin") };
+        var broken = operation with { Source = Path.Combine(root, "broken.lrplugin") };
         Directory.CreateDirectory(broken.Source);
         File.WriteAllText(Path.Combine(broken.Source, "Info.lua"), "return { VERSION = { major = 0, minor = 9 } }");
         var unreadable = Path.Combine(broken.Source, "Locked.lua");
-        if (!TryLink(() => File.CreateSymbolicLink(unreadable, Path.Combine(_root, "missing-target.lua")))) return;
+        if (!TryLink(() => File.CreateSymbolicLink(unreadable, Path.Combine(root, "missing-target.lua")))) return;
 
         Assert.ThrowsAny<IOException>(() => broken.Install());
         Assert.Equal(new SemanticVersion(0, 3, 0), broken.InstalledVersion);

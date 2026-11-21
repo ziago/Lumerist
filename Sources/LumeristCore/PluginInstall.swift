@@ -4,7 +4,7 @@ import Foundation
 /// Where the Lightroom Classic plug-in lives and where replaced copies go.
 public enum PluginInstallLayout {
     public static let bundleName = "Lumerist.lrplugin"
-    public static let backupPrefix = "Lumerist.lrplugin.backup-"
+    private static let backupPrefix = "Lumerist.lrplugin.backup-"
 
     /// Lightroom Classic's per-user plug-in folder (same for every version and language).
     public static func modulesDirectory(home: URL) -> URL {
@@ -17,7 +17,7 @@ public enum PluginInstallLayout {
         home.appending(path: "Library/Application Support/Lumerist/plugin-backups", directoryHint: .isDirectory)
     }
 
-    public static func backupName(for date: Date, timeZone: TimeZone = .current) -> String {
+    static func backupName(for date: Date, timeZone: TimeZone = .current) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = timeZone
@@ -53,7 +53,7 @@ public enum PluginInstallStatus: Equatable, Sendable {
         if case .outdated = self { true } else { false }
     }
 
-    public static func compare(
+    static func compare(
         installed: SemanticVersion?,
         installedExists: Bool,
         bundled: SemanticVersion,
@@ -95,8 +95,8 @@ public struct PluginInstallOperation: Sendable {
         (try? FileManager.default.attributesOfItem(atPath: url.path)) != nil
     }
 
-    public var bundledVersion: SemanticVersion? { Self.version(ofPlugin: source) }
-    public var installedVersion: SemanticVersion? { Self.version(ofPlugin: destination) }
+    var bundledVersion: SemanticVersion? { Self.version(ofPlugin: source) }
+    var installedVersion: SemanticVersion? { Self.version(ofPlugin: destination) }
 
     public func status() throws -> PluginInstallStatus {
         guard let bundled = bundledVersion else { throw PluginInstallError.bundledPluginUnreadable(source) }
@@ -159,7 +159,7 @@ public struct PluginInstallOperation: Sendable {
         return target
     }
 
-    public static func version(ofPlugin plugin: URL) -> SemanticVersion? {
+    static func version(ofPlugin plugin: URL) -> SemanticVersion? {
         let info = plugin.appending(path: "Info.lua")
         guard let text = try? String(contentsOf: info, encoding: .utf8) else { return nil }
         return SemanticVersion.fromPluginInfo(text)
@@ -167,7 +167,7 @@ public struct PluginInstallOperation: Sendable {
 
     /// A digest of the plug-in's files (names and contents, Finder metadata
     /// ignored), to tell two builds with the same version apart.
-    public static func fingerprint(ofPlugin plugin: URL) -> String? {
+    private static func fingerprint(ofPlugin plugin: URL) -> String? {
         let manager = FileManager.default
         guard let enumerator = manager.enumerator(at: plugin, includingPropertiesForKeys: [.isRegularFileKey]) else { return nil }
         // Resolve symlinks on both sides (/var vs /private/var) so the relative

@@ -40,6 +40,9 @@ python3 Scripts/check-parity.py --side swift # shared cases and constants
 - `install-local-plugin.sh --replace` refuses to run while Lightroom Classic is
   open and keeps a backup of the previous copy outside Lightroom's Modules
   folder. Restart Lightroom after installing: it caches plug-in code.
+- `swift Scripts/render-icon.swift` rebuilds the app icons in `Resources/` from
+  the SVGs in `Resources/Icon`, and `swift Scripts/docs-render-banner.swift`
+  redraws the README banner and the social preview in `docs/images`.
 
 ### Windows
 
@@ -93,6 +96,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short:
 | `Shared/fixtures` | test cases both apps must pass ([format](Shared/fixtures/README.md)) |
 | `Shared/contract.json` | ports, plug-in id and other values both apps and the plug-in share |
 | `Tests/` | Swift tests and the LuaJIT harness with Lightroom stubs |
+| `Scripts/` | build, release, test and code-generation scripts |
+| `Resources/` | the Mac app's Info.plist and icons; the fonts both apps bundle |
 | `docs/` | architecture, protocol, feature list |
 
 ### Adding a parameter
@@ -107,13 +112,17 @@ Edit `Shared/parameters.json`, then run `python3 Scripts/generate-parameters.py`
 | Variable | Effect |
 | --- | --- |
 | `LUMERIST_RENDER_HUD=<folder>` | renders every Value HUD style, the floating panels and the keyboard map to PNG files (`-galerist` / `-miami`, plus light and dark where a theme has both) and quits (no window, no event tap, no Lightroom connection) |
+| `LUMERIST_RENDER_SETUP=<folder>` | renders the setup guide, the General sections, the menu bar window and every screen in each theme to PNG files and quits |
 | `LUMERIST_PREVIEW_OVERLAY=ruler\|compact` | shows a HUD preview at launch |
 | `LUMERIST_PREVIEW_PANELS=1` | opens the Palette and Key Reference panels at launch |
-| `LUMERIST_MODULES_DIR`, `LUMERIST_BACKUP_DIR` | stage the plug-in into another folder (tests) |
-| `LUMERIST_SIGN_IDENTITY` | code-signing identity for the build script |
+| `LUMERIST_MODULES_DIR`, `LUMERIST_BACKUP_DIR` | stage the plug-in into another folder (tests); read by `install-local-plugin.sh` and by debug builds of both apps |
+| `LUMERIST_PLUGIN_SOURCE` | the plug-in folder a debug build installs from |
+| `LUMERIST_SIGN_IDENTITY`, `LUMERIST_BUILD_NUMBER` | code-signing identity and build number for `build-macos-app.sh` |
 
-Run the HUD renderer against the built app, e.g.
+Run the renderers against the built app, e.g.
 `LUMERIST_RENDER_HUD=/tmp/hud build/Lumerist.app/Contents/MacOS/LumeristApp`.
+The overrides for the Stay in touch sign-up and its live test are listed in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#environment-overrides).
 
 ## Both platforms
 
@@ -132,7 +141,9 @@ two apps share behaviour, not files.
   stay pure logic without UI or system calls, so they can be ported and tested
   on any machine.
 - **Run `python3 Scripts/check-parity.py`.** It fails when a shared case runs
-  on one side only, or when ports, the plug-in id or the consent texts differ.
+  on one side only, when ports, the plug-in id or the consent texts differ,
+  when a theme colour differs, or when a row of the feature list has no
+  status for one system.
 - **If you can only do one side**, say so in the pull request: a maintainer
   opens an issue labelled `parity`, and no release ships while one is open.
 - **Only what exists on one system** (the Mac's Accessibility permission and

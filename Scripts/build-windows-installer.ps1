@@ -65,9 +65,9 @@ foreach ($arch in $Architectures) {
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed for $arch." }
     if (-not (Test-Path (Join-Path $app 'Lumerist.lrplugin\Info.lua'))) { throw "The plug-in is missing from the $arch build." }
 
-    # 0.9.0 ships unsigned (README and SECURITY.md explain it). When code
-    # signing comes, Lumerist.exe is signed here, before it is zipped and
-    # packed, and the installer after ISCC.
+    # The packages are not code-signed (README and SECURITY.md explain why).
+    # Signing goes here: Lumerist.exe before it is zipped and packed, the
+    # installer after ISCC.
 
     $zip = Join-Path $out "Lumerist-$version-windows-$arch.zip"
     Step "Portable zip: $(Split-Path -Leaf $zip)"

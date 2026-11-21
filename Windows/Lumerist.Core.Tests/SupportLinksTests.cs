@@ -1,4 +1,3 @@
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -111,12 +110,6 @@ public class StatusMenuTextTests
         Assert.Equal("Develop · mask selected", StatusMenuText.Context(true, new LightroomContext("develop", "masking")));
         Assert.Equal("Library", StatusMenuText.Context(true, new LightroomContext("library", "masking")));
         Assert.Equal("—", StatusMenuText.Context(true, new LightroomContext("", "")));
-    }
-
-    [Fact]
-    public void CapitalizedLikeSwift()
-    {
-        Assert.Equal("Slideshow", StatusMenuText.Capitalized("SLIDESHOW"));
-        Assert.Equal("Two Words", StatusMenuText.Capitalized("two wORDS"));
+        Assert.Equal("Slideshow", StatusMenuText.Context(true, new LightroomContext("SLIDESHOW", "")));
     }
 }

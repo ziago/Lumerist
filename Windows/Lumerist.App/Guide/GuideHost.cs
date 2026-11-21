@@ -1,7 +1,5 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
-using Lumerist.App.Design;
 
 namespace Lumerist.App.Guide;
 
@@ -39,20 +37,6 @@ internal static class GuideHost
         GuideWindow.ShowOrActivate(controller);
     }
 
-    /// <summary>About &amp; Support with Updates, in a window of its own (tray → "Support Lumerist…").</summary>
-    public static void ShowAbout(AppController controller)
-    {
-        Ensure(controller);
-        AboutWindow.ShowOrActivate(updates!, stayInTouch!);
-    }
-
-    /// <summary>"Stay in touch" on request (About &amp; Support's "Leave your email…"): never counted as a scheduled prompt.</summary>
-    public static void ShowStayInTouch(AppController controller)
-    {
-        Ensure(controller);
-        stayInTouch!.PresentFromAbout();
-    }
-
     /// <summary>For the main window's General screen: the Mac's General → Updates.</summary>
     public static FrameworkElement CreateUpdatesSection(AppController controller)
     {
@@ -65,17 +49,6 @@ internal static class GuideHost
     {
         Ensure(controller);
         return new AboutSupportSection(stayInTouch!);
-    }
-
-    /// <summary>The Updates and About &amp; Support sections one under the other, with the Mac's page padding.</summary>
-    internal static FrameworkElement SupportPage(UpdateChecker updates, StayInTouchPrompter stayInTouch)
-    {
-        var about = new AboutSupportSection(stayInTouch) { Margin = new Thickness(0, Theme.Space.XL, 0, 0) };
-        return new Border
-        {
-            Padding = new Thickness(Theme.Space.XXL),
-            Child = new StackPanel { Children = { new UpdatesSection(updates), about } },
-        };
     }
 
     /// <summary>The update check, for the tray's notice of a new version.</summary>

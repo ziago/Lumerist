@@ -60,19 +60,6 @@ public static class KeyNames
     }
 
     /// <summary>The US name, independent of the active layout.</summary>
-    public static string UsName(int scanCode) =>
+    internal static string UsName(int scanCode) =>
         UsNames.TryGetValue(scanCode, out var name) ? name : $"Key {scanCode:X}";
-
-    /// <summary>Keys offered when the user adds a Dial Key, comfortable for the left hand.</summary>
-    public static IReadOnlyList<int> SuggestedDialKeys { get; } =
-    [
-        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, // Q W E R T Y U I
-        0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23,             // A S D F G H
-        0x2C, 0x2D, 0x2E, 0x2F, 0x30,                   // Z X C V B
-        0x02, 0x03, 0x04, 0x05, 0x06,                   // 1 2 3 4 5
-    ];
-
-    /// <summary>Keys a Dial Key must never take: Enter, Tab, Space, Backspace, Esc.</summary>
-    public static IReadOnlySet<int> ReservedScanCodes { get; } =
-        new HashSet<int> { ScanCodes.Enter, ScanCodes.Tab, ScanCodes.Space, ScanCodes.Backspace, ScanCodes.Escape };
 }

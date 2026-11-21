@@ -12,6 +12,7 @@ local Develop = {}
 
 -- Each Temperature point is this many kelvin when Lightroom shows the Kelvin
 -- scale (raw and DNG files); rendered files use Lightroom's -100..100 scale.
+-- Library Quick Develop uses the same rule.
 Develop.kelvinPerTemperaturePoint = 50
 
 -- LrDevelopController applies changes asynchronously, so getValue can still
@@ -50,7 +51,6 @@ local function clamp(value, minimum, maximum)
     return value
 end
 
---- Develop module + target photo, or nil and the reason.
 -- Names of the LrDevelopController functions this Lightroom lacks, or nil.
 -- Every catalog call goes through these, so an older Lightroom answers with a
 -- clear rejection instead of a Lua error.
@@ -67,6 +67,7 @@ local function missingFunctions(names)
     return "this Lightroom version does not provide LrDevelopController." .. table.concat(missing, ", ")
 end
 
+--- The target photo in the Develop module, or nil and the reason.
 local function developPhoto()
     if LrApplicationView.getCurrentModuleName() ~= "develop" then
         return nil, "switch to the Develop module first"

@@ -45,12 +45,10 @@ enum MainSection: String, CaseIterable, Identifiable {
 }
 
 /// Tabs inside a module page (Develop or Library).
-enum ModuleTab: String, CaseIterable, Identifiable {
+enum ModuleTab: String, CaseIterable {
     case sliders
     case commands
     case keyboard
-
-    var id: String { rawValue }
 
     func title(for scope: ParameterScope) -> String {
         switch self {

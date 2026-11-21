@@ -1,9 +1,13 @@
--- Brings the Lumerist window to the front: File > Plug-in Extras >
--- Open Lumerist
+-- Starts the Lumerist app on macOS and Windows: in the background when
+-- Lightroom starts (Init.lua), and with its window in front from
+-- File > Plug-in Extras > Open Lumerist (OpenAppMenu.lua).
 local LrTasks = import "LrTasks"
 local LrDialogs = import "LrDialogs"
 
 local OpenApp = {}
+
+-- Named in the dialog shown when the app cannot be found.
+OpenApp.downloadPage = "https://github.com/ziago/Lumerist/releases"
 
 -- Windows ---------------------------------------------------------------------
 -- The Windows app writes %APPDATA%\Lumerist\plugin-link.json every time it
@@ -102,7 +106,6 @@ end
 -- macOS -----------------------------------------------------------------------
 
 OpenApp.bundleIdentifier = "io.github.ziago.lumerist"
-OpenApp.downloadPage = "https://github.com/ziago/Lumerist/releases"
 
 -- `open` starts Lumerist, or brings it forward like a Dock click when it is
 -- already running. --show-window keeps the window visible on a fresh launch

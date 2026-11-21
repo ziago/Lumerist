@@ -6,7 +6,9 @@ return {
     LrPluginName = "Lumerist",
     LrToolkitIdentifier = "io.github.ziago.lumerist.lightroom",
     -- Shown in Plug-in Manager: after a restart it confirms which build
-    -- Lightroom loaded. Keep in sync with the top-level VERSION file.
+    -- Lightroom loaded. Keep in sync with the top-level VERSION file: the Mac
+    -- build stamps it (Scripts/plugin-version.zsh), the Windows build ships
+    -- this file as it is.
     VERSION = { major = 0, minor = 9, revision = 0, display = "0.9.0 (protocol 3)" },
     LrInitPlugin = "Init.lua",
     -- Without this Lightroom may load the plug-in lazily, on first use (menu,

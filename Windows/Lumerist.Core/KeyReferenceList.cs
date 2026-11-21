@@ -55,15 +55,6 @@ public static class KeyReferenceList
         return Scope(context) == ParameterScope.Develop ? (context.IsMasking ? "Develop · mask" : "Develop") : "Library";
     }
 
-    /// <summary>A System Key's name, as the Mac's keyboard settings write it.</summary>
-    public static string RoleTitle(SystemKeyRole role) => role switch
-    {
-        SystemKeyRole.ComboKey => "Combo Key",
-        SystemKeyRole.PaletteKey => "Palette Key",
-        SystemKeyRole.KeyReferenceToggle => "Key Reference toggle",
-        _ => "Pause toggle",
-    };
-
     /// <summary>Keys that work on their own, then combos (each Nudge Key on its side).</summary>
     public static (IReadOnlyList<KeyReferenceEntry> Regular, IReadOnlyList<KeyReferenceEntry> Combos) Entries(
         Keymap keymap, ParameterScope scope)
@@ -76,9 +67,9 @@ public static class KeyReferenceList
             if (keymap.SystemKeys.ChordFor(role) is not { } chord) continue;
             if (role == SystemKeyRole.PaletteKey && scope != ParameterScope.Develop) continue;
             // A System Key may itself be a combo ("Tab + H"): spelled out in full here.
-            regular.Add(new($"system.{role.WireName()}", [keymap.DisplayText(chord)], RoleTitle(role), "System"));
+            regular.Add(new($"system.{role.WireName()}", [keymap.DisplayText(chord)], role.Title(), "System"));
         }
-        var summary = keymap.Summary(scope, AssignmentSummary.Sort.Section);
+        var summary = keymap.Summary(scope);
         foreach (var entry in summary.DialKeys)
         {
             if (entry.Slot.Dial is not { } chord) continue;
@@ -113,7 +104,7 @@ public static class KeyReferenceList
     }
 
     /// <summary>The title row of the combos: "Combos (hold Tab)".</summary>
-    public static KeyReferenceEntry ComboHeader(Keymap keymap)
+    internal static KeyReferenceEntry ComboHeader(Keymap keymap)
     {
         ArgumentNullException.ThrowIfNull(keymap);
         var title = keymap.SystemKeys.ComboKey is { } combo ? $"Combos (hold {combo.DisplayText})" : "Combos (set a Combo Key)";
@@ -121,7 +112,7 @@ public static class KeyReferenceList
     }
 
     /// <summary>Rows whose title, keys or full combo name contain the search, ignoring case.</summary>
-    public static IReadOnlyList<KeyReferenceEntry> Filtered(IReadOnlyList<KeyReferenceEntry> entries, string search)
+    private static IReadOnlyList<KeyReferenceEntry> Filtered(IReadOnlyList<KeyReferenceEntry> entries, string search)
     {
         ArgumentNullException.ThrowIfNull(entries);
         var query = (search ?? "").Trim();

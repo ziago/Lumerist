@@ -9,12 +9,10 @@ struct OverlaySettings: Codable, Sendable, Equatable {
     /// The band of the screen the HUD is measured from. Set by dragging the
     /// HUD (the nearest band wins), so a spot near the top stays near the top
     /// on a smaller display.
-    enum Placement: String, Codable, Sendable, CaseIterable, Identifiable {
+    enum Placement: String, Codable, Sendable {
         case bottom
         case center
         case top
-
-        var id: String { rawValue }
     }
 
     /// Ruler: name, value and a scale with numbers. Compact: one slim line.
@@ -51,11 +49,9 @@ struct OverlaySettings: Codable, Sendable, Equatable {
     }
 
     /// Which display shows the HUD when there is more than one.
-    enum Screen: String, Sendable, CaseIterable, Identifiable {
+    enum Screen: Sendable, CaseIterable {
         case lightroom
         case pointer
-
-        var id: String { rawValue }
 
         var displayName: String {
             switch self {
@@ -144,7 +140,7 @@ struct OverlaySettings: Codable, Sendable, Equatable {
 
     var clampedBackgroundOpacity: Double {
         guard backgroundOpacity.isFinite else { return OverlaySettings.defaultBackgroundOpacity }
-        return min(max(backgroundOpacity, 0), 1)
+        return min(max(backgroundOpacity, Self.backgroundOpacityRange.lowerBound), Self.backgroundOpacityRange.upperBound)
     }
 
     /// Back to the default spot: bottom centre.
@@ -184,19 +180,6 @@ final class ValueHUD {
     private static let edgeInset: CGFloat = 80
     /// A drop this close to the screen's centre line snaps onto it.
     private static let centreSnap: CGFloat = 12
-
-    enum StepMode: Sendable {
-        case normal
-        /// The larger step, used with Shift.
-        case coarse
-
-        var label: String {
-            switch self {
-            case .normal: "Normal"
-            case .coarse: "Coarse"
-            }
-        }
-    }
 
     /// True while the sample is on screen to be dragged into place.
     private(set) var isPlacing = false
@@ -239,38 +222,23 @@ final class ValueHUD {
         guard let hostingView, let shown = lastShown else { return }
         hostingView.rootView = OverlayView(content: shown.content, style: shown.settings.style,
                                            backgroundOpacity: shown.settings.clampedBackgroundOpacity)
-        hostingView.layoutSubtreeIfNeeded()
-        let fitting = hostingView.fittingSize
-        let size = NSSize(width: ceil(fitting.width), height: ceil(fitting.height))
+        let size = Self.fittedSize(hostingView)
         panel.setFrame(NSRect(origin: Self.origin(for: size, settings: shown.settings), size: size), display: true)
     }
 
     /// Shows the result of an adjustment. Does nothing when the HUD is off
     /// or while it is being placed. `local_` parameters get a "Mask ·" badge.
-    /// - Parameters:
-    ///   - keyLabel: the key that drove the change ("Q"), shown as "[Q]".
-    ///   - stepMode: normal or coarse step, shown beside the key.
-    func show(
-        ack: LightroomAck,
-        settings: OverlaySettings,
-        keyLabel: String? = nil,
-        stepMode: StepMode? = nil
-    ) {
+    func show(ack: LightroomAck, settings: OverlaySettings) {
         guard settings.isEnabled, !isPlacing else { return }
-        var content = OverlayContent(ack: ack)
-        content.keyLabel = keyLabel
-        content.stepLabel = stepMode?.label
         showsSample = false
-        present(content, settings: settings)
+        present(OverlayContent(ack: ack), settings: settings)
     }
 
     /// Shows a neutral notice such as "Vibrance is not available in a mask".
-    func showNotice(_ text: String, title: String? = nil, settings: OverlaySettings) {
+    func showNotice(_ text: String, settings: OverlaySettings) {
         guard settings.isEnabled, !isPlacing else { return }
-        var content = OverlayContent(notice: text)
-        if let title { content.title = title }
         showsSample = false
-        present(content, settings: settings)
+        present(OverlayContent(notice: text), settings: settings)
     }
 
     /// Shows a sample adjustment so style and position can be judged while
@@ -338,9 +306,7 @@ final class ValueHUD {
                 onDone: { [weak self] in Task { @MainActor in self?.endPlacing() } }
             )
         )
-        hostingView.layoutSubtreeIfNeeded()
-        let fitting = hostingView.fittingSize
-        let size = NSSize(width: ceil(fitting.width), height: ceil(fitting.height))
+        let size = Self.fittedSize(hostingView)
         // The caption hangs under the read-out, which sits exactly where the
         // real HUD appears on that display.
         let caption = OverlayView.placingCaptionHeight
@@ -382,7 +348,7 @@ final class ValueHUD {
             rangeText: ("-5.00", "+5.00")
         )
         sample.keyLabel = "Q"
-        sample.stepLabel = StepMode.normal.label
+        sample.stepLabel = "Normal"
         return sample
     }
 
@@ -390,9 +356,7 @@ final class ValueHUD {
         let (panel, hostingView) = makePanelIfNeeded()
         lastShown = (content, settings)
         hostingView.rootView = OverlayView(content: content, style: settings.style, backgroundOpacity: settings.clampedBackgroundOpacity)
-        hostingView.layoutSubtreeIfNeeded()
-        let fitting = hostingView.fittingSize
-        let size = NSSize(width: ceil(fitting.width), height: ceil(fitting.height))
+        let size = Self.fittedSize(hostingView)
         panel.ignoresMouseEvents = true
         panel.setFrame(NSRect(origin: Self.origin(for: size, settings: settings), size: size), display: true)
         reveal(panel)
@@ -463,6 +427,13 @@ final class ValueHUD {
             self.panel?.orderOut(nil)
             self.showsSample = false
         }
+    }
+
+    /// The read-out's size after layout, in whole points.
+    private static func fittedSize(_ hostingView: NSView) -> NSSize {
+        hostingView.layoutSubtreeIfNeeded()
+        let fitting = hostingView.fittingSize
+        return NSSize(width: ceil(fitting.width), height: ceil(fitting.height))
     }
 
     private func makePanelIfNeeded() -> (OverlayPanel, FirstMouseHostingView<OverlayView>) {
@@ -559,7 +530,7 @@ final class ValueHUD {
 
     /// The monitor that holds most of Lightroom Classic's largest window.
     private static func lightroomScreen() -> NSScreen? {
-        let pids = Set(NSRunningApplication.runningApplications(withBundleIdentifier: "com.adobe.LightroomClassicCC7")
+        let pids = Set(NSRunningApplication.runningApplications(withBundleIdentifier: LightroomLifecycle.bundleIdentifier)
             .map(\.processIdentifier))
         guard !pids.isEmpty,
               let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
@@ -732,8 +703,7 @@ struct OverlayContent: Equatable {
         unit: String?,
         accent: Accent,
         bar: Bar? = nil,
-        rangeText: (low: String, high: String)? = nil,
-        detail: String? = nil
+        rangeText: (low: String, high: String)? = nil
     ) {
         self.title = title
         self.valueText = valueText
@@ -741,7 +711,6 @@ struct OverlayContent: Equatable {
         self.accent = accent
         self.bar = bar
         self.rangeText = rangeText
-        self.detail = detail
     }
 
     /// A neutral note, e.g. "Vibrance is not available in a mask".
@@ -842,11 +811,6 @@ enum OverlayFormatting {
         case "deg": "°"
         default: nil
         }
-    }
-
-    /// Kept for callers that want one string.
-    static func valueText(_ value: Double, unit: String) -> String {
-        [number(value, unit: unit), unitSuffix(unit)].compactMap { $0 }.joined(separator: " ")
     }
 }
 

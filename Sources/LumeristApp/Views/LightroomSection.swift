@@ -82,8 +82,7 @@ struct LightroomSection: View {
         }
     }
 
-    /// The link in words. `store.status` also carries shortcut messages, so
-    /// the sentence is built from the link state alone.
+    /// The link in words.
     private var linkDetail: String {
         if store.isConnected { return "Linked to the Lumerist plug-in inside Lightroom Classic." }
         if LightroomLifecycle.isLightroomRunning {

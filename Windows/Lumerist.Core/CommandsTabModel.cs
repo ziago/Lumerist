@@ -71,7 +71,10 @@ public static class CommandTitles
         _ => null,
     };
 
-    /// <summary>Swift's <c>capitalized</c>: each word starts upper case, the rest lower case.</summary>
+    /// <summary>
+    /// Swift's <c>capitalized</c>: each word starts upper case, the rest lower
+    /// case ("develop" → "Develop"). Also used for Lightroom's module names.
+    /// </summary>
     public static string Capitalized(string text)
     {
         var characters = text.ToCharArray();
@@ -114,14 +117,6 @@ public static class CommandTitles
                 return "";
         }
     }
-
-    public static string KindTitle(this CommandAction action) => action switch
-    {
-        CommandAction.Command => "Command",
-        CommandAction.Preset => "Preset",
-        CommandAction.Shortcut => "Shortcut",
-        _ => "Macro",
-    };
 
     /// <summary>"Develop", "Library", "All modules".</summary>
     public static string Title(this CommandScope scope) => scope switch
@@ -199,21 +194,8 @@ public static class CommandTitles
 /// <param name="Id">The mask argument: "aiSelection/subject", "brush"…</param>
 public sealed record MaskTool(string Id, string Title)
 {
-    public static IReadOnlyList<MaskTool> All { get; } =
-    [
-        new("aiSelection/subject", "Subject"),
-        new("aiSelection/sky", "Sky"),
-        new("aiSelection/background", "Background"),
-        new("aiSelection/people", "People"),
-        new("aiSelection/objects", "Objects"),
-        new("aiSelection/landscape", "Landscape"),
-        new("brush", "Brush"),
-        new("gradient", "Linear"),
-        new("radialGradient", "Radial"),
-        new("rangeMask/color", "Color range"),
-        new("rangeMask/luminance", "Luminance range"),
-        new("rangeMask/depth", "Depth range"),
-    ];
+    /// <summary>The Palette's tools (<see cref="PaletteMenu.MaskTools"/>), in the same order, without their symbols.</summary>
+    public static IReadOnlyList<MaskTool> All { get; } = [.. PaletteMenu.MaskTools.Select(tool => new MaskTool(tool.Id, tool.Title))];
 
     public static string TitleFor(string? argument) =>
         argument is null ? "" : All.FirstOrDefault(tool => tool.Id == argument)?.Title ?? argument;

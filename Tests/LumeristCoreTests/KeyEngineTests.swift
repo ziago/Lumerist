@@ -10,9 +10,6 @@ private extension KeyGestureEngine.Decision {
     var replacement: [Event]? { if case .replace(let events) = self { events } else { nil } }
 }
 
-private func dev(_ id: String) -> ParameterKey { ParameterKey(scope: .develop, id: id) }
-private func lib(_ id: String) -> ParameterKey { ParameterKey(scope: .library, id: id) }
-
 private let develop = EngineContext()
 private let masking = EngineContext(tool: "masking")
 private let library = EngineContext(module: "library")
@@ -290,7 +287,7 @@ struct KeyEngineArrowAndMouseTests {
     }
 }
 
-struct KeyEngineHotAndActionTests {
+struct KeyEngineNudgeAndCommandKeyTests {
     private static func withNudgeKeys(combo: Bool = false) -> Engine {
         let modifiers: KeyModifiers = combo ? .combo : []
         return Engine.standard {

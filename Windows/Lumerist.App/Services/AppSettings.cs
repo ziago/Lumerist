@@ -11,7 +11,8 @@ namespace Lumerist.App.Services;
 /// </summary>
 /// <remarks>
 /// Partial: each part of the interface keeps its own preferences in its own
-/// file (AppSettings.Hud.cs, AppSettings.Guide.cs…), in this one class.
+/// file (AppSettings.Views.cs, AppSettings.Panels.cs, AppSettings.Guide.cs),
+/// in this one class.
 /// </remarks>
 internal sealed partial class AppSettings
 {
@@ -44,7 +45,9 @@ internal sealed partial class AppSettings
 
     public static readonly (double Minimum, double Maximum) QuitDelayRange = (0, 60);
 
-    public double QuitDelaySeconds { get; set; } = 3;
+    private const double DefaultQuitDelaySeconds = 3;
+
+    public double QuitDelaySeconds { get; set; } = DefaultQuitDelaySeconds;
 
     /// <summary>The Value HUD.</summary>
     public OverlaySettings Overlay { get; set; } = new();
@@ -72,7 +75,7 @@ internal sealed partial class AppSettings
             : IntentCoalescer.DefaultRate;
         settings.QuitDelaySeconds = double.IsFinite(settings.QuitDelaySeconds)
             ? Math.Clamp(settings.QuitDelaySeconds, QuitDelayRange.Minimum, QuitDelayRange.Maximum)
-            : 3;
+            : DefaultQuitDelaySeconds;
         settings.Overlay ??= new OverlaySettings();
         return settings;
     }

@@ -25,7 +25,7 @@ while (( $# > 0 )); do
     --universal) universal=1 ;;
     --release) mode="release"; universal=1 ;;
     --output) shift; out_dir="${1:?--output needs a folder}" ;;
-    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
     *) print -u2 "Unknown option: $1"; exit 64 ;;
   esac
   shift
@@ -78,7 +78,7 @@ set_plist_string CFBundleVersion "$build_number"
 
 cp "$binary" "$app/Contents/MacOS/LumeristApp"
 # App icons (rebuild both with: swift Scripts/render-icon.swift): the app's
-# icon (Galerist) and the Dock icon used while the Miami theme is on.
+# icon, in the Galerist theme, and the Dock icon used while the Miami theme is on.
 cp "$root/Resources/Lumerist.icns" "$app/Contents/Resources/Lumerist.icns"
 cp "$root/Resources/Lumerist-Miami.icns" "$app/Contents/Resources/Lumerist-Miami.icns"
 # SIL OFL fonts (Chakra Petch, Inter, JetBrains Mono) and their licences.

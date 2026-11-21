@@ -37,6 +37,8 @@ internal sealed class OverlaySettings
     /// <summary>88 % keeps text ≥ 4.5:1 over bright skies; lower values let more of the photo through.</summary>
     public const double DefaultBackgroundOpacity = 0.88;
 
+    private const double DefaultDuration = 1.2;
+
     public bool IsEnabled { get; set; } = true;
 
     public PlacementBand Placement { get; set; } = PlacementBand.Bottom;
@@ -48,7 +50,7 @@ internal sealed class OverlaySettings
     public double HorizontalOffset { get; set; }
 
     /// <summary>Seconds the HUD stays visible after the last change.</summary>
-    public double Duration { get; set; } = 1.2;
+    public double Duration { get; set; } = DefaultDuration;
 
     public HudStyle Style { get; set; } = HudStyle.Ruler;
 
@@ -62,7 +64,7 @@ internal sealed class OverlaySettings
     public bool FollowsLightroomWindow { get; set; } = true;
 
     [JsonIgnore]
-    public double ClampedDuration => double.IsFinite(Duration) ? Math.Clamp(Duration, DurationRange.Minimum, DurationRange.Maximum) : 1.2;
+    public double ClampedDuration => double.IsFinite(Duration) ? Math.Clamp(Duration, DurationRange.Minimum, DurationRange.Maximum) : DefaultDuration;
 
     [JsonIgnore]
     public double ClampedVerticalOffset =>

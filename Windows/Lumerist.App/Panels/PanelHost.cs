@@ -27,7 +27,6 @@ internal sealed class PanelHost : IPanelHost, IPanelSettings
     private KeyReferenceView? keyReferenceView;
     /// <summary>The Palette Key holds it open, or a tap left it open (the Mac's store.isPaletteOpen).</summary>
     private bool isPaletteOpen;
-    private bool isPreviewingPalette;
     private bool isKeyReferenceVisible;
     /// <summary>What a click would do with the modifiers held right now; drives the highlight only.</summary>
     private PaletteMaskMode heldMode = PaletteMaskMode.New;
@@ -133,17 +132,9 @@ internal sealed class PanelHost : IPanelHost, IPanelSettings
         return frame.Root;
     }
 
-    /// <summary>Shows the Palette without its key (a development aid, as on the Mac).</summary>
-    public void PreviewPalette()
-    {
-        isPreviewingPalette = true;
-        ShowPalette();
-    }
-
     /// <summary>The Palette's own × (and a picked item when it is not pinned).</summary>
     public void ClosePaletteFromPanel()
     {
-        isPreviewingPalette = false;
         StoreClosePalette();
         palette?.Hide();
         Sync();
@@ -184,7 +175,7 @@ internal sealed class PanelHost : IPanelHost, IPanelSettings
 
     private void Sync()
     {
-        if (isPaletteOpen || isPreviewingPalette)
+        if (isPaletteOpen)
         {
             if (palette?.IsVisible != true) ShowPalette();
         }

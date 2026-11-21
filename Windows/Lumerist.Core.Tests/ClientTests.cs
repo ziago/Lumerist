@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Channels;
-using Lumerist.Core;
 using Xunit;
 
 namespace Lumerist.Core.Tests;
@@ -76,7 +75,7 @@ public class ClientTests
         var id = await client.SendAsync(LightroomRequest.Ping).WaitAsync(Timeout);
         _ = await commandReceiver.NextData();
 
-        // A preset list well over the old 16 KB limit, split across many reads.
+        // A preset list of more than 200 KB, several times the read buffer, split across many reads.
         var items = Enumerable.Range(0, 3_000)
             .Select(index => new PresetItem($"UUID-{index}", $"Preset number {index} with a long name", $"Folder {index % 7}"))
             .ToList();
@@ -484,7 +483,7 @@ internal sealed class LoopbackServer : IDisposable
     }
 }
 
-/// <summary>Protocol 3 messages from the plug-in: acks, context events, results (ResponseValueTests.swift).</summary>
+/// <summary>Protocol 3 messages from the plug-in: acks, context events, results (MessageTests.swift).</summary>
 public class MessageTests
 {
     private static LightroomMessage? Decode(string line) => MessageCodec.DecodeLine(Encoding.UTF8.GetBytes(line + "\n"));
@@ -542,7 +541,6 @@ public class MessageTests
         Assert.Equal(new LightroomMessage.Context(new LightroomContext("develop", "masking")), message);
         var context = Assert.IsType<LightroomMessage.Context>(message).Value;
         Assert.True(context.IsMasking);
-        Assert.True(context.IsDevelop);
     }
 
     [Fact]

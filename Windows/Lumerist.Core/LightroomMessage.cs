@@ -81,8 +81,6 @@ public sealed record LightroomAck
 /// </summary>
 public sealed record LightroomContext(string Module, string Tool)
 {
-    public bool IsDevelop => Module == "develop";
-
     public bool IsMasking => Module == "develop" && Tool == "masking";
 }
 

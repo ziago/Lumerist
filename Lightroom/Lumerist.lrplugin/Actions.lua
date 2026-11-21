@@ -117,15 +117,6 @@ function Actions.run(batch)
     return ok, message, details, result
 end
 
---- Validates and runs a single request (used by the manual menu item).
-function Actions.perform(request)
-    local valid, reason = Actions.validate(request)
-    if not valid then
-        return false, reason
-    end
-    return Actions.run(request)
-end
-
 --- Current module and Develop tool, for the context event.
 function Actions.context()
     return Commands.context()

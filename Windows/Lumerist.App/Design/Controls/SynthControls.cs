@@ -31,7 +31,6 @@ internal static class SynthControls
         Good,
         Waiting,
         Off,
-        Selected,
     }
 
     private static ControlStyles? styles;
@@ -266,7 +265,7 @@ internal static class SynthControls
     {
         if (Theme.IsFlat)
         {
-            var strong = tone is Tone.Good or Tone.Selected;
+            var strong = tone == Tone.Good;
             var color = strong ? Ink.Ice : Ink.Steel;
             return new Border
             {
@@ -283,8 +282,7 @@ internal static class SynthControls
         {
             Tone.Good => Ink.Teal,
             Tone.Waiting => Ink.Amber,
-            Tone.Off => Ink.Steel,
-            _ => Ink.MagentaLight,
+            _ => Ink.Steel,
         };
         var pill = new Border
         {
