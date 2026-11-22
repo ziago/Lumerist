@@ -74,7 +74,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: Synth.Space.l) {
             VStack(alignment: .leading, spacing: Synth.Space.xs) {
                 Text("Welcome to Lumerist").synthTitle(26).accessibilityAddTraits(.isHeader)
-                Text("Four steps, then your keyboard and mouse wheel drive Lightroom Classic's sliders.")
+                Text("Four steps, then your keyboard and your mouse or trackpad drive Lightroom Classic's sliders.")
                     .synthBody(13, color: Synth.steel)
             }
 
@@ -84,7 +84,7 @@ struct OnboardingView: View {
             step(2, title: "Open Lightroom Classic", done: store.isConnected, detail: lightroomDetail) {
                 lightroomActions
             }
-            step(3, title: "Allow keyboard and mouse access", done: accessibilityGranted, detail: accessibilityDetail) {
+            step(3, title: "Allow keyboard, mouse and trackpad access", done: accessibilityGranted, detail: accessibilityDetail) {
                 if !accessibilityGranted {
                     Button("Open System Settings") { AccessibilityPermission.request() }
                         .buttonStyle(.neonSecondary)
@@ -211,7 +211,7 @@ struct OnboardingView: View {
     private var tryDetail: String {
         if itWorks { return "It works! Every key can be changed in the Develop and Library pages." }
         if store.shortcutsAreEnabled {
-            return "In Lightroom's Develop module, hold Q and turn the mouse wheel: Exposure moves. Hold ⇧ for bigger steps."
+            return "In Lightroom's Develop module, hold Q and turn the mouse wheel or swipe on the trackpad: Exposure moves. Hold ⇧ for bigger steps."
         }
         return "Shortcuts only act while Lightroom Classic is in front; a quick tap of a key still reaches Lightroom."
     }

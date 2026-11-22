@@ -321,7 +321,7 @@ final class KeyEngineMonitor: @unchecked Sendable {
             case .accessibilityPermissionRequired:
                 "Enable Lumerist in System Settings → Privacy & Security → Accessibility (on macOS 27: “Device control and data access”), then try again."
             case .eventTapUnavailable:
-                "macOS could not create the keyboard and mouse monitor."
+                "macOS could not start watching the keyboard, mouse and trackpad."
             }
         }
     }

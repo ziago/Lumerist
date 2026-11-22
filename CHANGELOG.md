@@ -30,8 +30,8 @@ All notable changes to Lumerist are documented here. The format follows
 - **Value HUD** in Ruler and Compact styles with a labelled scale (every EV
   for exposure), on Lightroom's screen or under the pointer, placed by
   dragging it.
-- Mouse gestures: double-click / middle-click reset, side buttons for the
-  previous/next photo.
+- Mouse and trackpad clicks: double-click (or middle-click) resets, the mouse
+  side buttons go to the previous/next photo.
 - About 130 Develop parameters, the standard layout, a step and a larger ⇧
   step for every slider (Quick Develop uses Lightroom's own button steps), a
   Keyboard view of every module, export/import of the layout.

@@ -1,6 +1,6 @@
 # Security policy
 
-Lumerist reads keyboard, scroll and mouse events (on the Mac with the
+Lumerist reads keyboard, mouse and trackpad events (on the Mac with the
 Accessibility permission you grant it) and talks to its Lightroom Classic
 plug-in over `127.0.0.1` only. If you find a way to abuse that — for example
 another process sending commands to the plug-in, events leaking outside

@@ -339,20 +339,20 @@ func renderGalerist(width: Int, height: Int, to url: URL, taglineLines: [String]
 let images = root.appending(path: "docs/images")
 if CommandLine.arguments.dropFirst().first == "miami" {
     render(width: 1600, height: 560, to: images.appending(path: "banner.png"),
-           tagline: "Hold a key. Turn the wheel. Edit faster.",
-           subtitle: "KEYBOARD + MOUSE-WHEEL EDITING FOR LIGHTROOM CLASSIC, MAC AND WINDOWS",
+           tagline: "Hold a key. Scroll or swipe. Edit faster.",
+           subtitle: "KEYBOARD + MOUSE OR TRACKPAD · LIGHTROOM CLASSIC · MAC AND WINDOWS",
            wordmarkScale: 0.15, sunX: 0.76)
     render(width: 1280, height: 640, to: images.appending(path: "social-preview.png"),
-           tagline: "Hold a key. Turn the wheel. Edit faster.",
+           tagline: "Hold a key. Scroll or swipe. Edit faster.",
            subtitle: "FREE & OPEN SOURCE · LIGHTROOM CLASSIC · macOS · WINDOWS",
            wordmarkScale: 0.115, sunX: 0.82)
 } else {
     renderGalerist(width: 1600, height: 560, to: images.appending(path: "banner.png"),
-                   taglineLines: ["Hold a key. Turn the wheel. Edit faster."],
-                   subtitle: "KEYBOARD + MOUSE-WHEEL EDITING · FREE & OPEN SOURCE",
+                   taglineLines: ["Hold a key. Scroll or swipe. Edit faster."],
+                   subtitle: "KEYBOARD + MOUSE OR TRACKPAD · FREE & OPEN SOURCE",
                    wordmarkScale: 0.2, cardWidth: 560)
     renderGalerist(width: 1280, height: 640, to: images.appending(path: "social-preview.png"),
-                   taglineLines: ["Hold a key. Turn the wheel.", "Edit faster."],
+                   taglineLines: ["Hold a key. Scroll or swipe.", "Edit faster."],
                    subtitle: "FREE & OPEN SOURCE",
                    wordmarkScale: 0.17, cardWidth: 470)
 }

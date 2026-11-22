@@ -140,7 +140,7 @@ internal sealed class GuideView : LiveView
         {
             if (ItWorks) return "It works! Every key can be changed in the Develop and Library pages.";
             if (controller.ShortcutsEnabled)
-                return "In Lightroom's Develop module, hold Q and turn the mouse wheel: Exposure moves. Hold Shift for bigger steps.";
+                return "In Lightroom's Develop module, hold Q and turn the mouse wheel or swipe on the trackpad: Exposure moves. Hold Shift for bigger steps.";
             return "Shortcuts only act while Lightroom Classic is in front; a quick tap of a key still reaches Lightroom.";
         }
     }
@@ -171,7 +171,7 @@ internal sealed class GuideView : LiveView
         var page = new StackPanel();
         var header = new StackPanel();
         header.Children.Add(GuideKit.Title("Welcome to Lumerist", 26));
-        var subtitle = GuideKit.Text("Three steps, then your keyboard and mouse wheel drive Lightroom Classic's sliders.", 13, nameof(ThemePalette.Steel));
+        var subtitle = GuideKit.Text("Three steps, then your keyboard and your mouse or trackpad drive Lightroom Classic's sliders.", 13, nameof(ThemePalette.Steel));
         subtitle.Margin = new Thickness(0, Theme.Space.XS, 0, 0);
         header.Children.Add(subtitle);
         Add(page, header);

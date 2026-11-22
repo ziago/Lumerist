@@ -67,7 +67,7 @@ internal sealed class GeneralScreen(ScreenContext context) : Screen(context)
             "Windows needs no permission for this: the shortcuts just work.",
             Surfaces.SettingRow("Shortcuts",
                 on
-                    ? "Your keys, wheel and mouse drive Lightroom's sliders whenever Lightroom Classic is in front."
+                    ? "Your keys, mouse and trackpad drive Lightroom's sliders whenever Lightroom Classic is in front."
                     : "Every key goes straight to Lightroom, as if Lumerist were not there.",
                 SynthControls.Toggle(on, wanted =>
                 {

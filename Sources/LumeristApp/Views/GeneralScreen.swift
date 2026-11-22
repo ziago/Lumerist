@@ -186,7 +186,7 @@ private enum QuitChoice: CaseIterable, Hashable {
 }
 
 /// General → macOS permission: whether macOS allows Lumerist to read the
-/// keyboard and mouse (Accessibility), and the shortcuts switch.
+/// keyboard, mouse and trackpad (Accessibility), and the shortcuts switch.
 private struct PermissionSection: View {
     let store: CommandStore
     /// `AXIsProcessTrusted()` is not observable, so it is read again every
@@ -196,7 +196,7 @@ private struct PermissionSection: View {
     var body: some View {
         SettingsSection(title: "macOS permission", systemImage: "lock.shield") {
             SettingRow(title: "Accessibility", detail: allowed
-                       ? "macOS lets Lumerist read the keyboard, wheel and mouse while Lightroom Classic is in front."
+                       ? "macOS lets Lumerist read the keyboard, mouse and trackpad while Lightroom Classic is in front."
                        : "Switch Lumerist on in System Settings → Privacy & Security → Accessibility. On macOS 27 the list is called “Device control and data access”.") {
                 HStack(spacing: Synth.Space.s) {
                     if allowed {
@@ -232,7 +232,7 @@ private struct PermissionSection: View {
 
     private var shortcutsDetail: String {
         if store.shortcutsAreEnabled {
-            return "Your keys, wheel and mouse drive Lightroom's sliders whenever Lightroom Classic is in front."
+            return "Your keys, mouse and trackpad drive Lightroom's sliders whenever Lightroom Classic is in front."
         }
         if store.isWaitingForPermission {
             return "Waiting for macOS: shortcuts start by themselves once Accessibility is allowed."

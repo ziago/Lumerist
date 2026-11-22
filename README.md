@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner.png" alt="Lumerist — hold a key, turn the wheel, edit faster in Lightroom Classic" width="100%">
+  <img src="docs/images/banner.png" alt="Lumerist — hold a key, scroll or swipe, edit faster in Lightroom Classic" width="100%">
 </p>
 
 <p align="center">
@@ -13,12 +13,12 @@
 </p>
 
 <p align="center">
-  <b>Free, open-source keyboard + mouse-wheel editing for Adobe Lightroom Classic on the Mac and on Windows.</b><br>
-  Hold a key, turn the wheel, watch the slider move — without ever leaving the photo.
+  <b>Free, open-source editing with the keyboard and the mouse or trackpad, for Adobe Lightroom Classic on the Mac and on Windows.</b><br>
+  Hold a key, turn the mouse wheel or swipe on the trackpad, watch the slider move — without ever leaving the photo.
 </p>
 
 <p align="center">
-  <img src="docs/images/hero.gif" alt="Hold Q and turn the mouse wheel: the photo gets brighter, Lightroom's Exposure slider follows and the Value HUD shows the new value; then W does the same for Contrast" width="100%">
+  <img src="docs/images/hero.gif" alt="Hold Q and turn the mouse wheel: the photo gets brighter, Lightroom's Exposure slider follows and the Value HUD shows the new value; then hold W and swipe on the trackpad: Contrast follows the same way" width="100%">
 </p>
 
 <p align="center">
@@ -35,12 +35,13 @@
 ## Why Lumerist exists
 
 I fell in love with how fast you can edit in **Capture One**: keep one hand on
-the keyboard, the other on the mouse wheel, and the sliders follow you without
-hunting for them in a panel. When I went back to Lightroom Classic I missed
-that flow every single day — dragging tiny sliders with the pointer felt slow.
+the keyboard, the other on the mouse or the trackpad, and the sliders follow
+you without hunting for them in a panel. When I went back to Lightroom Classic
+I missed that flow every single day — dragging tiny sliders with the pointer
+felt slow.
 
 So I built Lumerist: a small app for Mac and Windows plus a Lightroom Classic
-plug-in that bring that **hold-a-key, turn-the-wheel** way of editing to
+plug-in that bring that **hold a key, then scroll or swipe** way of editing to
 Lightroom Classic. It is free, open source, and runs entirely on your computer.
 
 Lumerist is made by the creator of [Galerist](https://galerist.photo/c/lk-readme),
@@ -53,8 +54,8 @@ clients.
   <img src="docs/images/value-hud.png" alt="The Value HUD on a photo: Ruler style on Lightroom's screen (Exposure +0.35 EV) and Compact style under the pointer (Contrast +12)" width="100%">
 </p>
 
-- **Dial Keys** — hold a key and turn the mouse wheel (or swipe on a
-  trackpad, drag, or press ←/→) to move one Develop slider. Hold ⇧ for the
+- **Dial Keys** — hold a key and turn the mouse wheel or swipe on the
+  trackpad (a drag or ←/→ work too) to move one Develop slider. Hold ⇧ for the
   larger step. A quick tap still reaches Lightroom, so its own shortcuts and
   your typing keep working.
 - **Nudge Keys** — tap a key to move a slider one step down or up.
@@ -75,14 +76,15 @@ clients.
 - **Value HUD** — a small read-out of the slider, its new value, and a scale
   with big tick marks (every EV for exposure), in Ruler or Compact style, on
   Lightroom's screen or under the pointer. Drag it wherever you like it.
-- **Mouse gestures** — double-click or middle-click to reset the held slider;
-  the mouse side buttons move to the previous/next photo.
+- **Mouse and trackpad clicks** — double-click with the mouse or the trackpad
+  (or middle-click) to reset the held slider; the mouse side buttons move to
+  the previous/next photo.
 - **About 130 Develop parameters** — Basic, tone curve, HSL, B&W, colour
   grading, detail, transform, lens, effects, calibration, and local mask
   sliders. Every key, step size, and option can be changed.
 
 <p align="center">
-  <img src="docs/images/palette-masks.gif" alt="Hold the Palette key, click Radial: a radial mask appears, and Q with the wheel brightens only the inside of the mask" width="100%">
+  <img src="docs/images/palette-masks.gif" alt="Hold the Palette key, click Radial: a radial mask appears, and Q with a trackpad swipe brightens only the inside of the mask" width="100%">
 </p>
 
 <p align="center">
@@ -93,7 +95,7 @@ clients.
 ## Install in three steps
 
 <p align="center">
-  <img src="docs/images/install.png" alt="Ready in three steps: download, open Lumerist and let its guide install the Lightroom plug-in, then hold Q and turn the wheel" width="100%">
+  <img src="docs/images/install.png" alt="Ready in three steps: download, open Lumerist and let its guide install the Lightroom plug-in, then hold Q and turn the mouse wheel or swipe on the trackpad" width="100%">
 </p>
 
 ### On the Mac
@@ -104,7 +106,7 @@ clients.
    is signed and notarized by Apple, so it opens like any other Mac app.
 3. **Follow the first-run guide.** It installs the Lightroom Classic plug-in
    for you, asks you to (re)start Lightroom, and opens the right privacy pane
-   so you can allow Lumerist to read the keyboard and mouse:
+   so you can allow Lumerist to read the keyboard, mouse and trackpad:
    *System Settings → Privacy & Security → Accessibility* (on macOS 27 the
    pane is called **Device control and data access**).
 
@@ -126,7 +128,8 @@ clients.
    permission to grant on Windows. Lumerist lives in the notification area,
    next to the clock: click its icon for the menu.
 
-That's it: open a photo in Develop, hold **Q**, and turn the wheel.
+That's it: open a photo in Develop, hold **Q**, and turn the mouse wheel or
+swipe on the trackpad.
 
 Lumerist follows Lightroom Classic: the plug-in starts it in the background
 when Lightroom opens, and it quits 3 seconds after Lightroom quits (both can be
@@ -168,15 +171,15 @@ A plug-in left in Lightroom does no harm: without the app it does nothing.
 
 ## The standard layout
 
-Your left hand stays on the keys, your right hand on the mouse. If you come
-from Capture One you already know most of it: 1, 2, Q, W and A S D F are its
-default Speed Edit keys. **R** straightens, because a tap on R opens
-Lightroom's Crop tool anyway, and **T**, right next to it, zooms the crop.
-Lightroom has no Levels, so the tone curve sits where Capture One keeps them,
-dark to light from **X** to **B**.
+Your left hand stays on the keys, your right hand on the mouse or the
+trackpad. If you come from Capture One you already know most of it: 1, 2, Q, W
+and A S D F are its default Speed Edit keys. **R** straightens, because a tap
+on R opens Lightroom's Crop tool anyway, and **T**, right next to it, zooms
+the crop. Lightroom has no Levels, so the tone curve sits where Capture One
+keeps them, dark to light from **X** to **B**.
 
 <p align="center">
-  <img src="docs/images/dial-keys.gif" alt="The standard layout on the keyboard: 1 changes the white balance, A the highlights, S the shadows, and Shift with Q takes the larger Exposure step" width="100%">
+  <img src="docs/images/dial-keys.gif" alt="The standard layout on the keyboard: 1 with the mouse wheel changes the white balance, A with a trackpad swipe the highlights, S with the wheel the shadows, and Shift with Q takes the larger Exposure step on the trackpad" width="100%">
 </p>
 
 | Develop | | | | | |
@@ -219,7 +222,8 @@ key reads `A`.
 Everything can be reassigned: click a key cap in the app and press the new
 key. You can add Nudge and Command Keys, make any of them a combo (hold Tab
 while you press the key), change the step of each slider, make the larger step
-the default, reverse the wheel, and export or import your layout.
+the default, reverse the scroll direction, set the trackpad sensitivity,
+and export or import your layout.
 
 <p align="center">
   <img src="docs/images/customize.png" alt="The Keyboard view in Lumerist: click a key cap and press the new key; set the step per notch for each slider; export and import your layout" width="100%">
@@ -238,7 +242,7 @@ the default, reverse the wheel, and export or import your layout.
 ## Privacy
 
 <p align="center">
-  <img src="docs/images/privacy.png" alt="How it works: keys and wheel, Lumerist, the plug-in and Lightroom Classic all on your computer, linked by a local connection; no account, no tracking, no ads" width="100%">
+  <img src="docs/images/privacy.png" alt="How it works: keyboard, mouse and trackpad, Lumerist, the plug-in and Lightroom Classic all on your computer, linked by a local connection; no account, no tracking, no ads" width="100%">
 </p>
 
 Lumerist has no telemetry, and nothing about your photos, your catalog, or
@@ -328,15 +332,14 @@ without any warning.
 <details>
 <summary><b>My antivirus blocks or quarantines Lumerist on Windows.</b></summary>
 
-Lumerist reads the keyboard and the mouse wheel to drive Lightroom, which is
-also what malicious keyloggers do, so some antivirus programs flag it, more
-often while it is not code-signed. Lumerist never records what you type: its
-optional log holds only connection states, commands and Lightroom's answers,
-and all of its code is public in this repository. If your antivirus stops it,
-restore the file from quarantine, add an exception for
+Lumerist reads the keyboard, the mouse and the trackpad to drive Lightroom,
+which is also what malicious keyloggers do, so some antivirus programs flag
+it, more often while it is not code-signed. Lumerist never records what you
+type: its optional log holds only connection states, commands and Lightroom's
+answers, and all of its code is public in this repository. If your antivirus
+stops it, restore the file from quarantine, add an exception for
 `%LOCALAPPDATA%\Programs\Lumerist`, and please report the false positive to
-your antivirus vendor.
-</details>
+your antivirus vendor. </details>
 
 <details>
 <summary><b>On Windows, the keys do nothing in Lightroom.</b></summary>
@@ -366,7 +369,7 @@ Manager* should list Lumerist as running.
 <details>
 <summary><b>A tap on a key no longer reaches Lightroom.</b></summary>
 
-Taps are passed through when you don't turn the wheel. If a key also has a
+Taps are passed through when you don't scroll or swipe. If a key also has a
 Command Key, the tap runs that command instead — check the key in the app.
 </details>
 
