@@ -9,9 +9,9 @@ All notable changes to Lumerist are documented here. The format follows
 ## [0.9.0] — first public pre-release
 
 ### Added
-- **Dial Keys**: hold a key and turn the wheel, swipe on a trackpad, drag, or
-  press ←/→ to move a Develop slider; ⇧ for the larger step; a quick tap still
-  reaches Lightroom.
+- **Dial Keys**: hold a key and turn the mouse wheel, swipe on the trackpad,
+  drag, or press ←/→ to move a Develop slider; ⇧ for the larger step; a quick
+  tap still reaches Lightroom.
 - **Standard layout** built on Capture One's default Speed Edit keys and
   translated to Lightroom Classic; Tab is the Combo Key, the key left of 1
   opens the Palette. Four combos are preset in Develop: Tab + A Auto Tone,
