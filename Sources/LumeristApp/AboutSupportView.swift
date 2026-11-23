@@ -165,7 +165,9 @@ struct AboutSupportSection: View {
                        detail: "Made by a photographer who wanted faster editing in Lightroom Classic. Ideas and bug reports are welcome.") {
                 HStack(spacing: Synth.Space.s) {
                     link("GitHub", SupportLinks.repository)
-                    link("Report a bug", SupportLinks.issues)
+                    Button("Report a problem") { NSWorkspace.shared.open(SupportLinks.bugReport) }
+                        .buttonStyle(.neonQuiet)
+                        .help("Opens GitHub's bug form with the version, macOS, Mac and keyboard filled in")
                     link("Ideas", SupportLinks.discussions)
                 }
             }

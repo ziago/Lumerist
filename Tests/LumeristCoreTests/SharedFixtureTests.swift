@@ -683,6 +683,25 @@ struct SharedFixtureTests {
         }
     }
 
+    /// "Report a problem": the prefilled GitHub form, the same address on both systems.
+    @Test func bugReportLinks() throws {
+        try Fixtures.run("bug-report", try Fixtures.cases(in: "bug-report")) { testCase, _ in
+            if let computers = testCase["computers"] as? [[String: Any]] {
+                return computers.compactMap { row in
+                    let isMac = row["isMac"] as? Bool ?? false, isArm = row["isArm"] as? Bool ?? false
+                    let name = BugReport.computer(isMac: isMac, isArm: isArm)
+                    return name == row["name"] as? String ? nil : "computer(isMac: \(isMac), isArm: \(isArm)) = \(name)"
+                }
+            }
+            guard let details = testCase["details"] as? [String: String], let expected = testCase["url"] as? String else {
+                throw FixtureError("a bug-report case needs details and url, or computers")
+            }
+            let url = BugReport.url(for: .init(lumerist: details["lumerist"] ?? "", system: details["system"] ?? "",
+                                               computer: details["computer"] ?? "", keyboard: details["keyboard"] ?? ""))
+            return url.absoluteString == expected ? [] : ["url \(url.absoluteString)"]
+        }
+    }
+
     /// The Mac's own translation of the logical key names must stay complete.
     @Test func everyLogicalKeyHasAMacKeyCode() {
         #expect(Set(MacKeys.codes.values).count == MacKeys.codes.count)

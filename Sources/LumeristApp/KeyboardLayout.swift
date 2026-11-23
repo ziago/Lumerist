@@ -68,6 +68,15 @@ enum KeyboardLayout {
         lock.unlock()
     }
 
+    /// The active layout's name as macOS shows it ("Italian – Pro", "ABC"), or nil.
+    static var currentName: String? {
+        guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
+              let pointer = TISGetInputSourceProperty(source, kTISPropertyLocalizedName) else {
+            return nil
+        }
+        return Unmanaged<CFString>.fromOpaque(pointer).takeUnretainedValue() as String
+    }
+
     /// The character a key types with no modifiers, via UCKeyTranslate.
     private static func translate(_ keyCode: Int64) -> String? {
         guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue()

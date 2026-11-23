@@ -8,7 +8,6 @@ import LumeristCore
 enum SupportLinks {
     static let repository = URL(string: "https://github.com/ziago/Lumerist")!
     static let releases = URL(string: "https://github.com/ziago/Lumerist/releases")!
-    static let issues = URL(string: "https://github.com/ziago/Lumerist/issues/new/choose")!
     static let discussions = URL(string: "https://github.com/ziago/Lumerist/discussions")!
     static let license = URL(string: "https://github.com/ziago/Lumerist/blob/main/LICENSE")!
     /// Includes pre-releases (the `/releases/latest` endpoint skips them).
@@ -68,5 +67,27 @@ enum SupportLinks {
     /// The running app's version (from Info.plist, stamped from VERSION at build time).
     static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development build"
+    }
+
+    // MARK: Report a problem
+
+    /// GitHub's bug form with the version, macOS, the kind of Mac and the
+    /// keyboard layout filled in. Built on click, so it reads the layout in use;
+    /// opened in the browser, where the person sees everything before sending.
+    @MainActor static var bugReport: URL {
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        let system = BugReport.macOSDescription(
+            major: os.majorVersion, minor: os.minorVersion, patch: os.patchVersion,
+            build: BugReport.macOSBuild(fromVersionString: ProcessInfo.processInfo.operatingSystemVersionString))
+        return BugReport.url(for: .init(lumerist: appVersion, system: system,
+                                        computer: BugReport.computer(isMac: true, isArm: isAppleSilicon),
+                                        keyboard: KeyboardLayout.currentName ?? ""))
+    }
+
+    /// The hardware, not the process: also true when running under Rosetta.
+    private static var isAppleSilicon: Bool {
+        var value: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        return sysctlbyname("hw.optional.arm64", &value, &size, nil, 0) == 0 && value == 1
     }
 }

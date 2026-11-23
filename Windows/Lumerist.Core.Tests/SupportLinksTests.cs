@@ -10,7 +10,6 @@ public class SupportLinksTests
     {
         Assert.Equal("https://github.com/ziago/Lumerist", SupportLinks.Repository.OriginalString);
         Assert.Equal("https://github.com/ziago/Lumerist/releases", SupportLinks.Releases.OriginalString);
-        Assert.Equal("https://github.com/ziago/Lumerist/issues/new/choose", SupportLinks.Issues.OriginalString);
         Assert.Equal("https://github.com/ziago/Lumerist/discussions", SupportLinks.Discussions.OriginalString);
         Assert.Equal("https://github.com/ziago/Lumerist/blob/main/LICENSE", SupportLinks.License.OriginalString);
         Assert.Equal("https://api.github.com/repos/ziago/Lumerist/releases?per_page=20", SupportLinks.ReleasesApi.OriginalString);

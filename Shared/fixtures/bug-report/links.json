@@ -1,0 +1,80 @@
+{
+  "group": "bug-report",
+  "cases": [
+    {
+      "id": "bug-report/mac-apple-silicon",
+      "details": {
+        "lumerist": "0.9.1",
+        "system": "macOS 27.0 (26A123)",
+        "computer": "Mac with Apple Silicon",
+        "keyboard": "Italian – Pro"
+      },
+      "url": "https://github.com/ziago/Lumerist/issues/new?template=bug_report.yml&lumerist=0.9.1&system=macOS%2027.0%20%2826A123%29&computer=Mac%20with%20Apple%20Silicon&keyboard=Italian%20%E2%80%93%20Pro"
+    },
+    {
+      "id": "bug-report/windows-arm",
+      "details": {
+        "lumerist": "0.9.1",
+        "system": "Windows 11 24H2 (build 26100)",
+        "computer": "Windows PC (Arm)",
+        "keyboard": "Italian (Italy)"
+      },
+      "url": "https://github.com/ziago/Lumerist/issues/new?template=bug_report.yml&lumerist=0.9.1&system=Windows%2011%2024H2%20%28build%2026100%29&computer=Windows%20PC%20%28Arm%29&keyboard=Italian%20%28Italy%29"
+    },
+    {
+      "id": "bug-report/blank-details-are-left-out",
+      "details": {
+        "lumerist": "0.9.1",
+        "system": "   ",
+        "computer": "Mac with Intel",
+        "keyboard": ""
+      },
+      "url": "https://github.com/ziago/Lumerist/issues/new?template=bug_report.yml&lumerist=0.9.1&computer=Mac%20with%20Intel"
+    },
+    {
+      "id": "bug-report/spaces-around-are-trimmed",
+      "details": {
+        "lumerist": "development build",
+        "system": "  Windows 10 22H2 (build 19045)  ",
+        "computer": "Windows PC (x64)",
+        "keyboard": " German (Germany) "
+      },
+      "url": "https://github.com/ziago/Lumerist/issues/new?template=bug_report.yml&lumerist=development%20build&system=Windows%2010%2022H2%20%28build%2019045%29&computer=Windows%20PC%20%28x64%29&keyboard=German%20%28Germany%29"
+    },
+    {
+      "id": "bug-report/reserved-characters-are-escaped",
+      "details": {
+        "lumerist": "1.0.0-beta.2",
+        "system": "macOS 15.4 (24E248)",
+        "computer": "Mac with Intel",
+        "keyboard": "U.S. & Canada / ABC + #1 = 100%?"
+      },
+      "url": "https://github.com/ziago/Lumerist/issues/new?template=bug_report.yml&lumerist=1.0.0-beta.2&system=macOS%2015.4%20%2824E248%29&computer=Mac%20with%20Intel&keyboard=U.S.%20%26%20Canada%20%2F%20ABC%20%2B%20%231%20%3D%20100%25%3F"
+    },
+    {
+      "id": "bug-report/computer-names",
+      "computers": [
+        {
+          "isMac": true,
+          "isArm": true,
+          "name": "Mac with Apple Silicon"
+        },
+        {
+          "isMac": true,
+          "isArm": false,
+          "name": "Mac with Intel"
+        },
+        {
+          "isMac": false,
+          "isArm": true,
+          "name": "Windows PC (Arm)"
+        },
+        {
+          "isMac": false,
+          "isArm": false,
+          "name": "Windows PC (x64)"
+        }
+      ]
+    }
+  ]
+}

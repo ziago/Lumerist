@@ -6,6 +6,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to report a problem! The more details, the faster it can be fixed.
+        *Report a problem* in Lumerist (the menu bar or notification area menu, or General → About & Support) fills in the version, system, computer and keyboard for you.
   - type: textarea
     id: what
     attributes:
@@ -19,7 +20,7 @@ body:
       label: Steps to reproduce
       placeholder: |
         1. Open a photo in Develop
-        2. Hold Q and turn the wheel
+        2. Hold Q and turn the mouse wheel or swipe on the trackpad
         3. …
     validations:
       required: true
@@ -35,18 +36,14 @@ body:
     id: system
     attributes:
       label: macOS or Windows version
-      placeholder: "macOS 15.4, Windows 11 24H2"
+      placeholder: "macOS 15.4 (24E248), Windows 11 24H2 (build 26100)"
     validations:
       required: true
-  - type: dropdown
+  - type: input
     id: computer
     attributes:
       label: Computer
-      options:
-        - Mac with Apple Silicon
-        - Mac with Intel
-        - Windows PC (x64)
-        - Windows PC (Arm)
+      placeholder: "Mac with Apple Silicon, Mac with Intel, Windows PC (x64), Windows PC (Arm)"
     validations:
       required: true
   - type: input

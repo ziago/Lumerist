@@ -56,6 +56,8 @@ struct StatusMenu: View {
                 NSApp.activate()
                 openWindow(id: Onboarding.windowID)
             }
+            // GitHub's bug form, already filled in; opened in the browser, Lumerist sends nothing.
+            item("Report a problem…") { NSWorkspace.shared.open(SupportLinks.bugReport) }
             item("Support Lumerist…") {
                 Navigation.go(to: .general)
                 NSApp.activate()

@@ -12,6 +12,7 @@ every case.
 | `keymap-rules/*.json` | keymap validation and conflict reports | same | `Windows/Lumerist.Core.Tests/KeymapFixtureTests.cs` |
 | `protocol/*.json` | bridge protocol 3: request lines, plug-in messages | same | `Windows/Lumerist.Core.Tests/ProtocolFixtureTests.cs` |
 | `standard-layout.json` | the standard layout and default options | same | `Windows/Lumerist.Core.Tests/KeymapFixtureTests.cs` |
+| `bug-report/*.json` | "Report a problem": the prefilled GitHub bug form | same | `Windows/Lumerist.Core.Tests/BugReportTests.cs` |
 | `../contract.json` | ports, plug-in id, protocol version, consent hash | `Scripts/check-parity.py` | `Scripts/check-parity.py` |
 
 A new feature or fix is finished when it has a case here and both runners

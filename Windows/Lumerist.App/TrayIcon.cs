@@ -157,6 +157,8 @@ internal sealed class TrayMenu : IDisposable
             Item("Open Lumerist…", controller.RequestMainWindow),
             Item("Check connection", controller.SendConnectionCheck),
             Item("Setup guide…", () => GuideHost.ShowGuide(controller)),
+            // GitHub's bug form, already filled in; opened in the browser, Lumerist sends nothing.
+            Item("Report a problem…", () => GuideKit.Open(BugReportLink.Build())),
             // As on the Mac: General, where About & Support is the last section.
             Item("Support Lumerist…", () => Views.MainWindow.ShowSection(controller, Views.MainSection.General)),
             // Opens the browser only when clicked; Lumerist sends nothing.

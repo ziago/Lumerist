@@ -11,6 +11,12 @@ All notable changes to Lumerist are documented here. The format follows
 Everything Lumerist does is described in the
 [0.9.0 release notes](https://github.com/ziago/Lumerist/releases/tag/v0.9.0).
 
+### Added
+- **Report a problem…** in the menu bar (Mac) and notification area (Windows)
+  menu, and in General → About & Support: it opens GitHub's bug form in the
+  browser with the Lumerist version, the system, the kind of computer and the
+  keyboard layout already filled in. Lumerist itself sends nothing.
+
 ### Changed
 - The first-run guide and the General screen name the mouse and the trackpad
   together, on the Mac and on Windows: Dial Keys follow a two-finger swipe as

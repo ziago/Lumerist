@@ -68,6 +68,7 @@ One plug-in serves both systems; the few differences sit behind Lightroom's
 | Lightroom Classic 12+ (`LrSdkMinimumVersion = 12.0`) | in progress | verify |
 | Key names shown in the current keyboard layout | in progress | verify |
 | Update check (GitHub releases): at launch, at most once a day, on unless unticked in the first-run guide or General; a new version is announced in the menu bar or notification area; manual check in General; installing a new version keeps keys and settings | in progress | verify |
+| Report a problem: in the menu bar or notification area menu and in About & Support, opens GitHub's bug form in the browser with the version, system, computer and keyboard filled in; the app sends nothing | done | done (verify on a PC) |
 | Homebrew cask | planned | n/a (Homebrew is for macOS) |
 
 ## Planned

@@ -272,6 +272,11 @@ carry a short code, such as `/c/lk-menu`, so Galerist knows the visit came
 from Lumerist. The code names the link, not you: it contains no personal
 data.
 
+**Report a problem** opens GitHub's bug form in your browser with the
+Lumerist version, your system version, the kind of computer and the keyboard
+layout already filled in. Lumerist itself sends nothing: you read the form,
+say what happened and create the issue on GitHub.
+
 Galerist's [privacy policy](https://galerist.photo/en/legal/privacy#lumenkeys)
 explains how it handles a sign-up, including the IP address that any web
 request reveals.
@@ -414,6 +419,11 @@ Please attach both to bug reports.
 Have an idea? Open a [discussion](https://github.com/ziago/Lumerist/discussions).
 
 ## Contributing
+
+Found a bug? Choose **Report a problem…** in Lumerist's menu (the menu bar on
+the Mac, the notification area on Windows) or in *General → About & Support*:
+it opens GitHub's bug form with the version, system, computer and keyboard
+already filled in.
 
 Ideas, bug reports, translations, and pull requests are very welcome — see
 [CONTRIBUTING.md](CONTRIBUTING.md) for how to build from source and run the

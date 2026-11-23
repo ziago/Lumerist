@@ -88,7 +88,7 @@ internal sealed class AboutSupportSection : LiveView
             "Lumerist is free and open source (GPL-3.0). Donations are gifts, never payments: every feature stays free. Adobe, Lightroom and Lightroom Classic are trademarks of Adobe; Lumerist is not affiliated with Adobe.",
             GuideKit.Row($"Lumerist {AppController.AppVersion}",
                          "Made by a photographer who wanted faster editing in Lightroom Classic. Ideas and bug reports are welcome.",
-                         GuideKit.Buttons(Link("GitHub", SupportLinks.Repository), Link("Report a bug", SupportLinks.Issues),
+                         GuideKit.Buttons(Link("GitHub", SupportLinks.Repository), ReportProblem(),
                                           Link("Ideas", SupportLinks.Discussions))),
             GuideKit.Row("Galerist", GaleristOptIn.Copy.Credit, galerist),
             Donations(),
@@ -140,4 +140,12 @@ internal sealed class AboutSupportSection : LiveView
     };
 
     private static Button Link(string title, Uri url) => GuideKit.Button(title, GuideButtonKind.Quiet, () => GuideKit.Open(url));
+
+    /// <summary>GitHub's bug form, built on click with the version, Windows, PC and keyboard filled in.</summary>
+    private static Button ReportProblem()
+    {
+        var button = GuideKit.Button("Report a problem", GuideButtonKind.Quiet, () => GuideKit.Open(Services.BugReportLink.Build()));
+        button.ToolTip = "Opens GitHub's bug form with the version, Windows, PC and keyboard filled in";
+        return button;
+    }
 }

@@ -13,8 +13,6 @@ public static class SupportLinks
 
     public static Uri Releases { get; } = new("https://github.com/ziago/Lumerist/releases");
 
-    public static Uri Issues { get; } = new("https://github.com/ziago/Lumerist/issues/new/choose");
-
     public static Uri Discussions { get; } = new("https://github.com/ziago/Lumerist/discussions");
 
     public static Uri License { get; } = new("https://github.com/ziago/Lumerist/blob/main/LICENSE");
