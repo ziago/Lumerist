@@ -18,6 +18,11 @@
 </p>
 
 <p align="center">
+  <b>Made to edit faster.</b> With Lumerist I edit my photos <b>at least 5× faster</b> than dragging Lightroom's sliders with the pointer.<br>
+  That's my own rough figure: how much time you save depends on how you work.
+</p>
+
+<p align="center">
   <img src="docs/images/hero.gif" alt="Hold Q and turn the mouse wheel: the photo gets brighter, Lightroom's Exposure slider follows and the Value HUD shows the new value; then hold W and swipe on the trackpad: Contrast follows the same way" width="100%">
 </p>
 
