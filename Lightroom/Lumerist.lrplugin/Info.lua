@@ -9,7 +9,7 @@ return {
     -- Lightroom loaded. Keep in sync with the top-level VERSION file: the Mac
     -- build stamps it (Scripts/plugin-version.zsh), the Windows build ships
     -- this file as it is.
-    VERSION = { major = 0, minor = 9, revision = 0, display = "0.9.0 (protocol 3)" },
+    VERSION = { major = 0, minor = 9, revision = 1, display = "0.9.1 (protocol 3)" },
     LrInitPlugin = "Init.lua",
     -- Without this Lightroom may load the plug-in lazily, on first use (menu,
     -- Plug-in Manager), and the bridge would not listen until then.

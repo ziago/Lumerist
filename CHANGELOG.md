@@ -6,6 +6,23 @@ All notable changes to Lumerist are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.9.1] — the first release with the repository public
+
+Everything Lumerist does is described in the
+[0.9.0 release notes](https://github.com/ziago/Lumerist/releases/tag/v0.9.0).
+
+### Changed
+- The first-run guide and the General screen name the mouse and the trackpad
+  together, on the Mac and on Windows: Dial Keys follow a two-finger swipe as
+  well as the mouse wheel.
+- Mac: the Profile row no longer says that old backups are converted when
+  imported (import never did that); it now reads like the Windows one.
+- The README shows Lumerist at work: animations of Dial Keys and the Palette,
+  pictures of the setup; the bug report form asks about Windows too.
+- The code was tidied before going public (unused pieces removed, repeated
+  helpers merged), on the Mac, on Windows and in the plug-in alike. Nothing
+  else changes in how Lumerist works.
+
 ## [0.9.0] — first public pre-release
 
 ### Added
@@ -70,5 +87,6 @@ Lumerist is made by the creator of [Galerist](https://galerist.photo/c/lk-releas
 online galleries where photographers and videographers deliver their work to
 clients.
 
-[Unreleased]: https://github.com/ziago/Lumerist/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/ziago/Lumerist/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/ziago/Lumerist/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/ziago/Lumerist/releases/tag/v0.9.0

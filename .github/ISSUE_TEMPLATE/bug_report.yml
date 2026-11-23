@@ -28,7 +28,7 @@ body:
     attributes:
       label: Lumerist version
       description: Shown in the app (General → About & Support) and in Lightroom's Plug-in Manager.
-      placeholder: "0.9.0"
+      placeholder: "0.9.1"
     validations:
       required: true
   - type: input
