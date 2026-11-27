@@ -54,7 +54,7 @@ All notable changes to Lumerist are documented here. The format follows
   page, could send Lightroom the commands Lumerist uses (reset, ratings,
   flags, presets). This is bridge protocol 4: the app and the plug-in update
   together, and the app installs the new plug-in by itself while Lightroom is
-  closed. Thanks to the person who reported it privately.
+  closed. Thanks to xeer, who reported it privately.
 - The plug-in's log keeps only a short, cleaned-up copy of what a sender
   wrote, so nobody can flood it or forge lines in it.
 - Mac: a profile with an impossible key code no longer crashes the app when
@@ -64,7 +64,7 @@ All notable changes to Lumerist are documented here. The format follows
 - Releases: the release script downloads the Windows packages itself, from
   the CI run of the push to `main` for the released commit, so packages built
   by a pull request are never published. It also refuses to publish while the
-  plug-in or font folders hold files git ignores.
+  plug-in or font folders hold files git ignores. Also reported by xeer.
 
 ## [0.9.1] — the first release with the repository public
 
