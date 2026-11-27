@@ -87,6 +87,9 @@ All notable changes to Lumerist are documented here. The format follows
   the CI run of the push to `main` for the released commit, so packages built
   by a pull request are never published. It also refuses to publish while the
   plug-in or font folders hold files git ignores. Also reported by xeer.
+- Releases carry `SHA256SUMS`, the hashes of every package, signed with a
+  key kept off GitHub: the app installs an update only when that signature
+  checks out. SECURITY.md shows how to check it by hand.
 
 ## [0.9.1] — the first release with the repository public
 

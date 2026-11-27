@@ -34,6 +34,19 @@ has a `.sha256` file next to it.
   with the published one before running it:
   `Get-FileHash .\Lumerist-<version>-windows-x64-setup.exe` in PowerShell.
 
+From 0.9.2 every release also has `SHA256SUMS`, the hashes of all its
+packages, and `SHA256SUMS.sig`, their signature with Lumerist's update key.
+The key is kept off GitHub, and the app checks this signature before it
+updates itself. To check it by hand on a Mac:
+
+```sh
+echo MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEt37ZfOYd5bo4/ZKP73l2KTyzgZI9Ih0nlBof4WjmWuaoFd3JYfLtZah8HT6R2DP62EYmSxeW2N25UIN1DIhzVA== \
+  | base64 -d | openssl pkey -pubin -inform DER > lumerist-update.pem
+base64 -d < SHA256SUMS.sig > SHA256SUMS.der
+openssl dgst -sha256 -verify lumerist-update.pem -signature SHA256SUMS.der SHA256SUMS
+shasum -a 256 -c SHA256SUMS --ignore-missing
+```
+
 If a hash does not match, do not run the file, and please report it as above.
 
 **Update now**, in Lumerist's update window, does these checks by itself
