@@ -69,8 +69,18 @@ allow.
   window, taken from Adobe's public help (the Import window's from community
   reports). `python3 Scripts/generate-lightroom-shortcuts.py` checks it and
   writes the Mac's `LightroomShortcutData.swift`; the Windows core reads the
-  JSON. A tap key on one of them gets a warning in the conflict report
-  (`LightroomShortcuts`), which never blocks saving.
+  JSON. A tap key or a system key on one of them gets a warning in the
+  conflict report (`LightroomShortcuts`), which never blocks saving.
+- **Pressing Lightroom's keys.** Lightroom finds its shortcuts by the
+  character a key types, so Lumerist presses them by character, never by
+  position. `LayoutCharacters` is what the active layout types, alone and
+  with ⌘ (the ⌘ table differs on "Dvorak – QWERTY ⌘"). `FallbackShortcuts`
+  holds the shortcuts for commands the SDK can't run, and `ImportShortcuts`
+  the Import window's (Toggle: the key that types a plain `, else <, else
+  none). `AppCommand` is a command Lumerist runs itself by pressing a
+  shortcut, with no request to the plug-in (`pasteSettingsFromPrevious`,
+  ⌥⌘V). A letter no key types comes from the ASCII-capable layout, then the
+  US position.
 - **Combos.** A combo is a `KeyChord` with the pseudo-modifier
   `KeyModifiers.combo` (not a real modifier; key events never carry it). It
   works only while the Combo Key is held and reads "Tab + K"
@@ -128,8 +138,19 @@ allow.
   engine then sees the module `import`, where only the Import keys act.
 - `IntentDispatcher`: turns intents into requests at the chosen update rate
   (adjustments to the same slider are summed), runs macros, sends Lightroom's
-  own shortcuts, and falls back to a shortcut when the SDK refuses a command.
-- `KeymapStore`: saves and loads the keymap.
+  own shortcuts, runs `AppCommand`s, and falls back to a shortcut when the
+  SDK refuses a command.
+- `KeyboardLayout`: reads the active input source and the ASCII-capable one
+  through UCKeyTranslate into `LayoutCharacters` (key names and the keys to
+  press), again whenever the input source changes, when the Import keys are
+  looked up again too. The keyboard's shape (ANSI, ISO, JIS) comes from
+  `LMGetKbdType`; it picks the Palette Key of the standard layout (none on
+  JIS) at the first run and on "Restore standard layout", never later, since
+  it follows the last keyboard typed on.
+- `KeymapStore`: saves and loads the keymap. A stored keymap it can't read
+  (`KeymapLoad`) is copied to `~/Library/Application
+  Support/Lumerist/keymap-backups` and never written over; the standard
+  layout is used until the user changes a key.
 - `PluginInstaller`: installs, updates and removes the plug-in that ships
   inside the app; files are replaced only while Lightroom is closed.
 - `UpdateChecker`: the update check (see [Network](#network)). It never

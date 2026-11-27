@@ -262,13 +262,17 @@ internal sealed class ActionEditor : Window
 
     private FrameworkElement CommandPicker(ActionDraft editing)
     {
+        // Lightroom commands and app commands (AppCommands) by wire name, in their groups.
         var commands = LightroomCommandNames.All.Where(command => command != LightroomCommandName.ApplyPreset).ToList();
-        var menu = SynthControls.MenuButton(editing.Command.Title(), "Command",
-            CommandTitles.MenuGroups.Select(group => new SynthControls.MenuGroup<LightroomCommandName>(group,
-                commands.Where(command => command.Group() == group).ToList())).ToList(),
-            editing.Command, command => command.Title(), command =>
+        string Title(string name) => LightroomCommandNames.FromWireName(name)?.Title() ?? AppCommands.Title(name) ?? name;
+        var menu = SynthControls.MenuButton(Title(editing.CommandName), "Command",
+            CommandTitles.MenuGroups.Select(group => new SynthControls.MenuGroup<string>(group,
+                [.. commands.Where(command => command.Group() == group).Select(command => command.WireName()),
+                    .. AppCommands.All.Where(name => AppCommands.Group(name) == group)])).ToList(),
+            editing.CommandName, Title, name =>
             {
-                editing.Choose(command);
+                if (LightroomCommandNames.FromWireName(name) is { } command) editing.Choose(command);
+                else editing.ChooseAppCommand(name);
                 Changed();
             });
         menu.Width = 320;
@@ -294,6 +298,7 @@ internal sealed class ActionEditor : Window
             return menu;
         }
 
+        if (editing.AppCommand is not null) return SynthText.Body("No options.", 12, color: Ink.Steel);
         switch (editing.Command)
         {
             case LightroomCommandName.Rating:

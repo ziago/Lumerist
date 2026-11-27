@@ -33,7 +33,7 @@ public class WindowsInputTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void AltGrIsNeitherCtrlNorAlt(bool fakeControlFirst)
+    public void AltGrIsItsOwnModifierNeitherCtrlNorAlt(bool fakeControlFirst)
     {
         var tracker = new ModifierTracker();
         if (fakeControlFirst)
@@ -46,15 +46,18 @@ public class WindowsInputTests
             tracker.Observe(VirtualKeys.RightMenu, LeftMenuScan, true, isUp: false);
             tracker.Observe(VirtualKeys.LeftControl, ModifierTracker.AltGrFakeControlScanCode, false, isUp: false);
         }
-        Assert.Equal(KeyModifiers.None, tracker.Current);
+        Assert.Equal(KeyModifiers.AltGr, tracker.Current);
+        Assert.True(tracker.IsAltGrDown);
         Assert.False(tracker.IsMenuKeyDown);
         Assert.Empty(tracker.HeldModifierKeys);
+        Assert.Equal(ModifierPlan.AltGr, tracker.HeldMask);
 
         // Releasing in either order never shows a moment of Alt.
         tracker.Observe(VirtualKeys.LeftControl, ModifierTracker.AltGrFakeControlScanCode, false, isUp: true);
-        Assert.Equal(KeyModifiers.None, tracker.Current);
+        Assert.Equal(KeyModifiers.AltGr, tracker.Current);
         tracker.Observe(VirtualKeys.RightMenu, LeftMenuScan, true, isUp: true);
         Assert.Equal(KeyModifiers.None, tracker.Current);
+        Assert.Equal(0, tracker.HeldMask);
     }
 
     [Fact]
@@ -73,8 +76,9 @@ public class WindowsInputTests
         tracker.Observe(VirtualKeys.LeftControl, LeftControlScan, false, isUp: false);
         tracker.Observe(VirtualKeys.LeftControl, ModifierTracker.AltGrFakeControlScanCode, false, isUp: false);
         tracker.Observe(VirtualKeys.RightMenu, LeftMenuScan, true, isUp: false);
-        Assert.Equal(KeyModifiers.Control, tracker.Current);
+        Assert.Equal(KeyModifiers.Control | KeyModifiers.AltGr, tracker.Current);
         Assert.Equal([VirtualKeys.LeftControl], tracker.HeldModifierKeys);
+        Assert.Equal(ModifierPlan.Mask([VirtualKeys.LeftControl]) | ModifierPlan.AltGr, tracker.HeldMask);
     }
 
     [Fact]
@@ -175,11 +179,65 @@ public class WindowsInputTests
     public void ARepeatIsAKeyDownForAKeyAlreadyDown()
     {
         var repeats = new KeyRepeatTracker();
-        Assert.False(repeats.KeyDown(0x10));
-        Assert.True(repeats.KeyDown(0x10));
-        Assert.False(repeats.KeyDown(0x11));
+        Assert.False(repeats.KeyDown(0x10, 0));
+        Assert.True(repeats.KeyDown(0x10, 0.5));
+        Assert.False(repeats.KeyDown(0x11, 0.5));
         repeats.KeyUp(0x10);
-        Assert.False(repeats.KeyDown(0x10));
+        Assert.False(repeats.KeyDown(0x10, 0.6));
+        // Held for long: every repeat follows the last one closely.
+        for (var time = 0.63; time < 5; time += 0.03) Assert.True(repeats.KeyDown(0x10, time));
+    }
+
+    [Fact]
+    public void AKeyWithoutKeyUpIsNeverAnAutoRepeat()
+    {
+        var repeats = new KeyRepeatTracker();
+        // Korean 한/영 (0xF2) and 한자 (0xF1) send no key-up: each press is a press.
+        Assert.False(repeats.KeyDown(0xF2, 0));
+        Assert.False(repeats.KeyDown(0xF2, 0.1));
+        Assert.False(repeats.KeyDown(0xF1, 0.2));
+        // A key-up lost on another desktop: a press much later is new.
+        Assert.False(repeats.KeyDown(0x10, 1));
+        Assert.False(repeats.KeyDown(0x10, 1 + KeyRepeatTracker.MaximumRepeatGap + 0.01));
+    }
+
+    [Fact]
+    public void AShortcutLiftsAHeldAltGrAndPutsItBack()
+    {
+        var control = ModifierPlan.Mask([VirtualKeys.LeftControl]);
+        // Ctrl+Z with AltGr held: only Ctrl.
+        Assert.Equal(control, ModifierPlan.ForChord(KeyModifiers.Control, ModifierPlan.AltGr));
+        Assert.Equal(0, ModifierPlan.ForChord(KeyModifiers.None, ModifierPlan.AltGr));
+        Assert.Equal(ModifierPlan.AltGr, ModifierPlan.ForChord(KeyModifiers.AltGr, ModifierPlan.AltGr));
+        // AltGr up as right Alt then left Ctrl, and left Ctrl pressed again for Ctrl+Z…
+        Assert.Equal([(VirtualKeys.RightMenu, true), (VirtualKeys.LeftControl, true), (VirtualKeys.LeftControl, false)],
+            ModifierPlan.Transition(ModifierPlan.AltGr, control));
+        // …then left Ctrl up and AltGr back, left Ctrl then right Alt.
+        Assert.Equal([(VirtualKeys.LeftControl, true), (VirtualKeys.LeftControl, false), (VirtualKeys.RightMenu, false)],
+            ModifierPlan.Transition(control, ModifierPlan.AltGr));
+        // A plain key with AltGr held: lift it, put it back.
+        Assert.Equal([(VirtualKeys.RightMenu, true), (VirtualKeys.LeftControl, true)], ModifierPlan.Transition(ModifierPlan.AltGr, 0));
+        Assert.Equal([(VirtualKeys.LeftControl, false), (VirtualKeys.RightMenu, false)], ModifierPlan.Transition(0, ModifierPlan.AltGr));
+        Assert.Empty(ModifierPlan.Transition(ModifierPlan.AltGr, ModifierPlan.AltGr));
+        // Ctrl+Alt+V with AltGr held: AltGr up, then left Ctrl and left Alt (the menu mask after Alt).
+        var mask = (VirtualKeys.MenuMask, false);
+        var maskUp = (VirtualKeys.MenuMask, true);
+        Assert.Equal([(VirtualKeys.RightMenu, true), (VirtualKeys.LeftControl, true), (VirtualKeys.LeftControl, false),
+                (VirtualKeys.LeftMenu, false), mask, maskUp],
+            ModifierPlan.Transition(ModifierPlan.AltGr, ModifierPlan.ForChord(KeyModifiers.Control | KeyModifiers.Alt, ModifierPlan.AltGr)));
+    }
+
+    [Fact]
+    public void InputMethodKeysAreRecognised()
+    {
+        Assert.True(VirtualKeys.IsInputMethodKey(0x15)); // VK_HANGUL / VK_KANA
+        Assert.True(VirtualKeys.IsInputMethodKey(0x19)); // VK_HANJA / VK_KANJI
+        Assert.True(VirtualKeys.IsInputMethodKey(0x1C)); // VK_CONVERT
+        Assert.True(VirtualKeys.IsInputMethodKey(0xF3)); // VK_OEM_AUTO, 半角/全角
+        Assert.False(VirtualKeys.IsInputMethodKey(0x1B)); // Esc
+        Assert.False(VirtualKeys.IsInputMethodKey(0xC0)); // VK_OEM_3
+        Assert.False(VirtualKeys.IsInputMethodKey(VirtualKeys.ProcessKey));
+        Assert.False(VirtualKeys.IsInputMethodKey(0x50));
     }
 
     [Fact]
@@ -293,8 +351,8 @@ public class WindowsInputTests
         Assert.Equal(new KeyChord(0x2C, KeyModifiers.Control | KeyModifiers.Shift), FallbackShortcuts.For(LightroomCommandName.Redo));
         // On QWERTZ "z" is the key at the US "y" position (0x15).
         Assert.Equal(new KeyChord(0x15, KeyModifiers.Control),
-            FallbackShortcuts.For(LightroomCommandName.Undo, character => character == 'z' ? 0x15 : null));
-        Assert.Equal(new KeyChord(ScanCodes.RightArrow), FallbackShortcuts.For(LightroomCommandName.NextPhoto, _ => 0x99));
+            FallbackShortcuts.For(LightroomCommandName.Undo, LayoutTables.German));
+        Assert.Equal(new KeyChord(ScanCodes.RightArrow), FallbackShortcuts.For(LightroomCommandName.NextPhoto, LayoutTables.German));
         Assert.Null(FallbackShortcuts.For(LightroomCommandName.ApplyPreset));
     }
 }

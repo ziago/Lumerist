@@ -18,8 +18,8 @@ internal sealed class ImportScreen(ScreenContext context) : Screen(context)
     protected override FrameworkElement Build()
     {
         var keymap = Controller.Keymap;
-        // The keys Lumerist presses, named as the active layout prints them.
-        var layout = Context.IsSnapshot ? (nint?)null : KeyboardLayout.OfForeground();
+        // The keys Lumerist presses, named as Lightroom's layout prints them.
+        var layout = Context.IsSnapshot ? (nint?)null : KeyboardLayout.OfLightroom();
         var sends = layout is { } active ? KeyboardLayout.ImportShortcutsFor(active) : ImportShortcuts.Standard;
         var warnings = Warnings(keymap);
 

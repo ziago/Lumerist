@@ -28,6 +28,15 @@ public static class VirtualKeys
 
     public static bool IsModifier(int virtualKey) => virtualKey is Shift or Control or Menu or LeftWin or RightWin
         or (>= LeftShift and <= RightMenu);
+
+    /// <summary>
+    /// Keys that switch or drive the input method: VK_KANA / VK_HANGUL, VK_IME_ON,
+    /// VK_JUNJA, VK_FINAL, VK_HANJA / VK_KANJI, VK_IME_OFF, VK_CONVERT, VK_NONCONVERT,
+    /// VK_ACCEPT, VK_MODECHANGE, and 0xF0–0xF5, which Japanese layouts use for
+    /// 英数, カタカナ, ひらがな and 半角/全角. Not VK_PROCESSKEY: the app asks
+    /// the input method for the real key first (ImmGetVirtualKey).
+    /// </summary>
+    public static bool IsInputMethodKey(int virtualKey) => virtualKey is (>= 0x15 and <= 0x1A) or (>= 0x1C and <= 0x1F) or (>= 0xF0 and <= 0xF5);
 }
 
 /// <summary>Scan codes as hook events carry them.</summary>
@@ -61,7 +70,9 @@ public static class HookScanCodes
 /// <remarks>
 /// AltGr (Italian, German, French… layouts) arrives as a fake left Ctrl with
 /// scan code 0x21D plus right Alt. It types characters such as @ and €, so it
-/// counts as neither Ctrl nor Alt. Not thread-safe.
+/// counts as neither Ctrl nor Alt but as <see cref="KeyModifiers.AltGr"/>, a
+/// modifier of its own (Option on the Mac): AltGr+Q never matches a binding of
+/// Q alone. Not thread-safe.
 /// </remarks>
 public sealed class ModifierTracker
 {
@@ -99,9 +110,13 @@ public sealed class ModifierTracker
             if (down.Contains(VirtualKeys.LeftShift) || down.Contains(VirtualKeys.RightShift)) modifiers |= KeyModifiers.Shift;
             if (down.Contains(VirtualKeys.LeftControl) || down.Contains(VirtualKeys.RightControl)) modifiers |= KeyModifiers.Control;
             if (down.Contains(VirtualKeys.LeftMenu) || (down.Contains(VirtualKeys.RightMenu) && !rightAltIsAltGr)) modifiers |= KeyModifiers.Alt;
+            if (IsAltGrDown) modifiers |= KeyModifiers.AltGr;
             return modifiers;
         }
     }
+
+    /// <summary>AltGr is held: right Alt down together with the fake left Ctrl Windows adds for it.</summary>
+    public bool IsAltGrDown => rightAltIsAltGr && down.Contains(VirtualKeys.RightMenu);
 
     /// <summary>Win is not a Lumerist modifier: while it is held, keys belong to Windows.</summary>
     public bool IsWinDown => down.Contains(VirtualKeys.LeftWin) || down.Contains(VirtualKeys.RightWin);
@@ -117,9 +132,10 @@ public sealed class ModifierTracker
 
     /// <summary>
     /// The held keys as a <see cref="ModifierPlan"/> mask, recorded with each
-    /// key Lumerist may hold back, so a replay can restore them.
+    /// key Lumerist may hold back, so a replay can restore them. A held AltGr
+    /// is <see cref="ModifierPlan.AltGr"/>, so a shortcut can lift it.
     /// </summary>
-    public int HeldMask => ModifierPlan.Mask(HeldModifierKeys);
+    public int HeldMask => ModifierPlan.Mask(HeldModifierKeys) | (IsAltGrDown ? ModifierPlan.AltGr : 0);
 
     /// <summary>
     /// Forgets keys Windows says are up. Key-ups never reach the hook while
@@ -167,6 +183,13 @@ public static class ModifierPlan
         VirtualKeys.LeftMenu, VirtualKeys.RightMenu,
     ];
 
+    /// <summary>
+    /// The bit for a held AltGr. Windows sends AltGr as left Ctrl + right Alt,
+    /// so it goes up as right Alt then left Ctrl, and down as left Ctrl then
+    /// right Alt, as a unit apart from the real left Ctrl and right Alt bits.
+    /// </summary>
+    public const int AltGr = 1 << 6;
+
     public static int Mask(IEnumerable<int> keys)
     {
         var mask = 0;
@@ -178,13 +201,14 @@ public static class ModifierPlan
         return mask;
     }
 
+    /// <summary>The left/right keys of a mask (AltGr not included).</summary>
     public static IReadOnlyList<int> Keys(int mask) =>
         Order.Where((_, bit) => (mask & (1 << bit)) != 0).ToList();
 
     /// <summary>
     /// The mask with exactly a chord's modifiers: held keys of the right
     /// family are kept (a held right Ctrl serves Ctrl+Z), missing ones are
-    /// pressed on the left.
+    /// pressed on the left. A held AltGr stays only for a chord with AltGr.
     /// </summary>
     public static int ForChord(KeyModifiers modifiers, int held)
     {
@@ -200,6 +224,7 @@ public static class ModifierPlan
             var heldOfFamily = held & Mask([left, right]);
             mask |= heldOfFamily != 0 ? heldOfFamily : Mask([left]);
         }
+        if ((modifiers & KeyModifiers.AltGr) != 0) mask |= AltGr;
         return mask;
     }
 
@@ -209,16 +234,38 @@ public static class ModifierPlan
     /// and released with nothing in between opens the menu bar, so an unused
     /// key (<see cref="VirtualKeys.MenuMask"/>) is tapped before any Alt goes
     /// up and after any Alt goes down.
+    /// <para>
+    /// AltGr goes up first, as right Alt then left Ctrl (Windows may lift its
+    /// fake left Ctrl with the right Alt anyway), so a left Ctrl the target
+    /// needs is pressed again; AltGr comes back last, as left Ctrl then right
+    /// Alt. With Ctrl down, releasing right Alt opens no menu: no mask needed.
+    /// </para>
     /// </summary>
     public static IReadOnlyList<(int VirtualKey, bool IsUp)> Transition(int from, int to)
     {
         var events = new List<(int, bool)>();
-        var released = Keys(from & ~to);
-        var pressed = Keys(to & ~from);
+        var liftAltGr = (from & AltGr) != 0 && (to & AltGr) == 0;
+        var pressAltGr = (from & AltGr) == 0 && (to & AltGr) != 0;
+        var fromKeys = from & ~AltGr;
+        var toKeys = to & ~AltGr;
+        // Once AltGr is up, so are left Ctrl and right Alt, whatever their own bits said.
+        if (liftAltGr) fromKeys &= ~Mask([VirtualKeys.LeftControl, VirtualKeys.RightMenu]);
+        var released = Keys(fromKeys & ~toKeys);
+        var pressed = Keys(toKeys & ~fromKeys);
+        if (liftAltGr)
+        {
+            events.Add((VirtualKeys.RightMenu, true));
+            events.Add((VirtualKeys.LeftControl, true));
+        }
         if (released.Any(IsAlt)) AddMask(events);
         events.AddRange(released.Select(key => (key, true)));
         events.AddRange(pressed.Select(key => (key, false)));
         if (pressed.Any(IsAlt)) AddMask(events);
+        if (pressAltGr)
+        {
+            events.Add((VirtualKeys.LeftControl, false));
+            events.Add((VirtualKeys.RightMenu, false));
+        }
         return events;
     }
 
@@ -231,13 +278,35 @@ public static class ModifierPlan
     }
 }
 
-/// <summary>Hook events carry no repeat flag: a key down for a key already down is a repeat.</summary>
+/// <summary>
+/// Hook events carry no repeat flag: a key down for a key already down is a
+/// repeat, as long as it follows soon. Some keys send no key-up at all (the
+/// Korean 한/영 and 한자 keys, make codes 0xF2 and 0xF1), and a key-up can
+/// be lost while another desktop is in front: a key down much later than
+/// the last one is a new press, never an auto-repeat.
+/// </summary>
 public sealed class KeyRepeatTracker
 {
-    private readonly HashSet<int> down = [];
+    /// <summary>
+    /// Longer than any typematic delay Windows offers (1 s at most) plus a
+    /// margin; auto-repeats then come every 33–400 ms.
+    /// </summary>
+    public const double MaximumRepeatGap = 1.5;
 
-    /// <summary>Records a key down; returns true when it is an auto-repeat.</summary>
-    public bool KeyDown(int scanCode) => !down.Add(scanCode);
+    /// <summary>Keys that send a key down only (Korean 한자 and 한/영): never a repeat.</summary>
+    public static IReadOnlySet<int> MakeOnlyScanCodes { get; } = new HashSet<int> { 0xF1, 0xF2 };
+
+    /// <summary>The time of the last down (or repeat) of each key held.</summary>
+    private readonly Dictionary<int, double> down = [];
+
+    /// <summary>Records a key down at <paramref name="timestamp"/> seconds; returns true when it is an auto-repeat.</summary>
+    public bool KeyDown(int scanCode, double timestamp)
+    {
+        if (MakeOnlyScanCodes.Contains(scanCode)) return false;
+        var isRepeat = down.TryGetValue(scanCode, out var last) && timestamp - last <= MaximumRepeatGap;
+        down[scanCode] = timestamp;
+        return isRepeat;
+    }
 
     public void KeyUp(int scanCode) => down.Remove(scanCode);
 

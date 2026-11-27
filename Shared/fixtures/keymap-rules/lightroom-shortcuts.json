@@ -104,6 +104,28 @@
       "keymap": { "importKeys": { "include": "P", "exclude": "X" } },
       "validate": "ok",
       "conflicts": { "errors": 0, "warnings": 0 }
+    },
+    {
+      "id": "keymap-rules/system-keys-on-lightroom-keys-warn",
+      "about": "A system key takes its key from Lightroom where it acts: the Palette Key in Develop, a plain Key Reference toggle and the pause toggle in Library and Develop. One warning per module, with that module's scope.",
+      "keymap": { "systemKeys": { "paletteKey": "J", "keyReferenceToggle": "I", "pauseToggle": "L" } },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 5, "matches": [
+        { "severity": "warning", "chord": "J", "scope": "develop", "usesSystem": "paletteKey", "lightroomAction": "Show clipping",
+          "message": "Lightroom uses J for “Show clipping” in Develop. Lumerist takes it over there." },
+        { "severity": "warning", "chord": "I", "scope": "library", "usesSystem": "keyReferenceToggle", "lightroomAction": "Cycle info overlay" },
+        { "severity": "warning", "chord": "I", "scope": "develop", "usesSystem": "keyReferenceToggle", "lightroomAction": "Cycle info overlay" },
+        { "severity": "warning", "chord": "L", "scope": "library", "usesSystem": "pauseToggle",
+          "message": "Lightroom uses L for “Cycle forward / backward through Lights Out modes” in Library. Lumerist takes it over there." },
+        { "severity": "warning", "chord": "L", "scope": "develop", "usesSystem": "pauseToggle" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/the-combo-key-and-a-palette-key-free-in-develop-never-warn",
+      "about": "The Combo Key tapped alone still reaches Lightroom, like a Dial Key; G is Lightroom's only in Library, where the Palette Key does nothing.",
+      "keymap": { "systemKeys": { "comboKey": "K", "paletteKey": "G" } },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 0 }
     }
   ]
 }

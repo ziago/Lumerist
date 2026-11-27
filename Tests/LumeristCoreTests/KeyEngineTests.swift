@@ -397,8 +397,8 @@ struct KeyEngineNudgeAndCommandKeyTests {
         #expect(autoTone.decision.isConsume)
         #expect(autoTone.intents == [.action(.command(name: "autoTone", argument: nil))])
         #expect(engine.up(keyA).decision.isConsume)
-        // Tab + Q, still holding Tab: Lightroom's ⌥⌘V.
-        #expect(engine.down(keyQ).intents == [.action(.shortcut(KeyChord(9, [.option, .command])))])
+        // Tab + Q, still holding Tab: Paste Settings from Previous (the app presses ⌥⌘V).
+        #expect(engine.down(keyQ).intents == [.action(.command(name: "pasteSettingsFromPrevious", argument: nil))])
         _ = engine.up(keyQ)
         #expect(engine.up(keyCombo).decision.isConsume)
 

@@ -51,7 +51,7 @@ struct KeymapDefaultsTests {
         #expect(byKey["Tab + A"]?.action == .command(name: "autoTone", argument: nil))
         #expect(byKey["Tab + W"]?.action == .command(name: "autoWhiteBalance", argument: nil))
         #expect(byKey["Tab + R"]?.action == .command(name: "resetAll", argument: nil))
-        #expect(byKey["Tab + Q"]?.action == .shortcut(KeyChord(9, [.option, .command]))) // ⌥⌘V
+        #expect(byKey["Tab + Q"]?.action == .command(name: "pasteSettingsFromPrevious", argument: nil)) // ⌥⌘V, by character
         #expect(byKey["Tab + Q"]?.title == "Paste settings from previous")
         // Fixed ids: the same keys on every launch.
         #expect(Keymap.standardLayout.commandKeys.map(\.id) == combos.map(\.id))
@@ -287,9 +287,9 @@ struct KeymapValidationTests {
         #expect(throws: KeymapError.invalidCombo(.systemKey(.paletteKey))) { try system.validate() }
 
         // The Palette Key is the key left of 1: key code 10 on ISO keyboards.
-        #expect(Keymap.standardLayout(isoKeyboard: true).systemKeys.paletteKey == KeyChord(10))
-        #expect(Keymap.standardLayout(isoKeyboard: false) == Keymap.standardLayout)
-        #expect(throws: Never.self) { try Keymap.standardLayout(isoKeyboard: true).validate() }
+        #expect(Keymap.standardLayout(for: .iso).systemKeys.paletteKey == KeyChord(10))
+        #expect(Keymap.standardLayout(for: .ansi) == Keymap.standardLayout)
+        #expect(throws: Never.self) { try Keymap.standardLayout(for: .iso).validate() }
 
         // The Key Reference toggle is the one system key that can be a combo.
         let standard = Keymap.standardLayout

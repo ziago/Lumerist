@@ -130,7 +130,8 @@ public struct CommandKey: Codable, Sendable, Hashable, Identifiable {
 
     /// Every field a stored Command Key may have. `requiresLayerKey` is read
     /// from older files only (true turns the key into a combo) and is never
-    /// written.
+    /// written. The standard layout's old Tab + Q, Lightroom's ⌥⌘V sent by
+    /// key position, is read as the command `pasteSettingsFromPrevious`.
     fileprivate enum CodingKeys: String, CodingKey, CaseIterable {
         case id, scope, chord, group, title, action
         case requiresLayerKey
@@ -147,6 +148,16 @@ public struct CommandKey: Codable, Sendable, Hashable, Identifiable {
         if try c.decodeIfPresent(Bool.self, forKey: .requiresLayerKey) == true {
             chord = chord.asCombo
         }
+        action = Self.migrated(action, title: title)
+    }
+
+    /// The old standard Tab + Q pressed ⌥ ⌘ and key code 9, which is V only
+    /// on some layouts; its exact copy becomes the command that presses
+    /// Lightroom's ⌥⌘V by character. Any other shortcut stays as it is.
+    static func migrated(_ action: Action, title: String) -> Action {
+        guard case .shortcut(let chord) = action, chord == KeyChord(9, [.option, .command]),
+              title == "Paste settings from previous" else { return action }
+        return .command(name: AppCommand.pasteSettingsFromPrevious.rawValue, argument: nil)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -175,9 +186,9 @@ public struct SystemKeys: Codable, Sendable, Hashable {
     public var pauseToggle: KeyChord?
 
     /// Defaults: Tab is the Combo Key, the key left of 1 opens the Palette
-    /// (key code 50 on ANSI keyboards; `Keymap.standardLayout(isoKeyboard:)`
-    /// uses 10, the same spot on ISO keyboards, where 50 is Lightroom's
-    /// Before/After key next to the left Shift), the combo
+    /// (key code 50 on ANSI keyboards; `Keymap.standardLayout(for:)` uses 10,
+    /// the same spot on ISO keyboards, where 50 sits next to the left Shift,
+    /// and none on JIS keyboards, which have no key there), the combo
     /// Tab + H ("help") shows the Key Reference, and Control-Esc pauses. A
     /// quick tap of Tab still reaches Lightroom; the Palette key never does (a
     /// tap leaves the Palette open until the next press).
@@ -594,9 +605,10 @@ extension Keymap {
     /// amounts. Library uses the same keys for its Quick Develop controls.
     ///
     /// Four combos are preset in Develop (hold Tab): Tab + A Auto Tone,
-    /// Tab + W Auto White Balance, Tab + R Reset all, and Tab + Q Lightroom's
-    /// own ⌥⌘V, Paste Settings from Previous (the SDK has no command for it).
-    /// They have fixed ids, so they stay the same keys across launches.
+    /// Tab + W Auto White Balance, Tab + R Reset all, and Tab + Q Paste
+    /// Settings from Previous (`AppCommand`: the SDK has no command for it, so
+    /// Lumerist presses Lightroom's ⌥⌘V, by character). They have fixed ids,
+    /// so they stay the same keys across launches.
     public static let standardLayout: Keymap = {
         let develop = dialSlots([
             ("Temperature", 18), ("Tint", 19), ("Vibrance", 20), ("Texture", 21), ("Clarity", 23), ("Dehaze", 22),
@@ -622,18 +634,69 @@ extension Keymap {
             combo("F0851B74-86AE-4988-BE39-01DF8EFAFE25", 15, "Reset all",
                   .command(name: "resetAll", argument: nil)),
             combo("787E1A28-ED89-40D3-9855-6049A5F3F639", 12, "Paste settings from previous",
-                  .shortcut(KeyChord(9, [.option, .command]))),
+                  .command(name: AppCommand.pasteSettingsFromPrevious.rawValue, argument: nil)),
         ]
         return Keymap(develop: develop, library: library, commandKeys: combos)
     }()
 
     /// The standard layout for the keyboard in use: the Palette Key is the
-    /// key left of 1, key code 50 on ANSI keyboards and 10 on ISO ones.
-    public static func standardLayout(isoKeyboard: Bool) -> Keymap {
+    /// key left of 1, key code 50 on ANSI keyboards and 10 on ISO ones, unless
+    /// `PaletteKeyDefault` finds a reason to leave it empty (a JIS keyboard,
+    /// or a key that types a letter or digit on `layout`); General says why.
+    public static func standardLayout(for shape: KeyboardShape, layout: LayoutCharacters? = nil) -> Keymap {
         var keymap = standardLayout
-        if isoKeyboard { keymap.systemKeys.paletteKey = .isoSection }
+        keymap.systemKeys.paletteKey = PaletteKeyDefault.reason(shape: shape, layout: layout) == nil
+            ? PaletteKeyDefault.keyLeftOf1(shape) : nil
         return keymap
     }
+}
+
+/// The standard layout's Palette Key: the key left of 1, or none when that
+/// key would take something from the user. The same rule on Windows.
+public enum PaletteKeyDefault {
+    public enum Unavailable: Sendable, Hashable {
+        /// JIS keyboards have no key left of 1.
+        case noKeyLeftOf1
+        /// The key left of 1 types an ASCII letter or digit Lightroom may use
+        /// ("0" on Hungarian keyboards, "w" on Turkish F – Legacy). Other
+        /// characters (º, ё, ذ…) keep the default.
+        case typesLightroomKey(String)
+    }
+
+    /// The key left of 1: key code 50 on ANSI keyboards, 10 on ISO ones, none on JIS.
+    public static func keyLeftOf1(_ shape: KeyboardShape) -> KeyChord? {
+        switch shape {
+        case .ansi: .grave
+        case .iso: .isoSection
+        case .jis: nil
+        }
+    }
+
+    public static func reason(shape: KeyboardShape, layout: LayoutCharacters?) -> Unavailable? {
+        guard let key = keyLeftOf1(shape) else { return .noKeyLeftOf1 }
+        guard let typed = layout?.plain[key.keyCode], typed.unicodeScalars.count == 1,
+              let scalar = typed.unicodeScalars.first, scalar.isASCII,
+              scalar.properties.isAlphabetic || ("0"..."9").contains(scalar) else { return nil }
+        return .typesLightroomKey(typed)
+    }
+
+    /// General's line under an empty Palette Key box.
+    public static func explanation(_ reason: Unavailable) -> String {
+        switch reason {
+        case .noKeyLeftOf1:
+            "No Palette Key is set: Japanese (JIS) keyboards have no key left of 1. Click the box to pick another key."
+        case .typesLightroomKey(let typed):
+            "No Palette Key is set: with this keyboard layout the key left of 1 types “\(typed)”, which Lightroom uses as a shortcut. Click the box to pick another key."
+        }
+    }
+}
+
+/// The physical shape of a Mac keyboard. On ISO keyboards key code 10 is
+/// left of 1 and 50 sits between the left Shift and Z; on ANSI ones 50 is
+/// left of 1 and there is no 10; JIS keyboards have neither, and have ¥, _,
+/// 英数 and かな (key codes 93, 94, 102, 104) instead.
+public enum KeyboardShape: String, Sendable, Hashable, CaseIterable {
+    case ansi, iso, jis
 }
 
 // MARK: - Validation and conflicts
@@ -827,6 +890,7 @@ extension Keymap {
             }
         }
         result += importKeyConflicts(name: name)
+        result += systemKeyLightroomWarnings(name: name)
 
         for scope in ParameterScope.allCases {
             var byChord: [KeyChord: [KeyUsage]] = [:]
@@ -895,6 +959,28 @@ extension Keymap {
         KeyConflict(severity: .warning, chord: chord, scope: scope, usages: usages,
                     message: "Lightroom uses \(text) for “\(match.name)” in \(match.context.place). Lumerist takes it over there.",
                     lightroomAction: match.name)
+    }
+
+    /// A system key that takes its key away from Lightroom, on one of
+    /// Lightroom's own keys there: the Palette Key in Develop, a plain Key
+    /// Reference toggle and the pause toggle in Library and Develop. Never the
+    /// Combo Key (tapped alone it still reaches Lightroom, like a Dial Key) or
+    /// a combo. One warning per module, with that module's scope.
+    private func systemKeyLightroomWarnings(name: (KeyChord) -> String) -> [KeyConflict] {
+        let places: [(SystemKeys.Role, [ParameterScope])] = [
+            (.paletteKey, [.develop]),
+            (.keyReferenceToggle, [.library, .develop]),
+            (.pauseToggle, [.library, .develop]),
+        ]
+        var result: [KeyConflict] = []
+        for (role, scopes) in places {
+            guard let chord = systemKeys.chord(for: role), !chord.isCombo else { continue }
+            for scope in scopes {
+                guard let match = LightroomShortcuts.match(chord, in: LightroomShortcuts.Context(scope)) else { continue }
+                result.append(Self.lightroomWarning(match, chord: chord, text: name(chord), scope: scope, usages: [.system(role)]))
+            }
+        }
+        return result
     }
 
     /// Two Import keys on one chord, or an Import key on the pause toggle,

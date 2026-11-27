@@ -1,6 +1,6 @@
 {
   "group": "import-keys",
-  "about": "Culling in Lightroom's Import window (\"in\": \"import\", set by the app, never reported by Lightroom). Only the Import keys and the pause toggle act there; each Import key sends Lightroom's own Import key: Include P, Exclude X, Toggle the key left of 1, then ArrowRight with advance. No Import key is assigned in the standard layout, so most cases set Z, X and C.",
+  "about": "Culling in Lightroom's Import window (\"in\": \"import\", set by the app, never reported by Lightroom). Only the Import keys and the pause toggle act there; each Import key sends Lightroom's own Import key: Include P, Exclude X, Toggle the key that types a plain ` (LeftOf1 with the US layout the cases use) or else <, then ArrowRight with advance. No Import key is assigned in the standard layout, so most cases set Z, X and C.",
   "cases": [
     {
       "id": "import-keys/the-standard-layout-takes-no-key-in-the-import-window",
@@ -24,6 +24,18 @@
         { "up": "X", "in": "import", "decision": "consume" },
         { "down": "C", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "LeftOf1" } }] },
         { "up": "C", "in": "import", "decision": "consume", "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "import-keys/toggle-sends-nothing-when-no-key-types-its-character",
+      "about": "On a layout where no key types a plain ` or < (Russian, Czech…) there is no Toggle: its key is taken and sends nothing, and the other Import keys work.",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "lightroomImportKeys": { "toggle": null },
+      "steps": [
+        { "down": "C", "in": "import", "decision": "consume", "intents": [] },
+        { "up": "C", "in": "import", "decision": "consume" },
+        { "down": "Z", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "P" } }] },
+        { "up": "Z", "in": "import", "decision": "consume", "state": { "engaged": false } }
       ]
     },
     {

@@ -130,6 +130,20 @@ struct GeneralScreen: View {
             SettingRow(title: "Standard layout", detail: "Brings back the keys Lumerist ships with. Your options stay as they are.") {
                 Button("Restore…") { confirmsRestore = true }.buttonStyle(.neonDestructive)
             }
+            // The stored keymap was written by another version (or damaged):
+            // it was copied, not written over (KeymapStore).
+            if let unreadable = store.keymap.unreadable {
+                SettingRow(title: "Earlier keys",
+                           detail: "This version of Lumerist can't read the keys saved earlier, perhaps by a newer version, so it started from the standard layout. They are not written over until you change a key, and a copy is kept.") {
+                    if let backup = unreadable.backup {
+                        Button("Show copy") { NSWorkspace.shared.activateFileViewerSelecting([backup]) }
+                            .buttonStyle(.neonQuiet)
+                            .accessibilityHint("Shows the copy of the earlier keys in Finder")
+                    } else {
+                        Text("Copy kept in Lumerist's settings").synthBody(12, color: Synth.steel)
+                    }
+                }
+            }
         }
     }
 

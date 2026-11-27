@@ -15,6 +15,9 @@ public sealed class IntentDispatcherHooks
     /// <summary>Shortcut to try when Lightroom refuses a command (see <see cref="FallbackShortcuts"/>).</summary>
     public Func<LightroomCommandName, KeyChord?> FallbackShortcut { get; init; } = command => FallbackShortcuts.For(command);
 
+    /// <summary>The shortcut an app command presses, in Lightroom's layout (see <see cref="AppCommands"/>).</summary>
+    public Func<string, KeyChord?> AppCommandShortcut { get; init; } = name => AppCommands.Shortcut(name);
+
     public Func<DateTimeOffset> Now { get; init; } = () => DateTimeOffset.UtcNow;
 
     public Func<double> UpdateRateHz { get; init; } = () => IntentCoalescer.DefaultRate;
@@ -155,6 +158,10 @@ public sealed class IntentDispatcher(IntentDispatcherHooks hooks)
     {
         switch (action)
         {
+            case CommandAction.Command(var name, null) when AppCommands.IsAppCommand(name):
+                // Never through the plug-in: Lightroom's own shortcut is the only way. (With an argument it is not an app command.)
+                if (hooks.AppCommandShortcut(name) is { } shortcut) hooks.PostShortcut(shortcut);
+                break;
             case CommandAction.Command(var name, var argument):
                 if (LightroomCommandNames.FromWireName(name) is not { } command)
                 {

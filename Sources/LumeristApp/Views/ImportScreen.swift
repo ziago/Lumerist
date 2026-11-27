@@ -9,6 +9,8 @@ struct ImportScreen: View {
 
     var body: some View {
         let keymap = store.keymap.keymap
+        // Drawn again when the input source changes: the keys follow the layout.
+        let _ = store.keyboardLayoutRevision
         let sends = ImportShortcuts.forCurrentLayout
         let warnings = Self.warnings(in: keymap)
         VStack(alignment: .leading, spacing: Synth.Space.xl) {
@@ -26,13 +28,19 @@ struct ImportScreen: View {
                 ForEach(ImportKeys.Role.allCases, id: \.self) { role in
                     SettingRow(title: role.title, detail: role.detail) {
                         HStack(spacing: Synth.Space.m) {
-                            Text("Sends \(sends.chord(for: role).displayText)")
+                            let lightroomKey = sends.chord(for: role)?.displayText
+                            Text(lightroomKey.map { "Sends \($0)" } ?? "Sends nothing")
                                 .synthBody(12, color: Synth.steel)
-                                .accessibilityLabel("Sends Lightroom's \(sends.chord(for: role).displayText) key")
+                                .accessibilityLabel(lightroomKey.map { "Sends Lightroom's \($0) key" } ?? "Sends nothing")
                             ImportKeySlot(store: store, role: role, warning: warnings[role])
                         }
                     }
                 }
+            }
+            if sends.toggle == nil {
+                Label("Toggle isn't available with this keyboard layout.", systemImage: "exclamationmark.triangle.fill")
+                    .synthBody(12, color: Synth.amber)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if let error = KeymapEditor.shared.lastError {
                 Label(error, systemImage: "exclamationmark.triangle.fill").synthBody(12, color: Synth.error)

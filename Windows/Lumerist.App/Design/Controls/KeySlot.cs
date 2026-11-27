@@ -84,7 +84,9 @@ internal sealed class KeySlot : ContentControl
         cap.HorizontalAlignment = HorizontalAlignment.Left;
         cap.ToolTip = conflict ?? (chord is null ? "Click, then press a key (Esc cancels)" : "Click to record another key; Delete clears");
         AutomationProperties.SetName(cap, accessibilityName);
-        AutomationProperties.SetItemStatus(cap, recording ? "Recording, press a key" : text ?? "Not assigned");
+        AutomationProperties.SetItemStatus(cap, recording
+            ? recorder.LastKeyRefused ? "That key switches the input method; press another key" : "Recording, press a key"
+            : text ?? "Not assigned");
         AutomationProperties.SetHelpText(cap, conflict ?? "Records a new key");
 
         UIElement trailing;
@@ -104,7 +106,12 @@ internal sealed class KeySlot : ContentControl
         Content = Layout.HStack(2, cap, trailing);
     }
 
-    /// <summary>"PRESS", or "Tab + …" while the Combo Key is held during recording.</summary>
+    /// <summary>
+    /// "PRESS", "Tab + …" while the Combo Key is held during recording, or
+    /// "OTHER KEY" after an input-method key, which can't be recorded.
+    /// </summary>
     private static string RecordingPrompt(ChordRecorder recorder) =>
-        recorder.IsComboKeyDown && recorder.ComboKey is { } combo ? $"{combo.DisplayText} + …" : "PRESS";
+        recorder.IsComboKeyDown && recorder.ComboKey is { } combo ? $"{combo.DisplayText} + …"
+        : recorder.LastKeyRefused ? "OTHER KEY"
+        : "PRESS";
 }

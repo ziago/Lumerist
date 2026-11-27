@@ -114,6 +114,12 @@ extension SystemKeys.Role {
             return "Hands every key back to Lightroom until you press it again. Handy when you need to type."
         }
     }
+
+    /// Why the standard layout sets no Palette Key on this keyboard, if it doesn't.
+    @MainActor static var noPaletteKeyReason: String? {
+        PaletteKeyDefault.reason(shape: KeyboardLayout.physicalShape, layout: KeyboardLayout.characters)
+            .map(PaletteKeyDefault.explanation)
+    }
 }
 
 extension Keymap {
@@ -373,6 +379,75 @@ extension LightroomCommandName {
     }
 }
 
+extension AppCommand {
+    var title: String {
+        switch self {
+        case .pasteSettingsFromPrevious: "Paste settings from previous"
+        }
+    }
+
+    var group: String {
+        switch self {
+        case .pasteSettingsFromPrevious: "Edit"
+        }
+    }
+}
+
+/// A command the Command Key editor offers: one the plug-in runs, or one
+/// Lumerist runs itself by pressing Lightroom's own shortcut (`AppCommand`).
+enum CommandChoice: Hashable {
+    case lightroom(LightroomCommandName)
+    case app(AppCommand)
+
+    /// What the editor lists (presets have their own picker).
+    static let all: [CommandChoice] = LightroomCommandName.allCases.filter { $0 != .applyPreset }.map(CommandChoice.lightroom)
+        + AppCommand.allCases.map(CommandChoice.app)
+
+    init?(name: String) {
+        if let command = LightroomCommandName(rawValue: name) {
+            self = .lightroom(command)
+        } else if let command = AppCommand(rawValue: name) {
+            self = .app(command)
+        } else {
+            return nil
+        }
+    }
+
+    /// The name stored in the keymap.
+    var name: String {
+        switch self {
+        case .lightroom(let command): command.rawValue
+        case .app(let command): command.rawValue
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .lightroom(let command): command.title
+        case .app(let command): command.title
+        }
+    }
+
+    var group: String {
+        switch self {
+        case .lightroom(let command): command.group
+        case .app(let command): command.group
+        }
+    }
+
+    func accepts(argument: String?) -> Bool {
+        switch self {
+        case .lightroom(let command): command.accepts(argument: argument)
+        case .app: argument == nil
+        }
+    }
+
+    var defaultArgument: String? {
+        if case .lightroom(let command) = self { return command.defaultArgument }
+        return nil
+    }
+}
+
 /// Mask tools offered by the Palette and the Command Key editor.
 struct MaskTool: Identifiable, Hashable {
     let id: String          // "aiSelection/subject"
@@ -406,7 +481,7 @@ extension CommandKey.Action {
         switch self {
         case .command(let name, let argument):
             let command = LightroomCommandName(rawValue: name)
-            let title = command?.title ?? name
+            let title = CommandChoice(name: name)?.title ?? name
             guard let argument else { return title }
             if command?.takesMask == true { return "\(title): \(MaskTool.title(for: argument))" }
             if command == .rating { return "\(title): \(argument) ★" }

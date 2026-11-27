@@ -69,8 +69,8 @@ public enum MouseButton: Sendable, Hashable {
 ///   buttons change photo.
 /// - **Import keys**: in Lightroom's Import window (module "import") only
 ///   they and the pause toggle act. Each press sends Lightroom's own Import
-///   shortcut (P, X, the key left of 1), then → with "Move to the next
-///   photo". Every other key, the wheel, the trackpad and the mouse reach
+///   shortcut (P, X, and the key that types ` or <), then → with "Move to
+///   the next photo". Every other key, the wheel, the trackpad and the mouse reach
 ///   Lightroom untouched.
 ///
 /// Typing stays safe: held keys are replayed in order when another key
@@ -627,12 +627,14 @@ public struct KeyGestureEngine<Event> {
     /// An Import key presses Lightroom's own shortcut, plus → after Include
     /// or Exclude with "Move to the next photo". Auto-repeats are swallowed
     /// when the first press was taken, and pass when it went to a text field.
+    /// A Toggle the layout has no key for is taken and sends nothing.
     private mutating func importKey(_ chord: KeyChord, isAutoRepeat: Bool, textFocused: () -> Bool) -> Outcome {
         guard let role = keymap.importKeys.role(for: chord) else { return Outcome(.pass) }
         if isAutoRepeat { return Outcome(consumedKeyUps.contains(chord.keyCode) ? .consume : .pass) }
         if textFocused() { return Outcome(.pass) }
         consumedKeyUps.insert(chord.keyCode)
-        var intents: [KeyIntent] = [.action(.shortcut(importShortcuts.chord(for: role)))]
+        guard let lightroomKey = importShortcuts.chord(for: role) else { return Outcome(.consume) }
+        var intents: [KeyIntent] = [.action(.shortcut(lightroomKey))]
         if keymap.importKeys.advance && role != .toggle {
             intents.append(.action(.shortcut(importShortcuts.nextPhoto)))
         }

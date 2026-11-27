@@ -17,32 +17,13 @@ final class IntentDispatcher {
         var log: (String) -> Void
     }
 
-    /// Lightroom Classic's own shortcuts, by character, so they are sent with
-    /// the physical key that types that character in the active layout
-    /// (⌘Z is a different key on AZERTY and QWERTZ keyboards).
-    private static let fallbackCharacters: [LightroomCommandName: (character: String, modifiers: KeyModifiers, ansiKeyCode: Int64)] = [
-        .autoTone: ("u", .command, 32),          // ⌘U
-        .undo: ("z", .command, 6),               // ⌘Z
-        .redo: ("z", [.command, .shift], 6),     // ⇧⌘Z
-        .flagPick: ("p", [], 35),                // P
-        .flagReject: ("x", [], 7),               // X
-        .flagRemove: ("u", [], 32),              // U
-        .showClipping: ("j", [], 38),            // J
-    ]
-
-    /// Arrow keys are the same on every layout.
-    private static let fallbackKeys: [LightroomCommandName: KeyChord] = [
-        .nextPhoto: KeyChord(124),               // →
-        .previousPhoto: KeyChord(123),           // ←
-    ]
-
-    /// Used when a command is not available through the SDK in the current
-    /// module (e.g. Auto Tone in Library).
+    /// Lightroom's own shortcut for a command the SDK cannot run in the
+    /// current module (e.g. Auto Tone in Library), pressed with the key that
+    /// types its character on the active layout (`FallbackShortcuts`: ⌘Z is
+    /// another key on AZERTY, QWERTZ and "Dvorak – QWERTY ⌘" keyboards).
     static func fallbackShortcut(for command: LightroomCommandName) -> KeyChord? {
-        if let chord = fallbackKeys[command] { return chord }
-        guard let entry = fallbackCharacters[command] else { return nil }
-        let keyCode = KeyboardLayout.keyCode(for: entry.character) ?? entry.ansiKeyCode
-        return KeyChord(keyCode, entry.modifiers)
+        FallbackShortcuts.press(for: command)?.chord(layout: KeyboardLayout.characters,
+                                                      asciiCapable: KeyboardLayout.asciiCapableCharacters)
     }
 
     private let hooks: Hooks
@@ -138,6 +119,15 @@ final class IntentDispatcher {
     private func run(_ action: CommandKey.Action) {
         switch action {
         case .command(let name, let argument):
+            // Lumerist's own commands press Lightroom's shortcut and send no request.
+            if let command = AppCommand(action) {
+                let chord = command.shortcut.chord(layout: KeyboardLayout.characters,
+                                                   asciiCapable: KeyboardLayout.asciiCapableCharacters)
+                if !KeyEngineMonitor.postToLightroom(chord) {
+                    hooks.log("\(name) (\(chord.displayText)) skipped: Lightroom is not in front")
+                }
+                return
+            }
             guard let command = LightroomCommandName(rawValue: name) else {
                 hooks.log("Unknown command \(name)")
                 return
@@ -175,14 +165,9 @@ final class IntentDispatcher {
 }
 
 extension ImportShortcuts {
-    /// Lightroom's Import keys for the active keyboard layout. P and X go
-    /// out as the keys that type p and x, like Lightroom's flag shortcuts
-    /// above; Toggle stays key code 50 (` on US keyboards) and → is the same
-    /// everywhere.
-    @MainActor static var forCurrentLayout: ImportShortcuts {
-        var shortcuts = ImportShortcuts.standard
-        if let include = IntentDispatcher.fallbackShortcut(for: .flagPick) { shortcuts.include = include }
-        if let exclude = IntentDispatcher.fallbackShortcut(for: .flagReject) { shortcuts.exclude = exclude }
-        return shortcuts
+    /// Lightroom's Import keys for the active keyboard layout: the keys that
+    /// type p and x, the key that types a plain ` or < (or no Toggle), and →.
+    static var forCurrentLayout: ImportShortcuts {
+        .forLayout(KeyboardLayout.characters, asciiCapable: KeyboardLayout.asciiCapableCharacters)
     }
 }

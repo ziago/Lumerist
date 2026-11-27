@@ -147,7 +147,8 @@ struct KeysPaletteScreen: View {
     /// the key switches it off.
     private func keyNote(_ keymap: Keymap) -> String {
         guard let key = keymap.systemKeys.paletteKey else {
-            return "The Palette is off: it has no key. Set one above."
+            let off = "The Palette is off: it has no key. Set one above."
+            return SystemKeys.Role.noPaletteKeyReason ?? off
         }
         return "In Develop, hold \(keymap.displayText(for: key)) and the Palette opens under the pointer. Clear the key to switch the Palette off."
     }

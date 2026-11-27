@@ -308,9 +308,12 @@ public static class KeymapEditing
     /// the Import keys are cleared; mouse, trackpad, Import ("Move to the next
     /// photo") and Lightroom options and the Palette stay.
     /// </summary>
-    public static Keymap StandardLayoutKeeping(Keymap current)
+    public static Keymap StandardLayoutKeeping(Keymap current) => StandardLayoutKeeping(current, KeyChord.LeftOf1);
+
+    /// <param name="paletteKey">The Palette Key this keyboard allows (<see cref="PaletteKeyDefault"/>).</param>
+    public static Keymap StandardLayoutKeeping(Keymap current, KeyChord? paletteKey)
     {
-        var restored = Keymap.StandardLayout();
+        var restored = Keymap.StandardLayout(paletteKey);
         restored.Input = current.Input with { };
         restored.Palette = current.Palette with { Favourites = [.. current.Palette.Favourites] };
         restored.ImportKeys.Advance = current.ImportKeys.Advance;

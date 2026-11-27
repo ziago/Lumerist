@@ -100,7 +100,7 @@ public static class CommandTitles
         {
             case CommandAction.Command(var name, var argument):
                 var command = LightroomCommandNames.FromWireName(name);
-                var title = command?.Title() ?? name;
+                var title = command?.Title() ?? (argument is null ? AppCommands.Title(name) : null) ?? name;
                 if (argument is null) return title;
                 if (command?.TakesMask() == true) return $"{title}: {MaskTool.TitleFor(argument)}";
                 if (command == LightroomCommandName.Rating) return $"{title}: {argument} ★";
@@ -227,6 +227,9 @@ public sealed class ActionDraft
 
     public LightroomCommandName Command { get; set; } = LightroomCommandName.AutoTone;
 
+    /// <summary>An app command (<see cref="AppCommands"/>) picked instead of <see cref="Command"/>; null otherwise.</summary>
+    public string? AppCommand { get; set; }
+
     public string? Argument { get; set; }
 
     public string? PresetId { get; set; }
@@ -243,6 +246,10 @@ public sealed class ActionDraft
     {
         switch (action)
         {
+            case CommandAction.Command(var name, null) when AppCommands.IsAppCommand(name):
+                Type = Kind.Command;
+                AppCommand = name;
+                break;
             case CommandAction.Command(var name, var argument):
                 Type = Kind.Command;
                 Command = LightroomCommandNames.FromWireName(name) ?? LightroomCommandName.AutoTone;
@@ -276,9 +283,20 @@ public sealed class ActionDraft
     /// <summary>Picks a command and its default argument.</summary>
     public void Choose(LightroomCommandName command)
     {
+        AppCommand = null;
         Command = command;
         Argument = command.DefaultArgument();
     }
+
+    /// <summary>Picks an app command (it takes no argument).</summary>
+    public void ChooseAppCommand(string name)
+    {
+        AppCommand = name;
+        Argument = null;
+    }
+
+    /// <summary>The picked command's wire name: the app command's, or the Lightroom command's.</summary>
+    public string CommandName => AppCommand ?? Command.WireName();
 
     /// <summary>The action, or null while incomplete.</summary>
     public CommandAction? Action
@@ -288,6 +306,7 @@ public sealed class ActionDraft
             switch (Type)
             {
                 case Kind.Command:
+                    if (AppCommand is { } app) return new CommandAction.Command(app);
                     return Command.Accepts(Argument) ? new CommandAction.Command(Command.WireName(), Argument) : null;
                 case Kind.Preset:
                     return PresetId is null ? null : new CommandAction.Preset(PresetId, PresetName.Length == 0 ? PresetId : PresetName);

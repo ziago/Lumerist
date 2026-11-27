@@ -362,7 +362,7 @@ struct ActionDraft: Equatable {
     enum Kind: String, CaseIterable { case command, preset, shortcut, macro }
 
     var kind: Kind = .command
-    var command: LightroomCommandName = .autoTone
+    var command: CommandChoice = .lightroom(.autoTone)
     var argument: String?
     var presetID: String?
     var presetName: String = ""
@@ -381,7 +381,7 @@ struct ActionDraft: Equatable {
         switch action {
         case .command(let name, let argument):
             kind = .command
-            command = LightroomCommandName(rawValue: name) ?? .autoTone
+            command = CommandChoice(name: name) ?? .lightroom(.autoTone)
             self.argument = argument
         case .preset(let uuid, let name):
             kind = .preset
@@ -401,7 +401,7 @@ struct ActionDraft: Equatable {
         switch kind {
         case .command:
             guard command.accepts(argument: argument) else { return nil }
-            return .command(name: command.rawValue, argument: argument)
+            return .command(name: command.name, argument: argument)
         case .preset:
             guard let presetID else { return nil }
             return .preset(uuid: presetID, name: presetName.isEmpty ? presetID : presetName)
@@ -468,14 +468,14 @@ private struct CommandPicker: View {
     @Binding var draft: ActionDraft
 
     var body: some View {
-        let commands = LightroomCommandName.allCases.filter { $0 != .applyPreset }
+        let commands = CommandChoice.all
         let groupOrder = ["Develop", "Edit", "Photos", "Masking"]
         VStack(alignment: .leading, spacing: Synth.Space.s) {
             NeonMenu(
                 title: draft.command.title,
                 accessibilityLabel: "Command",
                 groups: groupOrder.map { group in
-                    NeonMenu<LightroomCommandName>.Group(title: group, items: commands.filter { $0.group == group })
+                    NeonMenu<CommandChoice>.Group(title: group, items: commands.filter { $0.group == group })
                 },
                 selection: draft.command,
                 itemTitle: { $0.title },
@@ -491,10 +491,19 @@ private struct CommandPicker: View {
 }
 
 private struct ArgumentPicker: View {
-    let command: LightroomCommandName
+    let command: CommandChoice
     @Binding var argument: String?
 
     var body: some View {
+        switch command {
+        case .app:
+            Text("No options.").synthBody(12, color: Synth.steel)
+        case .lightroom(let command):
+            lightroomOptions(command)
+        }
+    }
+
+    @ViewBuilder private func lightroomOptions(_ command: LightroomCommandName) -> some View {
         switch command {
         case .rating:
             SynthSegmented(items: ["0", "1", "2", "3", "4", "5"], selection: binding("5"), title: { $0 == "0" ? "None" : "\($0) ★" })

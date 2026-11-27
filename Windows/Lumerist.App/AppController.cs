@@ -43,8 +43,8 @@ internal sealed class AppController : IDisposable
             Send = Send,
             PostShortcut = PostShortcut,
             Schedule = Schedule,
-            FallbackShortcut = command => FallbackShortcuts.For(command,
-                character => KeyboardLayout.ScanCodeFor(character, KeyboardLayout.OfForeground())),
+            FallbackShortcut = command => FallbackShortcuts.For(command, KeyboardLayout.Table(KeyboardLayout.OfLightroom())),
+            AppCommandShortcut = name => AppCommands.Shortcut(name, KeyboardLayout.Table(KeyboardLayout.OfLightroom())),
             UpdateRateHz = () => settings.UpdateRateHz,
             Notice = ShowNotice,
             OpenPalette = () => Panels?.OpenPalette(),
@@ -134,7 +134,7 @@ internal sealed class AppController : IDisposable
     {
         try
         {
-            KeymapStore.Save(newKeymap, AppPaths.KeymapFile);
+            KeymapFile.Save(newKeymap);
         }
         catch (Exception error) when (error is KeymapException or IOException or UnauthorizedAccessException)
         {
@@ -170,7 +170,7 @@ internal sealed class AppController : IDisposable
     public void Start(IReadOnlyList<string> arguments)
     {
         Log.Write($"Lumerist {AppVersion} started{(arguments.Count > 0 ? " " + string.Join(' ', arguments) : "")}");
-        KeyNames.LayoutName = scanCode => KeyboardLayout.Name(scanCode, KeyboardLayout.OfForeground());
+        KeyNames.LayoutName = scanCode => KeyboardLayout.Name(scanCode, KeyboardLayout.OfLightroom());
         WritePluginLink();
         Log.Write(PluginSummary);
         UpdatePluginIfOutdated();
@@ -301,18 +301,7 @@ internal sealed class AppController : IDisposable
 
     // Keymap and settings ------------------------------------------------------
 
-    private static Keymap LoadKeymap()
-    {
-        try
-        {
-            if (KeymapStore.Load(AppPaths.KeymapFile) is { } saved) return saved;
-        }
-        catch (Exception error) when (error is KeymapException or JsonException or IOException or UnauthorizedAccessException)
-        {
-            Log.Write($"Keymap not loaded, using the standard layout: {error.Message}");
-        }
-        return Keymap.StandardLayout();
-    }
+    private static Keymap LoadKeymap() => KeymapFile.Load();
 
     public void SaveSettings()
     {

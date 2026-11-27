@@ -245,11 +245,19 @@ public sealed partial class Keymap
     /// </code>
     /// P and M are the preset and mask amounts; Library uses the same keys for
     /// Quick Develop. Four combos in Develop: Tab + A Auto Tone, Tab + W Auto
-    /// White Balance, Tab + R Reset all, Tab + Q Lightroom's Ctrl+Alt+V (Paste
-    /// Settings from Previous). Fixed ids keep them the same keys across launches.
+    /// White Balance, Tab + R Reset all, Tab + Q Paste Settings from Previous
+    /// (<see cref="AppCommands.PasteSettingsFromPrevious"/>, Lightroom's Ctrl+Alt+V
+    /// with the key that types v). Fixed ids keep them the same keys across launches.
     /// No Import key is assigned.
     /// </summary>
-    public static Keymap StandardLayout()
+    public static Keymap StandardLayout() => StandardLayout(KeyChord.LeftOf1);
+
+    /// <summary>
+    /// The standard layout with the Palette Key the keyboard allows
+    /// (<see cref="PaletteKeyDefault"/>): the key left of 1, or none where that
+    /// key switches the input method or types a letter or digit.
+    /// </summary>
+    public static Keymap StandardLayout(KeyChord? paletteKey)
     {
         var develop = DialSlots(
             ("Temperature", ScanCodes.Digit1), ("Tint", ScanCodes.Digit2), ("Vibrance", ScanCodes.Digit3),
@@ -280,8 +288,9 @@ public sealed partial class Keymap
                     new CommandAction.Command("autoWhiteBalance")),
                 Combo("F0851B74-86AE-4988-BE39-01DF8EFAFE25", ScanCodes.R, "Reset all", new CommandAction.Command("resetAll")),
                 Combo("787E1A28-ED89-40D3-9855-6049A5F3F639", ScanCodes.Q, "Paste settings from previous",
-                    new CommandAction.Shortcut(new KeyChord(ScanCodes.V, KeyModifiers.Control | KeyModifiers.Alt))),
+                    new CommandAction.Command(AppCommands.PasteSettingsFromPrevious)),
             ],
+            SystemKeys = new SystemKeys { PaletteKey = paletteKey },
         };
     }
 }

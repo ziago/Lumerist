@@ -16,7 +16,7 @@ public struct ImportKeys: Codable, Sendable, Hashable {
     public var include: KeyChord?
     /// Unticks the photo, so Lightroom leaves it out (Lightroom's X).
     public var exclude: KeyChord?
-    /// Ticks or unticks the photo (Lightroom's ` key; the < key left of Z on European keyboards).
+    /// Ticks or unticks the photo (Lightroom's ` key, or < where no key types a plain `).
     public var toggle: KeyChord?
     /// After Include or Exclude, Lumerist also presses → so the next photo
     /// is selected.
@@ -87,21 +87,29 @@ public struct ImportKeys: Codable, Sendable, Hashable {
 // MARK: - Lightroom's Import shortcuts
 
 /// Lightroom Classic's own keys in its Import window, which the Import keys
-/// press: P includes, X excludes, key code 50 toggles (` on US keyboards,
-/// the < key left of Z on European ISO ones, as tested on an Italian Mac), and
-/// → selects the next photo.
+/// press: P includes, X excludes, the Toggle key ticks or unticks, and →
+/// selects the next photo.
 ///
-/// `standard` holds the US (ANSI) key codes, which the shared test cases
-/// expect. The app may replace them with the keys that type the same
-/// characters on the active keyboard layout, as it does for Lightroom's
-/// other shortcuts.
+/// Lightroom finds these keys by the character they type, so Lumerist
+/// presses them by character too (`forLayout`): P and X are the keys that
+/// type p and x, and Toggle is the key that types a plain ` (no modifier, not
+/// a dead key), else the key that types a plain <. With neither there is no
+/// Toggle (nil) and the Toggle key sends nothing. Never the key left of 1 by
+/// position: on an Italian keyboard that types \, one of Lightroom's own
+/// shortcuts, which hung the Import window on Windows. The < key worked in
+/// Lumerist's test with Lightroom in Italian (27 Nov 2026); which character
+/// Lightroom expects may depend on its own language.
+///
+/// `standard` holds the keys of a US keyboard (` is key code 50), which the
+/// shared test cases expect.
 public struct ImportShortcuts: Sendable, Hashable {
     public var include: KeyChord
     public var exclude: KeyChord
-    public var toggle: KeyChord
+    /// nil: no key types a plain ` or < on this layout, so Toggle is off.
+    public var toggle: KeyChord?
     public var nextPhoto: KeyChord
 
-    public init(include: KeyChord, exclude: KeyChord, toggle: KeyChord, nextPhoto: KeyChord) {
+    public init(include: KeyChord, exclude: KeyChord, toggle: KeyChord?, nextPhoto: KeyChord) {
         self.include = include
         self.exclude = exclude
         self.toggle = toggle
@@ -115,7 +123,23 @@ public struct ImportShortcuts: Sendable, Hashable {
         nextPhoto: KeyChord(KeyChord.rightArrow)    // →
     )
 
-    public func chord(for role: ImportKeys.Role) -> KeyChord {
+    /// The keys for a keyboard layout. `layout` is the active one;
+    /// `asciiCapable` the layout macOS keeps for shortcuts, used for P and X
+    /// when no key types them and in place of a layout without key data.
+    /// With no layout at all, the US keys.
+    public static func forLayout(_ layout: LayoutCharacters?, asciiCapable: LayoutCharacters? = nil) -> ImportShortcuts {
+        guard let typing = layout ?? asciiCapable else { return .standard }
+        let toggle = typing.keyCode(typing: "`") ?? typing.keyCode(typing: "<")
+        return ImportShortcuts(
+            include: FallbackShortcuts.flagPick.chord(layout: typing, asciiCapable: asciiCapable),
+            exclude: FallbackShortcuts.flagReject.chord(layout: typing, asciiCapable: asciiCapable),
+            toggle: toggle.map { KeyChord($0) },
+            nextPhoto: standard.nextPhoto
+        )
+    }
+
+    /// The key a role presses; nil for a Toggle the layout has no key for.
+    public func chord(for role: ImportKeys.Role) -> KeyChord? {
         switch role {
         case .include: include
         case .exclude: exclude

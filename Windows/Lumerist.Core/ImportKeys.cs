@@ -1,3 +1,5 @@
+using Lumerist.Core.Input;
+
 namespace Lumerist.Core;
 
 // Import keys (Sources/LumeristCore/ImportKeys.swift): culling keys for
@@ -86,8 +88,8 @@ public sealed record ImportKeys
 /// <see cref="Standard"/> holds the US scan codes the shared cases expect.
 /// The app uses <see cref="ForLayout"/> with Lightroom's layout:
 /// <list type="bullet">
-/// <item>P and X are the keys that type p and x, like Lightroom's flag
-/// shortcuts in <see cref="FallbackShortcuts"/>;</item>
+/// <item>P and X are Lightroom's keys for p and x, like its flag shortcuts in
+/// <see cref="FallbackShortcuts"/> (<see cref="KeyboardLayoutTable.LetterKey"/>);</item>
 /// <item>Toggle is the key that types ` alone (no Shift or AltGr, not a dead
 /// key): 0x29 on US and UK keyboards. Otherwise the key that types &lt; alone,
 /// the ISO key left of Z (0x56 on Italian, German, French, Spanish keyboards),
@@ -109,15 +111,12 @@ public sealed record ImportShortcuts(KeyChord Include, KeyChord Exclude, KeyChor
         new KeyChord(0x29), // ` on US keyboards
         new KeyChord(ScanCodes.RightArrow));
 
-    /// <param name="scanCodeForCharacter">
-    /// The key that types a character in the active layout with no modifiers
-    /// and without being a dead key, or null when none does. Null: the US keys.
-    /// </param>
-    public static ImportShortcuts ForLayout(Func<char, int?>? scanCodeForCharacter) => scanCodeForCharacter is null ? Standard : Standard with
+    /// <param name="layout">Lightroom's keyboard layout. Null: the US keys.</param>
+    public static ImportShortcuts ForLayout(KeyboardLayoutTable? layout) => layout is null ? Standard : Standard with
     {
-        Include = FallbackShortcuts.For(LightroomCommandName.FlagPick, scanCodeForCharacter) ?? Standard.Include,
-        Exclude = FallbackShortcuts.For(LightroomCommandName.FlagReject, scanCodeForCharacter) ?? Standard.Exclude,
-        Toggle = (scanCodeForCharacter('`') ?? scanCodeForCharacter('<')) is { } scanCode ? new KeyChord(scanCode) : null,
+        Include = FallbackShortcuts.For(LightroomCommandName.FlagPick, layout) ?? Standard.Include,
+        Exclude = FallbackShortcuts.For(LightroomCommandName.FlagReject, layout) ?? Standard.Exclude,
+        Toggle = (layout.PlainKeyFor('`') ?? layout.PlainKeyFor('<')) is { } scanCode ? new KeyChord(scanCode) : null,
     };
 
     /// <summary>The key a role presses; null for Toggle when the layout has none.</summary>

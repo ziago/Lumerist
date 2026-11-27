@@ -118,7 +118,9 @@ public sealed class CommandsTabModelTests
         Assert.Equal(4, CommandTitles.Filter(develop, "  ", keymap).Count);
         Assert.Equal(["Auto Tone", "Auto White Balance"], CommandTitles.Filter(develop, "auto", keymap).Select(key => key.Title));
         Assert.Single(CommandTitles.Filter(develop, "Tab + R", keymap));
-        Assert.Single(CommandTitles.Filter(develop, "shortcut ctrl", keymap));
+        // Tab + Q is the app command now, not a Ctrl+Alt+V shortcut.
+        Assert.Single(CommandTitles.Filter(develop, "paste settings", keymap));
+        Assert.Empty(CommandTitles.Filter(develop, "shortcut ctrl", keymap));
         var groups = CommandTitles.OrderedGroups([.. develop, develop[0] with { Id = Guid.NewGuid(), Group = "Mine" }]);
         Assert.Equal(["Lightroom", "Mine"], groups.Select(group => group.Group));
         Assert.Equal(4, groups[0].Keys.Count);

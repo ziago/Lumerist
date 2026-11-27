@@ -90,12 +90,12 @@
     },
     {
       "id": "nudge-and-command-keys/default-combos-in-develop",
-      "about": "Tab + A Auto Tone, Tab + Q Lightroom's Paste Settings from Previous; A alone stays the Highlights Dial Key; the combos are Develop only.",
+      "about": "Tab + A Auto Tone, Tab + Q Paste Settings from Previous (Lumerist's own command, which presses Lightroom's shortcut); A alone stays the Highlights Dial Key; the combos are Develop only.",
       "steps": [
         { "down": "Tab", "decision": "consume" },
         { "down": "A", "decision": "consume", "intents": [{ "action": { "command": "autoTone" } }] },
         { "up": "A", "decision": "consume" },
-        { "down": "Q", "intents": [{ "action": { "shortcut": "Primary+Alt+V" } }] },
+        { "down": "Q", "intents": [{ "action": { "command": "pasteSettingsFromPrevious" } }] },
         { "up": "Q" },
         { "up": "Tab", "decision": "consume" },
         { "down": "A", "decision": "consume" },

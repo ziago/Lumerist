@@ -29,7 +29,7 @@ scan codes in C#. The tables live in the test code only.
 | Name | Key |
 | --- | --- |
 | `A` … `Z`, `0` … `9` | letter and digit keys (US positions) |
-| `LeftOf1` | the key left of 1 (the Palette Key) |
+| `LeftOf1` | the key left of 1 on a US (ANSI) keyboard, which types `: macOS key code 50, Windows scan code 0x29. The standard layout's Palette Key (the apps put it left of 1 on ISO keyboards too, and set none on JIS keyboards or where that key types a letter or digit), and the Toggle key Lightroom gets with the US layout the cases use (see below) |
 | `Tab`, `Esc`, `Space`, `Return`, `Backspace` | as printed (`Backspace` is the Mac's Delete key) |
 | `ForwardDelete`, `Home`, `End`, `PageUp`, `PageDown` | as printed (`ForwardDelete` is Delete on Windows, ⌦ on the Mac) |
 | `[`, `]` | the two keys right of P |
@@ -62,8 +62,11 @@ in one chord.
   ] }
 ```
 
-`keymap` lists changes to the standard layout (see below). Each step does one
-thing and states what must follow:
+`keymap` lists changes to the standard layout (see below).
+`lightroomImportKeys` (optional) changes the keys Lightroom gets from the
+Import keys, which are otherwise those of the US layout: `include`, `exclude`,
+`toggle` and `nextPhoto`, each a chord; `"toggle": null` is a layout with no
+Toggle. Each step does one thing and states what must follow:
 
 | Step | Options | Engine call |
 | --- | --- | --- |
@@ -102,6 +105,15 @@ Intents: `{"adjust": "develop/Exposure", "delta": 0.05}`, `{"reset": p}`,
 Actions: `{"command": "undo"}` (optional `"argument"`), `{"shortcut": chord}`,
 `{"preset": uuid, "name": name}`, `{"macro": [{"action": action, "delay": s}]}`.
 
+A command is one of Lightroom's (docs/protocol-v3.md), which the app sends
+to the plug-in, or one Lumerist runs itself by pressing Lightroom's own
+shortcut, which sends nothing to the plug-in. There is one of those:
+`pasteSettingsFromPrevious`, Lightroom's Paste Settings from Previous (⌥⌘V
+on macOS, Ctrl+Alt+V on Windows, with the key that types v on the active
+layout), which the standard layout puts on `Combo+Q`. It takes no argument.
+Each app reads a Command Key saved with the old default, the shortcut
+`Primary+Alt+V` titled "Paste settings from previous", as this command.
+
 ## Keymap changes
 
 ```json
@@ -121,7 +133,13 @@ the Import keys (`include`, `exclude`, `toggle`: a chord or `null`) and
 
 In the Import window an Import key sends Lightroom's own key as
 `{"shortcut": chord}`: Include `P`, Exclude `X`, Toggle `LeftOf1`, and
-`ArrowRight` after Include or Exclude when `advance` is on.
+`ArrowRight` after Include or Exclude when `advance` is on. Those are the
+keys of the US layout. The apps find them by the character they type,
+never by position: the keys that type p and x, and for Toggle the key that
+types a plain ` (no modifier, not a dead key), else a plain <: `LeftOf1` on
+US keyboards, the key left of Z on Italian, German or French ones. With
+neither (Russian, Czech, U.S. International – PC…) there is no Toggle: its
+key is taken and sends nothing (`lightroomImportKeys`).
 
 ## Keymap rule cases
 
@@ -133,7 +151,8 @@ In the Import window an Import key sends Lightroom's own key as
 
 `conflicts` gives the number of `errors` and `warnings` and a list of
 `matches`: each must match at least one reported conflict by `severity`,
-`chord`, `scope` (`null` for system keys and Import keys), `usesSystem` (a
+`chord`, `scope` (`null` for system keys and Import keys, except a warning
+about one of Lightroom's keys, which names its module), `usesSystem` (a
 system key role), `lightroomAction` (see below) and `message`. Messages are compared only for chords without modifiers,
 whose names read the same on both systems.
 
@@ -148,6 +167,10 @@ in its own place gets a warning, which never blocks saving:
 - Command Keys and Nudge Keys in their module (a Command Key for all modules
   in each), and Import keys in the Import window. Never a Dial Key (a tap
   still reaches Lightroom) or a combo (Lumerist's own key).
+- System keys where they take their key: the Palette Key in Develop, a plain
+  Key Reference toggle and the pause toggle in Library and Develop, one
+  warning per module with that module's `scope`. Never the Combo Key: tapped
+  alone it still reaches Lightroom, like a Dial Key.
 - A Nudge Key with no modifiers also takes its Shift chord (the larger
   step): when the key itself is free, the Shift chord is checked.
 - An Import key never warns about the key it sends itself (`importRole`).

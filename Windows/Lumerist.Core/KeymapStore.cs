@@ -33,7 +33,7 @@ namespace Lumerist.Core;
 /// <item><c>format</c> is required. Every other section is optional and takes its defaults when missing.</item>
 /// <item>Slots are keyed by parameter id; each field is optional. Empty slots are dropped.</item>
 /// <item>A chord is a Set 1 scan code as hex text ("0x10" is Q, "0xE04D" is →, extended keys carry 0xE0)
-/// plus its modifiers, in the order Ctrl, Alt, Shift, Combo; no modifiers leaves the list out.
+/// plus its modifiers, in the order Ctrl, Alt, AltGr, Shift, Combo; no modifiers leaves the list out.
 /// A chord with "Combo" is a combo ("Tab + K").</item>
 /// <item>An action is one of <c>{"command": name, "argument"?: text}</c>, <c>{"preset": uuid, "name": text}</c>,
 /// <c>{"shortcut": chord}</c> or <c>{"macro": [{"action": action, "delay": seconds}]}</c>.</item>
@@ -71,7 +71,8 @@ public static class KeymapStore
     /// <summary>Modifier names in the order they are written.</summary>
     private static readonly (string Name, KeyModifiers Modifier)[] ModifierNames =
     [
-        ("Ctrl", KeyModifiers.Control), ("Alt", KeyModifiers.Alt), ("Shift", KeyModifiers.Shift), ("Combo", KeyModifiers.Combo),
+        ("Ctrl", KeyModifiers.Control), ("Alt", KeyModifiers.Alt), ("AltGr", KeyModifiers.AltGr), ("Shift", KeyModifiers.Shift),
+        ("Combo", KeyModifiers.Combo),
     ];
 
     // Encoding ------------------------------------------------------------------------
@@ -410,7 +411,9 @@ public static class KeymapStore
         {
             var list = fields["commandKeys"];
             if (list.ValueKind != JsonValueKind.Array) throw Invalid("commandKeys", "must be a list");
-            keymap.CommandKeys = list.EnumerateArray().Select((item, index) => ReadCommandKey(item, $"commandKeys[{index}]")).ToList();
+            // The old standard Tab + Q (a Ctrl+Alt+V shortcut by position) becomes the app command.
+            keymap.CommandKeys = list.EnumerateArray()
+                .Select((item, index) => AppCommands.Migrate(ReadCommandKey(item, $"commandKeys[{index}]"))).ToList();
         }
         if (!IsAbsent(fields, "systemKeys")) keymap.SystemKeys = ReadSystemKeys(fields["systemKeys"]);
         // Keymaps saved before Import keys existed get the default: none assigned.
@@ -644,5 +647,31 @@ public static class KeymapStore
     {
         if (!File.Exists(path)) return null;
         return Decode(File.ReadAllText(path, Encoding.UTF8));
+    }
+
+    /// <summary>
+    /// Keeps a copy of a keymap file this build can't decode, next to it, so
+    /// nothing the user made is lost when the standard layout is saved over it:
+    /// keymap.json → keymap.unreadable-2026-11-27-153000.json. A copy with the
+    /// same content already there is used instead of a new one, so each launch
+    /// does not add another. Returns the copy's path; throws <see cref="IOException"/>
+    /// or <see cref="UnauthorizedAccessException"/> when no copy could be made.
+    /// </summary>
+    public static string PreserveUnreadable(string path, DateTimeOffset now)
+    {
+        var source = Path.GetFullPath(path);
+        var folder = Path.GetDirectoryName(source) ?? throw new IOException("No folder for " + source);
+        var stem = Path.GetFileNameWithoutExtension(source);
+        var extension = Path.GetExtension(source);
+        var content = File.ReadAllBytes(source);
+        foreach (var existing in Directory.EnumerateFiles(folder, $"{stem}.unreadable-*{extension}"))
+        {
+            if (File.ReadAllBytes(existing).AsSpan().SequenceEqual(content)) return existing;
+        }
+        var name = $"{stem}.unreadable-{now.ToLocalTime():yyyy-MM-dd-HHmmss}";
+        var target = Path.Combine(folder, name + extension);
+        for (var suffix = 2; File.Exists(target); suffix++) target = Path.Combine(folder, $"{name}-{suffix}{extension}");
+        File.Copy(source, target, overwrite: false);
+        return target;
     }
 }

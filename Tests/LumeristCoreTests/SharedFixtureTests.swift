@@ -299,6 +299,23 @@ private enum GestureRunner {
     static let options: Set<String> = ["repeat", "at", "in", "textFocused", "modifiers", "momentum", "count"]
     static let expectations: Set<String> = ["decision", "intents", "lastIntent", "focusQueries", "state"]
 
+    /// Lightroom's Import keys for the keyboard layout of a case: the US keys
+    /// with the given changes (`"toggle": null` is a layout with no Toggle).
+    static func importShortcuts(_ any: Any) throws -> ImportShortcuts {
+        guard let changes = any as? [String: Any] else { throw FixtureError("lightroomImportKeys must be an object") }
+        var keys = ImportShortcuts.standard
+        for (name, value) in changes {
+            switch name {
+            case "include": keys.include = try MacKeys.chord(value as? String ?? "")
+            case "exclude": keys.exclude = try MacKeys.chord(value as? String ?? "")
+            case "toggle": keys.toggle = try Values.chordOrNil(value)
+            case "nextPhoto": keys.nextPhoto = try MacKeys.chord(value as? String ?? "")
+            default: throw FixtureError("unknown Lightroom Import key \(name)")
+            }
+        }
+        return keys
+    }
+
     static func button(_ name: String) throws -> MouseButton {
         switch name {
         case "left": .left
@@ -313,6 +330,7 @@ private enum GestureRunner {
     static func run(_ testCase: [String: Any]) throws -> [String] {
         guard let steps = testCase["steps"] as? [[String: Any]] else { throw FixtureError("no steps") }
         var engine = Engine(keymap: try KeymapChanges.apply(testCase["keymap"]))
+        if let keys = testCase["lightroomImportKeys"] { engine.update(importShortcuts: try importShortcuts(keys)) }
         var failures: [String] = []
 
         for (index, step) in steps.enumerated() {

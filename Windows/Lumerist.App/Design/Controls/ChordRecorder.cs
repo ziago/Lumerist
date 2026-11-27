@@ -19,6 +19,11 @@ namespace Lumerist.App.Design.Controls;
 /// scan code comes from the message's lParam, so the chord names the
 /// physical key whatever the layout. The input hook leaves these keys alone:
 /// it only acts while Lightroom is in front.
+/// <para>
+/// With an input method on, Windows delivers keys as VK_PROCESSKEY; the real
+/// key comes from ImmGetVirtualKey. Input-method keys (半角/全角, 変換, 한/영…)
+/// are refused, and modifiers are recognised by scan code as well.
+/// </para>
 /// </remarks>
 internal sealed partial class ChordRecorder
 {
@@ -26,6 +31,10 @@ internal sealed partial class ChordRecorder
     private const int VK_SHIFT = 0x10, VK_CONTROL = 0x11, VK_MENU = 0x12, VK_CAPITAL = 0x14, VK_NUMLOCK = 0x90, VK_SCROLL = 0x91;
     private const int VK_LWIN = 0x5B, VK_RWIN = 0x5C, VK_LSHIFT = 0xA0, VK_RSHIFT = 0xA1;
     private const int VK_LCONTROL = 0xA2, VK_RCONTROL = 0xA3, VK_LMENU = 0xA4, VK_RMENU = 0xA5;
+    private const int VK_PROCESSKEY = 0xE5;
+
+    /// <summary>Shift, Ctrl, Alt, Win and Caps Lock by scan code, for keys an input method hides behind VK_PROCESSKEY.</summary>
+    private static readonly HashSet<int> ModifierScanCodes = [0x2A, 0x36, 0x1D, 0xE01D, 0x38, 0xE038, 0xE05B, 0xE05C, 0x3A];
 
     public static ChordRecorder Shared { get; } = new();
 
@@ -42,6 +51,9 @@ internal sealed partial class ChordRecorder
 
     /// <summary>The Combo Key of the recording in progress.</summary>
     public KeyChord? ComboKey { get; private set; }
+
+    /// <summary>The last key pressed switches the input method and was not recorded.</summary>
+    public bool LastKeyRefused { get; private set; }
 
     /// <summary>Raised on the UI thread when recording starts, stops, or the Combo Key goes down.</summary>
     public event Action? Changed;
@@ -80,6 +92,7 @@ internal sealed partial class ChordRecorder
         }
         RecordingId = null;
         ComboKey = null;
+        LastKeyRefused = false;
         recording = null;
         onChord = null;
         onClear = null;
@@ -91,20 +104,29 @@ internal sealed partial class ChordRecorder
         var isDown = message.message is WM_KEYDOWN or WM_SYSKEYDOWN;
         if (!isDown && message.message is not (WM_KEYUP or WM_SYSKEYUP)) return;
         var virtualKey = (int)message.wParam;
+        // An input method is composing: ask it which key this is.
+        if (virtualKey == VK_PROCESSKEY && Interop.Native.ImmGetVirtualKey(message.hwnd) is var original and not 0 and not VK_PROCESSKEY)
+            virtualKey = (int)original;
         // Modifiers on their own, Win and the lock keys never make a chord.
         if (virtualKey is VK_SHIFT or VK_CONTROL or VK_MENU or VK_LSHIFT or VK_RSHIFT or VK_LCONTROL or VK_RCONTROL
             or VK_LMENU or VK_RMENU or VK_LWIN or VK_RWIN or VK_CAPITAL or VK_NUMLOCK or VK_SCROLL) return;
         var lParam = (long)message.lParam;
         var scanCode = HookScanCodes.FromHook((int)((lParam >> 16) & 0xFF), ((lParam >> 24) & 1) != 0);
-        if (scanCode == 0) return;
+        if (scanCode == 0 || ModifierScanCodes.Contains(scanCode)) return;
 
         ChordRecording.Outcome outcome;
         if (isDown)
         {
             handled = true;
             var wasComboDown = recording.IsComboKeyDown;
-            outcome = recording.KeyDown(new KeyChord(scanCode, CurrentModifiers()), isRepeat: ((lParam >> 30) & 1) != 0);
-            if (outcome == ChordRecording.Outcome.Continue && wasComboDown != recording.IsComboKeyDown) Changed?.Invoke();
+            outcome = recording.KeyDown(new KeyChord(scanCode, CurrentModifiers()), isRepeat: ((lParam >> 30) & 1) != 0,
+                isInputMethodKey: VirtualKeys.IsInputMethodKey(virtualKey));
+            var refused = outcome == ChordRecording.Outcome.Refused;
+            if (refused != LastKeyRefused || (outcome == ChordRecording.Outcome.Continue && wasComboDown != recording.IsComboKeyDown))
+            {
+                LastKeyRefused = refused;
+                Changed?.Invoke();
+            }
         }
         else
         {
@@ -135,8 +157,10 @@ internal sealed partial class ChordRecorder
     }
 
     /// <summary>
-    /// Shift, Ctrl and Alt held now. AltGr (left Ctrl with right Alt) types
-    /// characters on European layouts, so it counts as neither Ctrl nor Alt.
+    /// Shift, Ctrl, Alt and AltGr held now. AltGr (left Ctrl with right Alt)
+    /// types characters on European layouts, so it is its own modifier, like the
+    /// input hook's (<see cref="ModifierTracker"/>), and only on a layout that has
+    /// AltGr: on US layouts left Ctrl + right Alt is Ctrl+Alt.
     /// </summary>
     private static KeyModifiers CurrentModifiers()
     {
@@ -145,11 +169,13 @@ internal sealed partial class ChordRecorder
         var rightControl = Down(VK_RCONTROL);
         var leftAlt = Down(VK_LMENU);
         var rightAlt = Down(VK_RMENU);
-        var altGr = rightAlt && leftControl && !rightControl && !leftAlt;
+        var altGr = rightAlt && leftControl && !rightControl && !leftAlt
+            && Input.KeyboardLayout.HasAltGr(Interop.Native.GetKeyboardLayout(0));
         var modifiers = KeyModifiers.None;
         if (Down(VK_SHIFT)) modifiers |= KeyModifiers.Shift;
         if (rightControl || (leftControl && !altGr)) modifiers |= KeyModifiers.Control;
         if (leftAlt || (rightAlt && !altGr)) modifiers |= KeyModifiers.Alt;
+        if (altGr) modifiers |= KeyModifiers.AltGr;
         return modifiers;
     }
 

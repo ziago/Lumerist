@@ -49,6 +49,8 @@ struct KeyboardTab: View {
                 )
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel(layer == .plain ? "Keyboard, plain keys" : "Keyboard, combos")
+                // Key names follow the input source: draw again when it changes.
+                .id(store.keyboardLayoutRevision)
             )
 
             if layer == .combos && comboKey == nil {
@@ -328,7 +330,7 @@ struct KeySpot: Identifiable {
     static let width: CGFloat = 15
     static let height: CGFloat = 5
 
-    static func spots(for shape: KeyboardLayout.PhysicalShape) -> [KeySpot] {
+    static func spots(for shape: KeyboardShape) -> [KeySpot] {
         var spots: [KeySpot] = []
         func row(_ y: CGFloat, _ keys: [(Int64?, String?, CGFloat)]) {
             var x: CGFloat = 0
@@ -356,9 +358,23 @@ struct KeySpot: Identifiable {
                                  rect: CGRect(x: 13.5, y: 1, width: 1.5, height: 2), isISOReturn: true))
             row(2, [(nil, "caps lock", 1.75)] + letters(home) + [(42, nil, 1)])
             row(3, [(nil, "shift", 1.25), (50, nil, 1)] + letters(bottom) + [(nil, "shift", 2.75)])
+        case .jis:
+            // No key left of 1 or left of Z; ¥ ends the number row, _ the
+            // bottom row, and 英数 and かな flank the space bar.
+            row(0, letters(digits) + [(93, nil, 1), (51, "delete", 2)])
+            row(1, [(48, "tab", 1.5)] + letters(top))
+            spots.append(KeySpot(id: "iso-return", keyCode: 36, caption: "return",
+                                 rect: CGRect(x: 13.5, y: 1, width: 1.5, height: 2), isISOReturn: true))
+            row(2, [(nil, "control", 1.75)] + letters(home) + [(42, nil, 1)])
+            row(3, [(nil, "shift", 2.25)] + letters(bottom) + [(94, nil, 1), (nil, "shift", 1.75)])
         }
-        row(4, [(nil, "fn", 1), (nil, "⌃", 1.25), (nil, "⌥", 1.25), (nil, "⌘", 1.5), (49, "space", 5),
-                (nil, "⌘", 1.5), (nil, "⌥", 1.25)])
+        if shape == .jis {
+            row(4, [(nil, "caps", 1), (nil, "⌥", 1.25), (nil, "⌘", 1.5), (102, "英数", 1.25), (49, "space", 4),
+                    (104, "かな", 1.25), (nil, "⌘", 1.25), (nil, "fn", 1.25)])
+        } else {
+            row(4, [(nil, "fn", 1), (nil, "⌃", 1.25), (nil, "⌥", 1.25), (nil, "⌘", 1.5), (49, "space", 5),
+                    (nil, "⌘", 1.5), (nil, "⌥", 1.25)])
+        }
         // Arrow keys: ← and → half height, ↑ over ↓.
         spots += [
             KeySpot(id: "left", keyCode: 123, caption: "←", rect: CGRect(x: 12.75, y: 4.5, width: 0.75, height: 0.5)),

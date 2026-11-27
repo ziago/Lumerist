@@ -280,6 +280,7 @@ public sealed partial class Keymap
                     $"{Name(toggle)} can't work: a combo can't use the Combo Key itself."));
             }
         }
+        result.AddRange(SystemKeyLightroomWarnings(Name));
         result.AddRange(ImportKeyConflicts(Name));
 
         foreach (var scope in ParameterScopes.All)
@@ -362,6 +363,34 @@ public sealed partial class Keymap
         IReadOnlyList<KeyUsage> usages) =>
         new(ConflictSeverity.Warning, chord, scope, usages,
             $"Lightroom uses {text} for “{match.Name}” in {match.Context.Place()}. Lumerist takes it over there.", match.Name);
+
+    /// <summary>
+    /// A System Key on one of Lightroom's own keys where it never reaches
+    /// Lightroom: the Palette Key in Develop ("0" left of 1 on Hungarian
+    /// keyboards), the Key Reference toggle (when it is not a combo) and the
+    /// pause toggle in Library and Develop. Never the Combo Key, whose tap
+    /// still reaches Lightroom, nor a combo.
+    /// </summary>
+    private List<KeyConflict> SystemKeyLightroomWarnings(Func<KeyChord, string> name)
+    {
+        var result = new List<KeyConflict>();
+        foreach (var role in SystemKeyRoles.All)
+        {
+            if (SystemKeys.ChordFor(role) is not { IsCombo: false } chord) continue;
+            ParameterScope[] places = role switch
+            {
+                SystemKeyRole.PaletteKey => [ParameterScope.Develop],
+                SystemKeyRole.ComboKey => [],
+                _ => [ParameterScope.Library, ParameterScope.Develop],
+            };
+            foreach (var scope in places)
+            {
+                if (LightroomShortcuts.For(chord, LightroomShortcuts.ContextOf(scope)) is { } match)
+                    result.Add(LightroomWarning(match, chord, name(chord), scope, [new KeyUsage.SystemKey(role)]));
+            }
+        }
+        return result;
+    }
 
     /// <summary>
     /// Two Import keys on one chord, or an Import key on the pause toggle, and

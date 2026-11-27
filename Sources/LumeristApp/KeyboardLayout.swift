@@ -3,21 +3,31 @@ import Carbon.HIToolbox
 import Foundation
 import LumeristCore
 
-/// Reads the active keyboard layout so key names match what is printed on
-/// the user's keys (AZERTY, QWERTZ, Italian…), and finds the physical key
-/// that types a given character (for Lightroom's own shortcuts such as ⌘Z).
-/// Tables are rebuilt on the main thread whenever the input source changes.
+/// Reads the active keyboard layout, so key names match what is printed on
+/// the user's keys (AZERTY, QWERTZ, Italian…), and so Lightroom's own
+/// shortcuts are pressed by the character they type (⌘Z, P, the Import
+/// Toggle): `LayoutCharacters` in the core. Tables are rebuilt on the main
+/// thread whenever the input source changes; `didChange` is posted then.
 @MainActor
 enum KeyboardLayout {
     /// Immutable snapshots swapped under a lock, so a layout change on the
     /// main thread never races a reader on another thread.
     private struct Tables: Sendable {
+        /// The active layout, or the ASCII-capable one when the active
+        /// input source has no key data.
+        var characters: LayoutCharacters?
+        /// The ASCII-capable layout macOS keeps for shortcuts (the active
+        /// one when it is ASCII-capable).
+        var asciiCapable: LayoutCharacters?
         var names: [Int64: String] = [:]
-        var keyCodesByCharacter: [String: Int64] = [:]
     }
     private nonisolated static let lock = NSLock()
     private nonisolated(unsafe) static var tables = Tables()
     private static var observer: NSObjectProtocol?
+
+    /// Posted on the main thread after the tables were rebuilt for another
+    /// input source.
+    static let didChange = Notification.Name("org.lumerist.keyboard-layout-did-change")
 
     private nonisolated static var current: Tables {
         lock.lock()
@@ -35,34 +45,37 @@ enum KeyboardLayout {
             object: nil,
             queue: .main
         ) { _ in
-            MainActor.assumeIsolated { rebuild() }
+            MainActor.assumeIsolated {
+                rebuild()
+                NotificationCenter.default.post(name: didChange, object: nil)
+            }
         }
     }
 
-    /// The physical shape of the keyboard used last. On ISO keyboards key
-    /// code 50 sits between the left Shift and Z and key code 10 is left of 1;
-    /// on ANSI (and, for this purpose, JIS) keyboards key code 50 is left of 1.
-    enum PhysicalShape: Sendable { case ansi, iso }
+    /// What the active layout types; nil only when no layout has key data.
+    nonisolated static var characters: LayoutCharacters? { current.characters }
 
-    static var physicalShape: PhysicalShape {
-        KBGetLayoutType(Int16(LMGetKbdType())) == PhysicalKeyboardLayoutType(kKeyboardISO) ? .iso : .ansi
-    }
+    /// The ASCII-capable layout's keys, for letters the active layout lacks.
+    nonisolated static var asciiCapableCharacters: LayoutCharacters? { current.asciiCapable }
 
-    /// The key code that types `character` (lowercase) without modifiers in
-    /// the active layout, if any.
-    nonisolated static func keyCode(for character: String) -> Int64? {
-        current.keyCodesByCharacter[character.lowercased()]
+    /// The physical shape of the keyboard used last (`LMGetKbdType`, which
+    /// follows the last keyboard typed on and the Keyboard Setup Assistant).
+    static var physicalShape: KeyboardShape {
+        switch KBGetLayoutType(Int16(LMGetKbdType())) {
+        case PhysicalKeyboardLayoutType(kKeyboardISO): .iso
+        case PhysicalKeyboardLayoutType(kKeyboardJIS): .jis
+        default: .ansi
+        }
     }
 
     private static func rebuild() {
-        var newNames: [Int64: String] = [:]
-        var newCodes: [String: Int64] = [:]
-        for keyCode in KeyNames.layoutDependentKeyCodes.sorted() {
-            guard let text = translate(keyCode), !text.isEmpty else { continue }
-            newNames[keyCode] = text.uppercased()
-            if newCodes[text.lowercased()] == nil { newCodes[text.lowercased()] = keyCode }
-        }
-        let rebuilt = Tables(names: newNames, keyCodesByCharacter: newCodes)
+        let asciiSource = TISCopyCurrentASCIICapableKeyboardLayoutInputSource()?.takeRetainedValue()
+        let asciiCapable = asciiSource.flatMap(characters(of:))
+        // A layout without key data (some older third-party ones): the
+        // ASCII-capable layout stands in for names and shortcuts.
+        let activeSource = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue()
+        let active = activeSource.flatMap(characters(of:)) ?? asciiCapable
+        let rebuilt = Tables(characters: active, asciiCapable: asciiCapable, names: active?.names ?? [:])
         lock.lock()
         tables = rebuilt
         lock.unlock()
@@ -77,38 +90,52 @@ enum KeyboardLayout {
         return Unmanaged<CFString>.fromOpaque(pointer).takeUnretainedValue() as String
     }
 
-    /// The character a key types with no modifiers, via UCKeyTranslate.
-    private static func translate(_ keyCode: Int64) -> String? {
-        guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue()
-                ?? TISCopyCurrentASCIICapableKeyboardLayoutInputSource()?.takeRetainedValue(),
-              let pointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else {
-            return nil
-        }
+    /// What the keys of one input source type, through UCKeyTranslate; nil
+    /// when the source has no key data.
+    private static func characters(of source: TISInputSource) -> LayoutCharacters? {
+        guard let pointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return nil }
         let layoutData = Unmanaged<CFData>.fromOpaque(pointer).takeUnretainedValue() as Data
+        let keyboardType = UInt32(LMGetKbdType())
+        let commandState = UInt32(cmdKey >> 8) & 0xFF
+        return layoutData.withUnsafeBytes { buffer -> LayoutCharacters? in
+            guard let layout = buffer.baseAddress?.assumingMemoryBound(to: UCKeyboardLayout.self) else { return nil }
+            var plain: [Int64: String] = [:]
+            var command: [Int64: String] = [:]
+            var display: [Int64: String] = [:]
+            for keyCode in LayoutCharacters.searchOrder {
+                plain[keyCode] = translate(layout, keyCode, modifierState: 0, keyboardType: keyboardType, display: false)
+                command[keyCode] = translate(layout, keyCode, modifierState: commandState, keyboardType: keyboardType, display: false)
+                display[keyCode] = translate(layout, keyCode, modifierState: 0, keyboardType: keyboardType, display: true)
+            }
+            return LayoutCharacters(plain: plain, command: command, display: display)
+        }
+    }
+
+    /// The character a key types. A dead key types nothing by itself (nil),
+    /// unless `display` asks for the accent it shows.
+    private static func translate(_ layout: UnsafePointer<UCKeyboardLayout>, _ keyCode: Int64, modifierState: UInt32,
+                                  keyboardType: UInt32, display: Bool) -> String? {
         var deadKeyState: UInt32 = 0
         var length = 0
         var characters = [UniChar](repeating: 0, count: 4)
-        let status = layoutData.withUnsafeBytes { buffer -> OSStatus in
-            guard let layout = buffer.baseAddress?.assumingMemoryBound(to: UCKeyboardLayout.self) else { return -1 }
-            return UCKeyTranslate(
-                layout,
-                UInt16(keyCode),
-                UInt16(kUCKeyActionDisplay),
-                0,
-                UInt32(LMGetKbdType()),
-                // The mask (1 << bit), not the bit number: dead keys such as
-                // ^ on AZERTY then report their own character.
-                OptionBits(kUCKeyTranslateNoDeadKeysMask),
-                &deadKeyState,
-                characters.count,
-                &length,
-                &characters
-            )
-        }
+        let status = UCKeyTranslate(
+            layout,
+            UInt16(keyCode),
+            UInt16(display ? kUCKeyActionDisplay : kUCKeyActionDown),
+            modifierState,
+            keyboardType,
+            // The mask (1 << bit), not the bit number: dead keys such as ^ on
+            // AZERTY then report their own character.
+            display ? OptionBits(kUCKeyTranslateNoDeadKeysMask) : 0,
+            &deadKeyState,
+            characters.count,
+            &length,
+            &characters
+        )
         guard status == noErr, length > 0 else { return nil }
         let text = String(utf16CodeUnits: characters, count: length)
-        // Control characters are not useful names.
-        guard text.unicodeScalars.allSatisfy({ $0.value >= 0x20 }) else { return nil }
+        // Control characters are neither names nor shortcuts.
+        guard text.unicodeScalars.allSatisfy({ $0.value >= 0x20 && $0.value != 0x7F }) else { return nil }
         return text
     }
 }

@@ -39,6 +39,8 @@ internal sealed unsafe class InputHook : IDisposable
     private string module = "develop";
     private string tool = "";
     private bool isImportWindowOpen;
+    /// <summary>The layout the Import shortcuts were taken for, while the Import window is open.</summary>
+    private nint importLayout;
     private POINT? pointerAnchor;
     private POINT lastPoint;
     private bool menuMaskSent;
@@ -331,7 +333,7 @@ internal sealed unsafe class InputHook : IDisposable
             }
             else
             {
-                var isRepeat = repeats.KeyDown(scanCode);
+                var isRepeat = repeats.KeyDown(scanCode, Now);
                 outcome = engine.KeyDown(new KeyChord(scanCode, modifiers.Current), item, isRepeat, Now, context,
                     () => TextFocusProbe.IsTextInputFocused(lightroomThread));
             }
@@ -403,18 +405,24 @@ internal sealed unsafe class InputHook : IDisposable
     }
 
     /// <summary>
-    /// Lightroom's Import window came to the front or went away. Its
-    /// shortcuts are taken again at each opening, for the keyboard layout of
-    /// Lightroom's window then. One log line per change, no more.
+    /// Lightroom's Import window came to the front or went away. While it is
+    /// open, its shortcuts follow the keyboard layout of Lightroom's window:
+    /// taken at the opening and again whenever the layout changes (the table
+    /// is read once per layout, so the check costs one call). One log line per change, no more.
     /// </summary>
     private void FollowImportWindow(bool open, uint lightroomThread)
     {
-        if (open == isImportWindowOpen) return;
-        isImportWindowOpen = open;
         if (open)
         {
-            engine.UpdateImportShortcuts(KeyboardLayout.ImportShortcutsFor(GetKeyboardLayout(lightroomThread)));
+            var layout = GetKeyboardLayout(lightroomThread);
+            if (!isImportWindowOpen || layout != importLayout)
+            {
+                importLayout = layout;
+                engine.UpdateImportShortcuts(KeyboardLayout.ImportShortcutsFor(layout));
+            }
         }
+        if (open == isImportWindowOpen) return;
+        isImportWindowOpen = open;
         LogSafely(open ? "Import window opened" : "Import window closed");
     }
 

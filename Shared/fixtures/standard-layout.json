@@ -24,7 +24,7 @@
     { "id": "F0851B74-86AE-4988-BE39-01DF8EFAFE25", "scope": "develop", "chord": "Combo+R", "group": "Lightroom",
       "title": "Reset all", "action": { "command": "resetAll" } },
     { "id": "787E1A28-ED89-40D3-9855-6049A5F3F639", "scope": "develop", "chord": "Combo+Q", "group": "Lightroom",
-      "title": "Paste settings from previous", "action": { "shortcut": "Primary+Alt+V" } }
+      "title": "Paste settings from previous", "action": { "command": "pasteSettingsFromPrevious" } }
   ],
   "systemKeys": {
     "comboKey": "Tab",
@@ -49,8 +49,8 @@
   },
   "palette": { "keepVisible": false, "favourites": [] },
   "platformNotes": [
-    "LeftOf1 is the key left of 1: key code 50 on ANSI Mac keyboards and 10 on ISO ones (the app picks the right one); scan code 0x29 on Windows for both.",
-    "Primary+Alt+V is Lightroom's Paste Settings from Previous: ⌥⌘V on macOS, Ctrl+Alt+V on Windows.",
+    "LeftOf1 is the key left of 1: key code 50 on ANSI Mac keyboards and 10 on ISO ones (the app picks the right one); scan code 0x29 on Windows for both. JIS keyboards have no key there (on Windows 0x29 is 半角/全角), and on some layouts that key types a letter or digit (\"0\" on Hungarian keyboards): then there is no Palette Key.",
+    "pasteSettingsFromPrevious is a command Lumerist runs itself, with no request to the plug-in: it presses Lightroom's Paste Settings from Previous, ⌥⌘V on macOS and Ctrl+Alt+V on Windows, with the key that types v on the active layout. A keymap saved with the old default (the shortcut Primary+Alt+V titled \"Paste settings from previous\") reads as this command.",
     "Control+Esc pauses: ⌃Esc on macOS, Ctrl+Esc on Windows (the keyboard hook takes it before the Start menu; to be confirmed on Windows).",
     "No Import key is assigned: Lumerist takes over a Lightroom key in the Import window only when the user picks one. A keymap saved without importKeys reads as this."
   ]

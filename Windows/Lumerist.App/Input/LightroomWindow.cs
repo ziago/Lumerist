@@ -14,6 +14,19 @@ internal static class LightroomWindow
     private static uint lastProcess;
     private static uint lastThread;
     private static bool lastIsLightroom;
+    private static uint lastLightroomThread;
+
+    /// <summary>
+    /// The thread of the last Lightroom window seen in front (0 before any):
+    /// its keyboard layout is Lightroom's, also while Lumerist's window has the focus.
+    /// </summary>
+    public static uint LastThreadId
+    {
+        get
+        {
+            lock (Gate) return lastLightroomThread;
+        }
+    }
 
     /// <summary>
     /// Cheap enough for every hook event: the process is looked up only when
@@ -42,6 +55,7 @@ internal static class LightroomWindow
                     lastIsLightroom = process != 0 && IsLightroomClassic(process);
                 }
             }
+            if (lastIsLightroom && lastThread != 0) lastLightroomThread = lastThread;
             return (lastIsLightroom, lastThread, window);
         }
     }

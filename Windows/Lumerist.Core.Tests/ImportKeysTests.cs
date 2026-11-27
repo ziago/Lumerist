@@ -1,3 +1,4 @@
+using Lumerist.Core.Input;
 using Xunit;
 using static Lumerist.Core.Tests.KeymapTestSupport;
 
@@ -73,24 +74,13 @@ public class ImportShortcutsTests
         Assert.Equal(new KeyChord(0xE04D), standard.NextPhoto);
     }
 
-    /// <summary>
-    /// A layout as the app's lookup sees it: the key typing each character
-    /// alone, never through Shift, AltGr or a dead key.
-    /// </summary>
-    private static Func<char, int?> Layout(params (char Character, int ScanCode)[] keys) =>
-        character => keys.Where(key => key.Character == character).Select(key => (int?)key.ScanCode).FirstOrDefault();
-
-    // ` and < alone: US has ` at 0x29 (< is Shift+,); UK the same (VK_OEM_8 there);
-    // Italian has no ` and < on the ISO key 0x56; German types ` with Shift as a dead key.
-    private static readonly Func<char, int?> Us = Layout(('p', 0x19), ('x', 0x2D), ('`', 0x29));
-    private static readonly Func<char, int?> Uk = Layout(('p', 0x19), ('x', 0x2D), ('`', 0x29));
-    private static readonly Func<char, int?> Italian = Layout(('p', 0x19), ('x', 0x2D), ('ò', 0x27), ('\\', 0x29), ('<', 0x56));
-    private static readonly Func<char, int?> German = Layout(('p', 0x19), ('x', 0x2D), ('^', 0x29), ('<', 0x56));
+    /// <summary>US with ` taken off the key left of 1: no key types ` or &lt; alone.</summary>
+    private static readonly KeyboardLayoutTable NoToggle = LayoutTables.UsWith(LayoutTables.Key(0x29, 0xC0, null));
 
     [Fact]
     public void PAndXFollowTheLayout()
     {
-        var layout = ImportShortcuts.ForLayout(Layout(('p', 0x13), ('x', 0x2C)));
+        var layout = ImportShortcuts.ForLayout(LayoutTables.UsWith(LayoutTables.Key(0x13, 0x50, "p"), LayoutTables.Key(0x2C, 0x58, "x")));
         Assert.Equal(new KeyChord(0x13), layout.Include);
         Assert.Equal(new KeyChord(0x2C), layout.Exclude);
         Assert.Equal(new KeyChord(ScanCodes.RightArrow), layout.NextPhoto);
@@ -101,13 +91,13 @@ public class ImportShortcutsTests
     [Fact]
     public void ToggleIsTheBacktickKeyElseTheLessThanKeyElseNone()
     {
-        Assert.Equal(new KeyChord(0x29), ImportShortcuts.ForLayout(Us).Toggle);
-        Assert.Equal(new KeyChord(0x29), ImportShortcuts.ForLayout(Uk).Toggle);
+        Assert.Equal(new KeyChord(0x29), ImportShortcuts.ForLayout(LayoutTables.Us).Toggle);
+        Assert.Equal(new KeyChord(0x29), ImportShortcuts.ForLayout(LayoutTables.Uk).Toggle);
         // Italian: the < key left of Z, not \ left of 1 (0x29) and not ò (0x27).
-        Assert.Equal(new KeyChord(0x56), ImportShortcuts.ForLayout(Italian).Toggle);
-        Assert.Equal(new KeyChord(0x56), ImportShortcuts.ForLayout(German).Toggle);
+        Assert.Equal(new KeyChord(0x56), ImportShortcuts.ForLayout(LayoutTables.Italian).Toggle);
+        Assert.Equal(new KeyChord(0x56), ImportShortcuts.ForLayout(LayoutTables.German).Toggle);
         // Neither ` nor < alone: no Toggle at all, never the key left of 1.
-        var none = ImportShortcuts.ForLayout(Layout(('p', 0x19), ('x', 0x2D)));
+        var none = ImportShortcuts.ForLayout(NoToggle);
         Assert.Null(none.Toggle);
         Assert.Null(none.ChordFor(ImportKeyRole.Toggle));
     }
@@ -118,7 +108,7 @@ public class ImportShortcutsTests
         var keymap = Keymap.StandardLayout();
         keymap.ImportKeys = new ImportKeys { Toggle = Key(ScanCodes.C), Advance = true };
         var engine = new KeyGestureEngine<string>(keymap);
-        engine.UpdateImportShortcuts(ImportShortcuts.ForLayout(Layout(('p', 0x19), ('x', 0x2D))));
+        engine.UpdateImportShortcuts(ImportShortcuts.ForLayout(NoToggle));
         var import = new EngineContext(Module: EngineContext.ImportModule);
         var down = engine.KeyDown(Key(ScanCodes.C), "C↓", isAutoRepeat: false, 0, import, () => false);
         Assert.IsType<KeyGestureEngine<string>.Decision.Consume>(down.Decision);
@@ -126,7 +116,7 @@ public class ImportShortcutsTests
         Assert.IsType<KeyGestureEngine<string>.Decision.Consume>(engine.KeyUp(ScanCodes.C, "C↑", 0, import).Decision);
 
         // On an Italian keyboard it sends the < key.
-        engine.UpdateImportShortcuts(ImportShortcuts.ForLayout(Italian));
+        engine.UpdateImportShortcuts(ImportShortcuts.ForLayout(LayoutTables.Italian));
         Assert.Equal([new KeyIntent.RunAction(new CommandAction.Shortcut(new KeyChord(0x56)))],
             engine.KeyDown(Key(ScanCodes.C), "C↓", isAutoRepeat: false, 0, import, () => false).Intents);
     }

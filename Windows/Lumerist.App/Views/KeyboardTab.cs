@@ -81,12 +81,12 @@ internal static class KeyboardTab
         return stack;
     }
 
-    /// <summary>The language of the active keyboard layout (ANSI or ISO drawing).</summary>
+    /// <summary>The language of Lightroom's keyboard layout (ANSI or ISO drawing).</summary>
     private static int LayoutLanguage()
     {
         try
         {
-            return (int)(Input.KeyboardLayout.OfForeground() & 0xFFFF);
+            return (int)(Input.KeyboardLayout.OfLightroom() & 0xFFFF);
         }
         catch (Exception error) when (error is DllNotFoundException or EntryPointNotFoundException)
         {

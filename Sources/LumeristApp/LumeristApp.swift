@@ -143,6 +143,10 @@ final class CommandStore {
     private var monitor: KeyEngineMonitor?
     /// Watches for Lightroom's Import window while the shortcuts are on.
     @ObservationIgnored private var importWindow: ImportWindowDetector?
+    /// Bumped when the input source changes, so screens that name keys or
+    /// show the Import keys' Lightroom keys draw them again.
+    private(set) var keyboardLayoutRevision = 0
+    @ObservationIgnored private var layoutObserver: NSObjectProtocol?
     private var permissionWait: Task<Void, Never>?
 
     /// The user's own opt-in, remembered so shortcuts come back after a relaunch
@@ -158,6 +162,19 @@ final class CommandStore {
 
     func start() {
         guard client == nil else { return }
+
+        // General → Profile says so too.
+        if let unreadable = keymap.unreadable {
+            let copy = unreadable.backup.map { "Copy: \($0.path)." } ?? "Copy under the UserDefaults key \(KeymapStore.storageKey).unreadable."
+            DebugLog.write("Stored keymap unreadable (\(unreadable.reason)); standard layout in use, stored data left as it was. \(copy)")
+        }
+        layoutObserver = NotificationCenter.default.addObserver(forName: KeyboardLayout.didChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.keyboardLayoutRevision += 1
+                self.monitor?.update(importShortcuts: .forCurrentLayout)
+            }
+        }
 
         dispatcher = IntentDispatcher(hooks: IntentDispatcher.Hooks(
             send: { [weak self] request in self?.send(request) },
@@ -274,6 +291,7 @@ final class CommandStore {
             }
         }
         monitor.update(module: context.module.isEmpty ? "develop" : context.module, tool: context.tool)
+        monitor.update(importShortcuts: .forCurrentLayout)
         do {
             try monitor.start()
             self.monitor = monitor
@@ -289,7 +307,8 @@ final class CommandStore {
     /// The Import keys work, and the Develop and Library keys pause, while
     /// Lightroom's Import window is in front.
     private func importWindowDidChange(_ open: Bool) {
-        monitor?.update(isImportWindowOpen: open, shortcuts: .forCurrentLayout)
+        if open { monitor?.update(importShortcuts: .forCurrentLayout) }
+        monitor?.update(isImportWindowOpen: open)
         if open && isPaletteOpen { closePalette() }
     }
 

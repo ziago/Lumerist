@@ -3,21 +3,36 @@ namespace Lumerist.Core;
 /// <summary>
 /// Human-readable names for scan codes. Keys are stored as scan codes, so a
 /// binding follows the physical key. The app installs <see cref="LayoutName"/>,
-/// which asks the active keyboard layout what a key prints (AZERTY, QWERTZ,
-/// Italian…); without it, or for keys it does not name, the US names below are used.
+/// which asks Lightroom's keyboard layout what a key prints (AZERTY, QWERTZ,
+/// Italian…) or, for a key that prints nothing, Windows' own name for it
+/// (半角/全角, 変換); without it, or for keys it does not name, the US names below are used.
 /// </summary>
 public static class KeyNames
 {
-    /// <summary>Layout-aware name for a scan code, or null to use the US name. Set once by the app.</summary>
+    /// <summary>
+    /// Layout-aware name for a scan code: what the key types, else the
+    /// system's name for it; null to use the US name. Set once by the app.
+    /// </summary>
     public static Func<int, string?>? LayoutName { get; set; }
 
-    /// <summary>Scan codes whose printed character depends on the layout (letters, digits, punctuation, ISO key).</summary>
+    /// <summary>
+    /// Scan codes whose printed character depends on the layout (letters,
+    /// digits, punctuation, the ISO key left of Z, and the ABNT and JIS keys:
+    /// 0x73 / ? on Brazilian and ろ on Japanese keyboards, 0x7D ¥, 0x7E the Brazilian keypad's .).
+    /// </summary>
     public static IReadOnlySet<int> LayoutDependentScanCodes { get; } = new HashSet<int>(
         Enumerable.Range(0x02, 0x0D - 0x02 + 1)        // 1 … =
             .Concat(Enumerable.Range(0x10, 0x1B - 0x10 + 1)) // Q … ]
             .Concat(Enumerable.Range(0x1E, 0x29 - 0x1E + 1)) // A … `
             .Concat(Enumerable.Range(0x2B, 0x35 - 0x2B + 1)) // \ … /
-            .Append(0x56));                                  // ISO key left of Z
+            .Concat([0x56, 0x73, 0x7D, 0x7E]));              // ISO key left of Z, ABNT / JIS keys
+
+    /// <summary>
+    /// The input-method keys of Japanese and Korean keyboards: かな (0x70),
+    /// 変換 (0x79), 無変換 (0x7B), and 한자 / 한/영 (0x71 / 0x72, sent as 0xF1 / 0xF2).
+    /// They switch the input method, so they can't be recorded (<see cref="ChordRecording"/>).
+    /// </summary>
+    public static IReadOnlySet<int> InputMethodScanCodes { get; } = new HashSet<int> { 0x70, 0x71, 0x72, 0x79, 0x7B, 0xF1, 0xF2 };
 
     private static readonly Dictionary<int, string> UsNames = new()
     {
@@ -37,24 +52,35 @@ public static class KeyNames
         [0x52] = "Num 0", [0x4F] = "Num 1", [0x50] = "Num 2", [0x51] = "Num 3", [0x4B] = "Num 4", [0x4C] = "Num 5",
         [0x4D] = "Num 6", [0x47] = "Num 7", [0x48] = "Num 8", [0x49] = "Num 9", [0x53] = "Num .", [0x37] = "Num *",
         [0x4A] = "Num -", [0x4E] = "Num +", [0xE035] = "Num /", [0xE01C] = "Num Enter",
+        // ABNT and JIS keys where the layout says nothing; the input-method keys.
+        [0x73] = "Ro", [0x7D] = "Yen", [0x7E] = "Num ,",
+        [0x70] = "Kana", [0x79] = "Henkan", [0x7B] = "Muhenkan", [0x71] = "Hanja", [0x72] = "Han/Yeong",
+        [0xF1] = "Hanja", [0xF2] = "Han/Yeong",
     };
 
-    /// <summary>Windows order and spelling for modifiers: "Ctrl+Alt+Shift+".</summary>
+    /// <summary>Windows order and spelling for modifiers: "Ctrl+Alt+AltGr+Shift+".</summary>
     public static string ModifierPrefix(KeyModifiers modifiers)
     {
         var text = "";
         if ((modifiers & KeyModifiers.Control) != 0) text += "Ctrl+";
         if ((modifiers & KeyModifiers.Alt) != 0) text += "Alt+";
+        if ((modifiers & KeyModifiers.AltGr) != 0) text += "AltGr+";
         if ((modifiers & KeyModifiers.Shift) != 0) text += "Shift+";
         return text;
     }
 
     public static string Name(int scanCode) => Name(scanCode, LayoutName);
 
-    /// <summary>Name using an explicit layout lookup (testable without global state).</summary>
+    /// <summary>
+    /// Name using an explicit layout lookup (testable without global state):
+    /// keys whose character or name depends on the layout ask it first, and
+    /// so do keys without a US name; Esc, Tab, F-keys, arrows and the keypad keep their US names.
+    /// </summary>
     public static string Name(int scanCode, Func<int, string?>? layout)
     {
-        if (LayoutDependentScanCodes.Contains(scanCode) && layout?.Invoke(scanCode) is { Length: > 0 } name)
+        var asksLayout = LayoutDependentScanCodes.Contains(scanCode) || InputMethodScanCodes.Contains(scanCode)
+            || !UsNames.ContainsKey(scanCode);
+        if (asksLayout && layout?.Invoke(scanCode) is { Length: > 0 } name)
             return name;
         return UsName(scanCode);
     }

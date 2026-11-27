@@ -117,13 +117,14 @@ public enum LightroomShortcuts {
 
     /// The logical name to look up, or nil for a key that is never matched:
     /// a letter or digit by the character it types on the active layout
-    /// (`KeyNames`), a fixed key by its code, punctuation never.
+    /// (`KeyNames`; a Turkish "i" reads lowercase and still is I, the dotless
+    /// ı is no I), a fixed key by its code, punctuation never.
     static func matchableKey(_ keyCode: Int64, layout: ((Int64) -> String?)?) -> String? {
         if let fixed = fixedKeys[keyCode] { return fixed }
         guard KeyNames.layoutDependentKeyCodes.contains(keyCode) else { return nil }
         let name = KeyNames.name(for: keyCode, layout: layout)
-        guard name.unicodeScalars.count == 1, let scalar = name.unicodeScalars.first,
-              ("A"..."Z").contains(scalar) || ("0"..."9").contains(scalar) else { return nil }
-        return name
+        guard name.unicodeScalars.count == 1, let scalar = name.unicodeScalars.first, scalar.isASCII,
+              scalar.properties.isAlphabetic || ("0"..."9").contains(scalar) else { return nil }
+        return name.uppercased()
     }
 }

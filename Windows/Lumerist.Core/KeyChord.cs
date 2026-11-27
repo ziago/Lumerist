@@ -8,8 +8,15 @@ public enum KeyModifiers
     Shift = 1 << 0,
     /// <summary>Ctrl, left or right.</summary>
     Control = 1 << 1,
-    /// <summary>Alt, left or right. AltGr (left Ctrl + right Alt) is a character key, not this.</summary>
+    /// <summary>Alt, left or right. AltGr (left Ctrl + right Alt) is <see cref="AltGr"/>, not this.</summary>
     Alt = 1 << 2,
+    /// <summary>
+    /// AltGr, the right Alt of layouts that type characters with it (€, @, [
+    /// on Italian, German, French… keyboards; Windows sends it as left Ctrl +
+    /// right Alt). A modifier of its own, like Option on the Mac: AltGr+Q is
+    /// not Q, so a key bound alone lets AltGr+key through and its character is typed.
+    /// </summary>
+    AltGr = 1 << 3,
     /// <summary>
     /// Not a keyboard modifier: a chord with it is a combo, which works only
     /// while the Combo Key is held ("Tab + K"). Key events never carry it;
@@ -22,10 +29,11 @@ public static class KeyModifiersExtensions
 {
     /// <summary>
     /// Ctrl and Alt combinations belong to Lightroom and Windows (Ctrl+Z, Alt
-    /// menus…). Shift alone is allowed: it selects the large step.
+    /// menus…), and AltGr ones type characters. Shift alone is allowed: it
+    /// selects the large step.
     /// </summary>
     public static bool ReservesKey(this KeyModifiers modifiers) =>
-        (modifiers & (KeyModifiers.Control | KeyModifiers.Alt)) != 0;
+        (modifiers & (KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.AltGr)) != 0;
 }
 
 /// <summary>
@@ -56,7 +64,7 @@ public readonly record struct KeyChord(int ScanCode, KeyModifiers Modifiers = Ke
     /// <summary>The key and real modifiers of a combo, without the Combo Key.</summary>
     public KeyChord WithoutCombo => this with { Modifiers = Modifiers & ~KeyModifiers.Combo };
 
-    /// <summary>True when Ctrl or Alt is part of the chord.</summary>
+    /// <summary>True when Ctrl, Alt or AltGr is part of the chord.</summary>
     public bool UsesReservedModifiers => Modifiers.ReservesKey();
 
     // Common keys.

@@ -45,11 +45,34 @@ public class GestureFixtureTests
         _ => throw new FixtureException("unknown button " + name),
     };
 
+    /// <summary>
+    /// "lightroomImportKeys": Lightroom's Import keys for the case, changes to
+    /// the US ones (include, exclude, toggle, nextPhoto); a null toggle is a layout with no Toggle.
+    /// </summary>
+    private static ImportShortcuts LightroomImportKeys(JsonNode node)
+    {
+        var changes = node as JsonObject ?? throw new FixtureException("lightroomImportKeys must be an object");
+        var shortcuts = ImportShortcuts.Standard;
+        foreach (var (name, value) in changes)
+        {
+            shortcuts = name switch
+            {
+                "include" => shortcuts with { Include = WinKeys.Chord(FixtureValues.Text(value, name)) },
+                "exclude" => shortcuts with { Exclude = WinKeys.Chord(FixtureValues.Text(value, name)) },
+                "toggle" => shortcuts with { Toggle = FixtureValues.ChordOrNull(value) },
+                "nextPhoto" => shortcuts with { NextPhoto = WinKeys.Chord(FixtureValues.Text(value, name)) },
+                _ => throw new FixtureException("lightroomImportKeys: unknown field " + name),
+            };
+        }
+        return shortcuts;
+    }
+
     /// <summary>One gesture case: a fresh engine, then each step and its checks.</summary>
     private static List<string> Run(JsonObject testCase)
     {
         var steps = testCase["steps"] as JsonArray ?? throw new FixtureException("no steps");
         var engine = new KeyGestureEngine<string>(KeymapChanges.Apply(testCase["keymap"]));
+        if (testCase["lightroomImportKeys"] is { } importKeys) engine.UpdateImportShortcuts(LightroomImportKeys(importKeys));
         var failures = new List<string>();
 
         for (var index = 0; index < steps.Count; index++)

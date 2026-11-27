@@ -133,18 +133,34 @@ internal sealed class GeneralScreen(ScreenContext context) : Screen(context)
     /// <summary>Combo Key, Palette Key, Key Reference toggle and Pause toggle (SystemKeysSection.swift).</summary>
     private FrameworkElement SystemKeysSection()
     {
-        var systemKeys = Controller.Keymap.SystemKeys;
+        var keymap = Controller.Keymap;
+        var systemKeys = keymap.SystemKeys;
+        // Lightroom's own keys a System Key takes over ("0" left of 1 on Hungarian keyboards): never blocking.
+        var warnings = new Dictionary<SystemKeyRole, string>();
+        foreach (var conflict in keymap.Conflicts().Where(conflict => conflict.LightroomAction is not null))
+        {
+            foreach (var usage in conflict.Usages.OfType<KeyUsage.SystemKey>()) warnings.TryAdd(usage.Role, conflict.Message);
+        }
         var rows = SystemKeyRoles.All.Select(role =>
         {
             KeySlot? slot = null;
-            slot = new KeySlot($"system.{role.WireName()}", systemKeys.ChordFor(role), null, 64, role.Title(), systemKeys.ComboKey,
+            slot = new KeySlot($"system.{role.WireName()}", systemKeys.ChordFor(role), warnings.GetValueOrDefault(role), 64, role.Title(),
+                systemKeys.ComboKey,
                 chord => KeymapEditor.SetSystem(Controller, role, chord, slot),
                 () => KeymapEditor.SetSystem(Controller, role, null, slot));
             return (UIElement?)Surfaces.SettingRow(role.Title(), role.Detail(systemKeys.ComboKey), slot);
         }).ToArray();
-        return Surfaces.SettingsSection("System Keys", Icons.Keyboard,
+        var section = Surfaces.SettingsSection("System Keys", Icons.Keyboard,
             "Click a box and press the new key: Esc cancels, Delete clears. System Keys work in every module, so no slider or Command Key can share them.",
             rows);
+        // Why the standard layout left the Palette Key empty on this keyboard.
+        var reason = systemKeys.PaletteKey is null && !Context.IsSnapshot ? KeyboardLayout.PaletteKeyUnavailable() : null;
+        var notes = new List<UIElement?>
+        {
+            reason is { } why ? SynthText.Body(PaletteKeyDefault.Explanation(why, KeyboardLayout.LeftOf1Text()), 12, color: Ink.Steel) : null,
+        };
+        notes.AddRange(SystemKeyRoles.All.Where(warnings.ContainsKey).Select(role => (UIElement?)SynthText.WarningLine(warnings[role])));
+        return notes.All(note => note is null) ? section : Layout.VStack(Theme.Space.S, [section, .. notes]);
     }
 
     // Lightroom ------------------------------------------------------------------
@@ -314,7 +330,7 @@ internal sealed class GeneralScreen(ScreenContext context) : Screen(context)
             if (!SynthDialog.Confirm(View, "Restore the standard layout?",
                     "Dial Keys, Nudge Keys, Command Keys, System Keys and steps return to the layout Lumerist ships with, and the Import keys are cleared. Your mouse, trackpad, Import and Lightroom options and the Palette are kept. To keep the current keys, export the profile first.",
                     "Restore", isDestructive: true)) return;
-            profileError = Controller.UpdateKeymap(KeymapEditing.StandardLayoutKeeping(Controller.Keymap));
+            profileError = Controller.UpdateKeymap(KeymapEditing.StandardLayoutKeeping(Controller.Keymap, KeyboardLayout.StandardPaletteKey()));
             if (profileError is not null) Refresh();
         });
         var rows = new List<UIElement?>

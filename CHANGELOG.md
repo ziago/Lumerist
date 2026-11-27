@@ -6,6 +6,46 @@ All notable changes to Lumerist are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- **Import keys** for culling in Lightroom's Import window: on the new
+  Import page, pick an Include, an Exclude and a Toggle key. They act only
+  while the Import window is in front and press Lightroom's own keys there
+  (P, X and its Toggle key). "Move to the next photo" selects the next photo
+  after Include or Exclude. No key is assigned until you pick one, and in the
+  Import window the mouse wheel and the trackpad scroll Lightroom as usual.
+  Lumerist recognises the window by the type and size of Lightroom's
+  windows, never their text.
+- **Lightroom key warnings**: a Command Key, Nudge Key, Import key or system
+  key on one of Lightroom's own keys gets a note on its row, e.g. "Lightroom
+  uses Z for “Toggle Zoom view” in Library. Lumerist takes it over there."
+  It never stops you from saving.
+- Tooltips explain Dial Keys, Nudge Keys, steps and the other kinds of keys.
+  They follow the chosen theme and appear after one second.
+- Japanese (JIS) keyboards: the drawn keyboard has their shape, and ¥, _,
+  英数 and かな have names.
+
+### Changed
+- The keys Lumerist presses in Lightroom (shortcuts for commands, Import
+  keys, Paste Settings from Previous) are found by the character they type
+  on your keyboard layout, ⌘ and Ctrl shortcuts included. They stay right on
+  Dvorak, AZERTY, QWERTZ and other layouts, and a key is never pressed just
+  because of where it sits.
+- Tab + Q is now the command "Paste settings from previous", listed under
+  Edit. A Tab + Q left as it came from an earlier version becomes the
+  command by itself.
+- No default Palette Key on Japanese (JIS) keyboards, where the key left of 1
+  switches the input method, nor where that key types a Latin letter or a
+  digit (Hungarian). General says why, and any free key can be picked.
+- Windows: AltGr is a modifier of its own, as Option is on the Mac, so
+  AltGr + a key types its character and never sets off a Lumerist key. The
+  input-method keys of Japanese and Korean keyboards can't be recorded.
+- The × that clears a key turns red under the pointer.
+
+### Fixed
+- A keymap Lumerist can't read, such as one saved by a newer version, is no
+  longer replaced by the standard layout: a copy is kept and the problem is
+  logged. On the Mac, General → Profile shows the copy.
+
 ## [0.9.1] — the first release with the repository public
 
 Everything Lumerist does is described in the

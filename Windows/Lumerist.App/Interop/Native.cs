@@ -194,8 +194,17 @@ internal static unsafe partial class Native
     [LibraryImport("user32.dll")]
     public static partial uint MapVirtualKeyExW(uint uCode, uint uMapType, nint dwhkl);
 
+    /// <summary>GetKeyNameTextW: Windows' name for a key ("Caps Lock", "半角/全角") in the calling thread's layout.</summary>
     [LibraryImport("user32.dll")]
-    public static partial short VkKeyScanExW(ushort ch, nint dwhkl);
+    public static partial int GetKeyNameTextW(int lParam, char* lpString, int cchSize);
+
+    /// <summary>GetKeyboardType(0): 7 is a Japanese keyboard, 8 a Korean one.</summary>
+    [LibraryImport("user32.dll")]
+    public static partial int GetKeyboardType(int nTypeFlag);
+
+    /// <summary>The key an input method turned into VK_PROCESSKEY (imm32).</summary>
+    [LibraryImport("imm32.dll")]
+    public static partial uint ImmGetVirtualKey(nint hWnd);
 
     [LibraryImport("user32.dll")]
     public static partial int ToUnicodeEx(uint wVirtKey, uint wScanCode, byte* lpKeyState, char* pwszBuff, int cchBuff, uint wFlags, nint dwhkl);

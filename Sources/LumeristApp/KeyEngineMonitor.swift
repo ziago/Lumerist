@@ -89,13 +89,18 @@ final class KeyEngineMonitor: @unchecked Sendable {
         lock.unlock()
     }
 
-    /// Lightroom's Import window came to the front or went away. Its
-    /// shortcuts are taken again at each opening, for the keyboard layout
-    /// in use then.
-    func update(isImportWindowOpen open: Bool, shortcuts: ImportShortcuts) {
+    /// Lightroom's Import window came to the front or went away.
+    func update(isImportWindowOpen open: Bool) {
         lock.lock()
         isImportWindowOpen = open
-        if open { engine.update(importShortcuts: shortcuts) }
+        lock.unlock()
+    }
+
+    /// The keys the Import keys press, for the keyboard layout in use: set
+    /// at start and again whenever the input source changes.
+    func update(importShortcuts: ImportShortcuts) {
+        lock.lock()
+        engine.update(importShortcuts: importShortcuts)
         lock.unlock()
     }
 

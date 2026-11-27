@@ -11,21 +11,43 @@ final class KeymapStore {
 
     @ObservationIgnored private let defaults: UserDefaults
     private(set) var keymap: Keymap
+    /// Set when the stored keymap could not be read: why, and where its copy
+    /// went (nil if the copy could not be written either).
+    @ObservationIgnored private(set) var unreadable: (reason: String, backup: URL?)?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         // Key names and Lightroom's fallback shortcuts follow the active
         // keyboard layout; created at launch, so this runs before any UI.
         KeyboardLayout.install()
-        if let data = defaults.data(forKey: Self.storageKey),
-           let stored = try? Keymap.decodeStored(data) {
-            keymap = stored
-            return
+        // First run: the standard layout, saved. A stored keymap this build
+        // cannot read (decoding is strict, so a newer version's file may be
+        // one) is copied and never written over; the standard layout is used
+        // until the user changes a key (`KeymapLoad`).
+        let load = KeymapLoad.decide(stored: defaults.data(forKey: Self.storageKey), standard: Self.standardLayout)
+        keymap = load.keymap
+        if let unreadable = load.unreadable {
+            self.unreadable = (unreadable.reason, Self.backUp(unreadable.data, defaults: defaults))
         }
-        // First run, or a stored keymap this build cannot read (decoding is
-        // strict): start from the standard layout.
-        keymap = Self.standardLayout
-        try? save()
+        if load.saveNow { try? save() }
+    }
+
+    /// Keeps a copy of a stored keymap this build could not read, in
+    /// ~/Library/Application Support/Lumerist/keymap-backups (or, if that
+    /// fails, under a UserDefaults key of its own).
+    private static func backUp(_ data: Data, defaults: UserDefaults) -> URL? {
+        let manager = FileManager.default
+        if let support = manager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let folder = support.appending(path: "Lumerist/keymap-backups", directoryHint: .isDirectory)
+            let file = folder.appending(path: KeymapBackup.fileName(for: data))
+            do {
+                try manager.createDirectory(at: folder, withIntermediateDirectories: true)
+                if !manager.fileExists(atPath: file.path) { try data.write(to: file, options: .atomic) }
+                return file
+            } catch {}
+        }
+        defaults.set(data, forKey: storageKey + ".unreadable")
+        return nil
     }
 
     /// Validates, persists, and only then publishes a change.
@@ -37,9 +59,15 @@ final class KeymapStore {
         keymap = updated
     }
 
-    /// The standard layout for this Mac's keyboard (ISO or ANSI).
+    /// The standard layout for this Mac's keyboard (ANSI, ISO or JIS), taken
+    /// on the first run and by "Restore standard layout". The Palette Key is
+    /// not moved later when another keyboard is used: `LMGetKbdType` follows
+    /// the last keyboard typed on, so a Mac with an ISO built-in keyboard and
+    /// an ANSI external one would flip it back and forth, and the other spot
+    /// may hold a key the user assigned. General shows the key, and changing
+    /// it is one click.
     static var standardLayout: Keymap {
-        Keymap.standardLayout(isoKeyboard: KeyboardLayout.physicalShape == .iso)
+        Keymap.standardLayout(for: KeyboardLayout.physicalShape, layout: KeyboardLayout.characters)
     }
 
     /// Puts back the standard keys (no Import keys); input options, the
