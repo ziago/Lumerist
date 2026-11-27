@@ -1,5 +1,5 @@
 /// What the user asked for with a key, wheel or mouse gesture. The companion
-/// maps intents to bridge requests (docs/protocol-v3.md) or to its own UI.
+/// maps intents to bridge requests (docs/protocol-v4.md) or to its own UI.
 public enum KeyIntent: Sendable, Hashable {
     /// Change a parameter by `delta` (slider units; see the catalog unit).
     case adjust(ParameterKey, delta: Double)

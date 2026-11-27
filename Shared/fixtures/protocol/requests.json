@@ -4,62 +4,62 @@
     {
       "id": "protocol-requests/ping",
       "request": { "kind": "ping" }, "wireId": 1,
-      "line": { "version": 3, "id": 1, "kind": "ping" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 1, "kind": "ping" }
     },
     {
       "id": "protocol-requests/adjust-develop",
       "request": { "kind": "adjust", "scope": "develop", "parameter": "Exposure", "delta": 0.05 }, "wireId": 7,
-      "line": { "version": 3, "id": 7, "kind": "adjust", "scope": "develop", "parameter": "Exposure", "delta": 0.05 }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 7, "kind": "adjust", "scope": "develop", "parameter": "Exposure", "delta": 0.05 }
     },
     {
       "id": "protocol-requests/adjust-library",
       "request": { "kind": "adjust", "scope": "library", "parameter": "Temperature", "delta": -20 }, "wireId": 8,
-      "line": { "version": 3, "id": 8, "kind": "adjust", "scope": "library", "parameter": "Temperature", "delta": -20 }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 8, "kind": "adjust", "scope": "library", "parameter": "Temperature", "delta": -20 }
     },
     {
       "id": "protocol-requests/adjust-a-special-parameter",
       "request": { "kind": "adjust", "scope": "develop", "parameter": "lumerist.cropZoom", "delta": 5 }, "wireId": 9,
-      "line": { "version": 3, "id": 9, "kind": "adjust", "scope": "develop", "parameter": "lumerist.cropZoom", "delta": 5 }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 9, "kind": "adjust", "scope": "develop", "parameter": "lumerist.cropZoom", "delta": 5 }
     },
     {
       "id": "protocol-requests/reset",
       "request": { "kind": "reset", "scope": "develop", "parameter": "Exposure" }, "wireId": 10,
-      "line": { "version": 3, "id": 10, "kind": "reset", "scope": "develop", "parameter": "Exposure" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 10, "kind": "reset", "scope": "develop", "parameter": "Exposure" }
     },
     {
       "id": "protocol-requests/gesture-begin",
       "request": { "kind": "gesture", "phase": "begin", "parameter": "Exposure" }, "wireId": 11,
-      "line": { "version": 3, "id": 11, "kind": "gesture", "phase": "begin", "parameter": "Exposure" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 11, "kind": "gesture", "phase": "begin", "parameter": "Exposure" }
     },
     {
       "id": "protocol-requests/gesture-end-without-a-parameter",
       "request": { "kind": "gesture", "phase": "end" }, "wireId": 12,
-      "line": { "version": 3, "id": 12, "kind": "gesture", "phase": "end" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 12, "kind": "gesture", "phase": "end" }
     },
     {
       "id": "protocol-requests/command-without-an-argument",
       "request": { "kind": "command", "name": "autoTone" }, "wireId": 13,
-      "line": { "version": 3, "id": 13, "kind": "command", "name": "autoTone" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 13, "kind": "command", "name": "autoTone" }
     },
     {
       "id": "protocol-requests/command-rating",
       "request": { "kind": "command", "name": "rating", "argument": "5" }, "wireId": 14,
-      "line": { "version": 3, "id": 14, "kind": "command", "name": "rating", "argument": "5" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 14, "kind": "command", "name": "rating", "argument": "5" }
     },
     {
       "id": "protocol-requests/command-create-mask",
       "request": { "kind": "command", "name": "createMask", "argument": "aiSelection/subject" }, "wireId": 15,
-      "line": { "version": 3, "id": 15, "kind": "command", "name": "createMask", "argument": "aiSelection/subject" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 15, "kind": "command", "name": "createMask", "argument": "aiSelection/subject" }
     },
     {
       "id": "protocol-requests/command-apply-preset",
       "request": { "kind": "command", "name": "applyPreset", "argument": "4A7E2C10-1B2D-4E5F-8A9B-0C1D2E3F4A5B" }, "wireId": 16,
-      "line": { "version": 3, "id": 16, "kind": "command", "name": "applyPreset", "argument": "4A7E2C10-1B2D-4E5F-8A9B-0C1D2E3F4A5B" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 16, "kind": "command", "name": "applyPreset", "argument": "4A7E2C10-1B2D-4E5F-8A9B-0C1D2E3F4A5B" }
     },
     {
       "id": "protocol-requests/query-presets",
       "request": { "kind": "query", "name": "presets" }, "wireId": 17,
-      "line": { "version": 3, "id": 17, "kind": "query", "name": "presets" }
+      "line": { "version": 4, "token": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", "id": 17, "kind": "query", "name": "presets" }
     },
     {
       "id": "protocol-requests/delta-above-the-limit",

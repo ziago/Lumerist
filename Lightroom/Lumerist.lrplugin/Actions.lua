@@ -1,4 +1,5 @@
--- Protocol 3 request validation and dispatch (see docs/protocol-v3.md).
+-- Protocol 4 request validation and dispatch (see docs/protocol-v4.md).
+-- The bridge checks the token (BridgeToken.lua) before a request gets here.
 
 local LrTasks = import "LrTasks"
 local Catalog = require "Catalog"
@@ -8,7 +9,7 @@ local Library = require "Library"
 
 local Actions = {}
 
-Actions.protocolVersion = 3
+Actions.protocolVersion = 4
 
 local SCOPES = { develop = true, library = true }
 local KINDS = { ping = true, adjust = true, reset = true, gesture = true, command = true, query = true }
@@ -21,13 +22,20 @@ local function isInteger(value)
     return isFinite(value) and value == math.floor(value)
 end
 
+--- The rejection for a request of another protocol version.
+function Actions.versionMessage(version)
+    local got = tostring(version)
+    if #got > 16 then got = got:sub(1, 16) .. "..." end
+    return "protocol " .. Actions.protocolVersion .. " required (got " .. got .. ")"
+end
+
 --- Checks a decoded request without touching Lightroom. Returns ok, reason.
 function Actions.validate(request)
     if type(request) ~= "table" then
         return false, "request must be a JSON object"
     end
     if request.version ~= Actions.protocolVersion then
-        return false, "protocol " .. Actions.protocolVersion .. " required (got " .. tostring(request.version) .. ")"
+        return false, Actions.versionMessage(request.version)
     end
     if not isInteger(request.id) then
         return false, "request id must be an integer"

@@ -9,7 +9,7 @@ It fails when
 - a case in Shared/fixtures was not run by a side's tests (each test suite
   writes the ids it ran to build/parity/<side>/<group>.txt), or the list is
   older than the cases;
-- a value of Shared/contract.json (ports, protocol version, plug-in id,
+- a value of Shared/contract.json (ports, protocol version, bridge token file, plug-in id,
   consent version and hash) is missing from a side or from the plug-in;
 - a row of docs/feature-spec.md has an empty macOS or Windows column;
 - a theme colour of the Windows app differs from the Mac's;
@@ -105,6 +105,7 @@ def check_values(side: str):
     consent = contract["consent"]
     version, digest = re.escape(consent["version"]), consent["sha256"]
     plugin_id = re.escape(contract["pluginId"])
+    token_file = re.escape(contract["bridgeTokenFile"])
     if side == "plug-in":
         lua = sources(["Lightroom/Lumerist.lrplugin/*.lua"])
         expect(side, lua, "request port", rf"REQUEST_PORT\s*=\s*{contract['requestPort']}\b")
@@ -112,6 +113,7 @@ def check_values(side: str):
         expect(side, lua, "protocol version", rf"protocolVersion\s*=\s*{contract['protocolVersion']}\b")
         expect(side, lua, "plug-in id", rf'LrToolkitIdentifier\s*=\s*"{plugin_id}"')
         expect(side, lua, "Windows link file", r'"plugin-link\.json"')
+        expect(side, lua, "bridge token file", rf'fileName\s*=\s*"{token_file}"')
     elif side == "swift":
         code = sources(["Sources/**/*.swift"])
         tests = sources(["Tests/LumeristCoreTests/*.swift"])
@@ -119,6 +121,7 @@ def check_values(side: str):
         expect(side, code, "response port", rf"responsePort:\s*UInt16\s*=\s*{port(contract['responsePort'])}\b")
         expect(side, code, "protocol version", rf"protocolVersion\s*=\s*{contract['protocolVersion']}\b")
         expect(side, code, "consent version", rf'consentVersion\s*=\s*"{version}"')
+        expect(side, code, "bridge token file", rf'fileName\s*=\s*"{token_file}"')
         expect(side, tests, "consent hash test", digest)
     else:
         code = sources(["Windows/Lumerist.Core/**/*.cs", "Windows/Lumerist.App/**/*.cs"])
@@ -132,6 +135,7 @@ def check_values(side: str):
         expect(side, code, "consent version", rf'ConsentVersion\s*=\s*"{version}"')
         expect(side, code, "plug-in id", rf'"{plugin_id}"')
         expect(side, code, "Windows link file", r'"plugin-link\.json"')
+        expect(side, code, "bridge token file", rf'BridgeTokenFileName\s*=\s*"{token_file}"')
         expect(side, tests, "consent hash test", digest)
 
 

@@ -55,7 +55,7 @@ One plug-in serves both systems; the few differences sit behind Lightroom's
 
 | Feature | macOS | Windows |
 | --- | --- | --- |
-| Protocol 3 over loopback (two `LrSocket`s), ids, acks with value/range/unit, context events (module/tool), presets and catalog queries | done | done (same plug-in) / verify |
+| Protocol 4 over loopback (two `LrSocket`s), the bridge token, ids, acks with value/range/unit, context events (module/tool), presets and catalog queries | done | done (same plug-in) / verify |
 | Single worker task, merged adjustments, stale-read chain, generations shared through plug-in prefs, forced init at startup, send-socket rebind | done | done (same plug-in) / verify |
 | ~130 catalog parameters incl. hue wrap, choice stepping, Crop zoom, `local_*` | done / verify names in Lightroom | done (same plug-in) / verify |
 | One history step per gesture (`startTracking`/`stopTracking`) | verify | verify |

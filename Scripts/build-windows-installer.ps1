@@ -6,10 +6,10 @@
   For x64 and arm64: a self-contained publish of the app (no .NET needed on
   the user's PC), a portable zip and a per-user installer (Inno Setup 6).
   Output: build\release\<version>\windows\, with BUILD-COMMIT (the commit
-  they were built from) and a .sha256 next to each package. Copy that
-  folder to build/release/<version>/windows/ on the release Mac:
-  Scripts/release.sh publishes the Mac and Windows packages together and
-  refuses when one is missing or was built from another commit.
+  they were built from) and a .sha256 next to each package. CI runs this on
+  every push and pull request; Scripts/release.sh publishes the packages of
+  the CI run of the push to main for the released commit, downloaded by
+  itself (a folder copied by hand is used only by a dry run).
 
   Needs: the .NET 10 SDK, Inno Setup 6, git, a clean working tree.
 

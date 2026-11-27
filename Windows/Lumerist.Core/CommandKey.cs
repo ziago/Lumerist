@@ -38,7 +38,7 @@ public abstract record CommandAction
 {
     private CommandAction() { }
 
-    /// <summary>A protocol command name (docs/protocol-v3.md) with an optional argument.</summary>
+    /// <summary>A protocol command name (docs/protocol-v4.md) with an optional argument.</summary>
     public sealed record Command(string Name, string? Argument = null) : CommandAction;
 
     /// <summary>A Develop preset, by UUID; the name is for display.</summary>

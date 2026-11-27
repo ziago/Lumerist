@@ -20,7 +20,7 @@ public class ClientTests
         using var receiver = LoopbackServer.LineReceiver();
         using var responseSender = LoopbackServer.ResponseSender();
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
-        using var client = new LightroomCommandClient(state => states.Writer.TryWrite(state),
+        using var client = new LightroomCommandClient(TestToken.Value, state => states.Writer.TryWrite(state),
             port: receiver.Port, responsePort: responseSender.Port);
         client.Start();
         await WaitUntilReady(states.Reader);
@@ -28,6 +28,7 @@ public class ClientTests
         var first = LightroomRequest.Adjust(ParameterScope.Develop, "Exposure", 0.1);
         var firstId = await client.SendAsync(first).WaitAsync(Timeout);
         var received = RequestCodec.DecodeLine(await receiver.NextData());
+        Assert.Equal(TestToken.Value, received.Token);
         Assert.Equal(first, received.Request);
         Assert.Equal(firstId, received.Id);
 
@@ -45,7 +46,7 @@ public class ClientTests
         using var receiver = LoopbackServer.ChunkReceiver();
         using var responseSender = LoopbackServer.ResponseSender();
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
-        using var client = new LightroomCommandClient(state => states.Writer.TryWrite(state),
+        using var client = new LightroomCommandClient(TestToken.Value, state => states.Writer.TryWrite(state),
             port: receiver.Port, responsePort: responseSender.Port);
         client.Start();
         await WaitUntilReady(states.Reader);
@@ -65,6 +66,7 @@ public class ClientTests
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
         var messages = Channel.CreateUnbounded<LightroomMessage>();
         using var client = new LightroomCommandClient(
+            TestToken.Value,
             state => states.Writer.TryWrite(state),
             message => messages.Writer.TryWrite(message),
             port: commandReceiver.Port, responsePort: responseSender.Port);
@@ -79,7 +81,7 @@ public class ClientTests
         var items = Enumerable.Range(0, 3_000)
             .Select(index => new PresetItem($"UUID-{index}", $"Preset number {index} with a long name", $"Folder {index % 7}"))
             .ToList();
-        var ack = new LightroomAck(id, true, "Lumerist plug-in ready (protocol 3)");
+        var ack = new LightroomAck(id, true, "Lumerist plug-in ready (protocol 4)");
         var payload = MessageCodec.EncodeLine(new LightroomMessage.Context(new LightroomContext("develop", "masking")))
             .Concat(MessageCodec.EncodeLine(new LightroomMessage.Ack(ack)))
             .Concat(MessageCodec.EncodeLine(new LightroomMessage.Result(new LightroomResult.Presets(99, items, false))))
@@ -102,6 +104,7 @@ public class ClientTests
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
         var messages = Channel.CreateUnbounded<LightroomMessage>();
         using var client = new LightroomCommandClient(
+            TestToken.Value,
             state => states.Writer.TryWrite(state),
             message => messages.Writer.TryWrite(message),
             port: commandReceiver.Port, responsePort: responseSender.Port);
@@ -110,7 +113,7 @@ public class ClientTests
         await WaitUntilReady(states.Reader);
 
         var ack = new LightroomMessage.Ack(new LightroomAck(7, true, "Café prêt"));
-        var payload = Encoding.UTF8.GetBytes("not json\n\n{\"kind\":\"telemetry\",\"version\":3}\n")
+        var payload = Encoding.UTF8.GetBytes("not json\n\n{\"kind\":\"telemetry\",\"version\":4}\n")
             .Concat(MessageCodec.EncodeLine(ack)).ToArray();
         // Sent in pieces that split a line, the two bytes of "é" and the final newline.
         var insideE = Array.IndexOf(payload, (byte)0xC3) + 1;
@@ -138,7 +141,7 @@ public class ClientTests
     public async Task RefusesToSendBeforeTheCommandChannelIsReady()
     {
         var unusedPort = ReserveFreePort();
-        using var client = new LightroomCommandClient(_ => { }, port: unusedPort, responsePort: unusedPort);
+        using var client = new LightroomCommandClient(TestToken.Value, _ => { }, port: unusedPort, responsePort: unusedPort);
         client.Start();
 
         Exception? failure = null;
@@ -155,7 +158,7 @@ public class ClientTests
         var commandPort = ReserveFreePort();
 
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
-        using var client = new LightroomCommandClient(state => states.Writer.TryWrite(state),
+        using var client = new LightroomCommandClient(TestToken.Value, state => states.Writer.TryWrite(state),
             port: commandPort, responsePort: responseSender.Port,
             initialRetryDelay: TimeSpan.FromSeconds(0.2), maximumRetryDelay: TimeSpan.FromSeconds(0.4));
         client.Start();
@@ -177,7 +180,7 @@ public class ClientTests
         using var commandReceiver = LoopbackServer.LineReceiver();
         using var responseSender = LoopbackServer.ResponseSender();
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
-        using var client = new LightroomCommandClient(state => states.Writer.TryWrite(state),
+        using var client = new LightroomCommandClient(TestToken.Value, state => states.Writer.TryWrite(state),
             port: commandReceiver.Port, responsePort: responseSender.Port,
             initialRetryDelay: TimeSpan.FromSeconds(0.1), maximumRetryDelay: TimeSpan.FromSeconds(0.1));
         client.Start();
@@ -199,7 +202,7 @@ public class ClientTests
         using var commandReceiver = LoopbackServer.LineReceiver();
         var responsePort = ReserveFreePort();
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
-        using var client = new LightroomCommandClient(state => states.Writer.TryWrite(state),
+        using var client = new LightroomCommandClient(TestToken.Value, state => states.Writer.TryWrite(state),
             port: commandReceiver.Port, responsePort: responsePort,
             initialRetryDelay: TimeSpan.FromSeconds(1.5), maximumRetryDelay: TimeSpan.FromSeconds(1.5));
         client.Start();
@@ -223,7 +226,7 @@ public class ClientTests
         // The response endpoint stays closed, so that channel keeps retrying.
         var responsePort = ReserveFreePort();
         var attempts = 0;
-        using var client = new LightroomCommandClient(state => { if (state is LightroomCommandClient.State.Waiting) Interlocked.Increment(ref attempts); },
+        using var client = new LightroomCommandClient(TestToken.Value, state => { if (state is LightroomCommandClient.State.Waiting) Interlocked.Increment(ref attempts); },
             port: commandListener.Port, responsePort: responsePort,
             initialRetryDelay: TimeSpan.FromSeconds(0.1), maximumRetryDelay: TimeSpan.FromSeconds(0.1));
         client.Start();
@@ -240,7 +243,7 @@ public class ClientTests
     {
         var unusedPort = ReserveFreePort();
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
-        var client = new LightroomCommandClient(state => states.Writer.TryWrite(state),
+        var client = new LightroomCommandClient(TestToken.Value, state => states.Writer.TryWrite(state),
             port: unusedPort, responsePort: unusedPort,
             initialRetryDelay: TimeSpan.FromSeconds(0.1), maximumRetryDelay: TimeSpan.FromSeconds(0.1));
         client.Start();
@@ -265,7 +268,7 @@ public class ClientTests
         using var receiver = LoopbackServer.LineReceiver();
         using var responseSender = LoopbackServer.ResponseSender();
         var states = Channel.CreateUnbounded<LightroomCommandClient.State>();
-        var client = new LightroomCommandClient(state => states.Writer.TryWrite(state),
+        var client = new LightroomCommandClient(TestToken.Value, state => states.Writer.TryWrite(state),
             port: receiver.Port, responsePort: responseSender.Port);
         client.Start();
         await WaitUntilReady(states.Reader);
@@ -308,6 +311,7 @@ public class ClientTests
         var delivered = 0;
         var firstMessage = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var client = new LightroomCommandClient(
+            TestToken.Value,
             state => states.Writer.TryWrite(state),
             _ =>
             {
@@ -337,7 +341,7 @@ public class ClientTests
     public void DisposeIsFinal()
     {
         var unusedPort = ReserveFreePort();
-        var client = new LightroomCommandClient(_ => { }, port: unusedPort, responsePort: unusedPort);
+        var client = new LightroomCommandClient(TestToken.Value, _ => { }, port: unusedPort, responsePort: unusedPort);
         client.Dispose();
         Assert.Throws<ObjectDisposedException>(client.Start);
         client.Dispose(); // Twice is fine.
@@ -346,9 +350,9 @@ public class ClientTests
     [Fact]
     public void RetryDelaysMustBePositiveAndOrdered()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new LightroomCommandClient(_ => { }, initialRetryDelay: TimeSpan.Zero));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new LightroomCommandClient(_ => { }, initialRetryDelay: TimeSpan.FromMilliseconds(-1)));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new LightroomCommandClient(_ => { },
+        Assert.Throws<ArgumentOutOfRangeException>(() => new LightroomCommandClient(TestToken.Value, _ => { }, initialRetryDelay: TimeSpan.Zero));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new LightroomCommandClient(TestToken.Value, _ => { }, initialRetryDelay: TimeSpan.FromMilliseconds(-1)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new LightroomCommandClient(TestToken.Value, _ => { },
             initialRetryDelay: TimeSpan.FromSeconds(2), maximumRetryDelay: TimeSpan.FromSeconds(1)));
     }
 
@@ -494,7 +498,7 @@ public class MessageTests
     [Fact]
     public void DecodesTheAckThePlugInWrites()
     {
-        var line = """{"accepted":true,"id":12,"kind":"ack","maximum":50000,"message":"accepted","minimum":2000,"parameter":"Temperature","scope":"develop","unit":"K","value":5100,"version":3}""";
+        var line = """{"accepted":true,"id":12,"kind":"ack","maximum":50000,"message":"accepted","minimum":2000,"parameter":"Temperature","scope":"develop","unit":"K","value":5100,"version":4}""";
         var ack = Assert.IsType<LightroomMessage.Ack>(Decode(line)).Value;
         Assert.Equal(12, ack.Id);
         Assert.True(ack.Accepted);
@@ -510,7 +514,7 @@ public class MessageTests
     [Fact]
     public void RejectedAckWithoutIdOrValues()
     {
-        var ack = Assert.IsType<LightroomMessage.Ack>(Decode("""{"accepted":false,"kind":"ack","message":"malformed JSON","version":3}""")).Value;
+        var ack = Assert.IsType<LightroomMessage.Ack>(Decode("""{"accepted":false,"kind":"ack","message":"malformed JSON","version":4}""")).Value;
         Assert.Null(ack.Id);
         Assert.False(ack.Accepted);
         Assert.Null(ack.Value);
@@ -520,7 +524,7 @@ public class MessageTests
     [Fact]
     public void MaskAckCarriesTheLocalParameter()
     {
-        var line = """{"accepted":true,"id":3,"kind":"ack","maximum":4,"message":"accepted","minimum":-4,"parameter":"local_Exposure","scope":"develop","unit":"EV","value":0.25,"version":3}""";
+        var line = """{"accepted":true,"id":3,"kind":"ack","maximum":4,"message":"accepted","minimum":-4,"parameter":"local_Exposure","scope":"develop","unit":"EV","value":0.25,"version":4}""";
         var ack = Assert.IsType<LightroomMessage.Ack>(Decode(line)).Value;
         Assert.Equal("local_Exposure", ack.Parameter);
         Assert.Equal(0.25, ack.Value);
@@ -529,7 +533,7 @@ public class MessageTests
     [Fact]
     public void AnUnknownScopeIsLeftOut()
     {
-        var ack = Assert.IsType<LightroomMessage.Ack>(Decode("""{"accepted":true,"id":3,"kind":"ack","parameter":"Exposure","scope":"map","version":3}""")).Value;
+        var ack = Assert.IsType<LightroomMessage.Ack>(Decode("""{"accepted":true,"id":3,"kind":"ack","parameter":"Exposure","scope":"map","version":4}""")).Value;
         Assert.Null(ack.Scope);
         Assert.Equal(new ParameterKey(ParameterScope.Develop, "Exposure"), ack.ParameterKey);
     }
@@ -537,7 +541,7 @@ public class MessageTests
     [Fact]
     public void DecodesTheContextEvent()
     {
-        var message = Decode("""{"kind":"event","module":"develop","name":"context","tool":"masking","version":3}""");
+        var message = Decode("""{"kind":"event","module":"develop","name":"context","tool":"masking","version":4}""");
         Assert.Equal(new LightroomMessage.Context(new LightroomContext("develop", "masking")), message);
         var context = Assert.IsType<LightroomMessage.Context>(message).Value;
         Assert.True(context.IsMasking);
@@ -546,11 +550,11 @@ public class MessageTests
     [Fact]
     public void DecodesResults()
     {
-        var presets = Decode("""{"id":4,"items":[{"group":"Favourites","id":"A1-B2","name":"Warm \"Film\""}],"kind":"result","name":"presets","version":3}""");
+        var presets = Decode("""{"id":4,"items":[{"group":"Favourites","id":"A1-B2","name":"Warm \"Film\""}],"kind":"result","name":"presets","version":4}""");
         Assert.Equal(new LightroomMessage.Result(new LightroomResult.Presets(4, [new PresetItem("A1-B2", "Warm \"Film\"", "Favourites")], false)), presets);
-        var catalog = Decode("""{"id":5,"kind":"result","name":"catalog","skipped":["local_Amount"],"unsupported":["LensBlurAmount"],"version":3}""");
+        var catalog = Decode("""{"id":5,"kind":"result","name":"catalog","skipped":["local_Amount"],"unsupported":["LensBlurAmount"],"version":4}""");
         Assert.Equal(new LightroomMessage.Result(new LightroomResult.Catalog(5, ["LensBlurAmount"], ["local_Amount"])), catalog);
-        var context = Decode("""{"id":6,"kind":"result","module":"library","name":"context","tool":"","version":3}""");
+        var context = Decode("""{"id":6,"kind":"result","module":"library","name":"context","tool":"","version":4}""");
         Assert.Equal(new LightroomMessage.Result(new LightroomResult.Context(6, new LightroomContext("library", ""))), context);
         Assert.Equal(6, Assert.IsType<LightroomMessage.Result>(context).Value.Id);
     }
@@ -558,10 +562,10 @@ public class MessageTests
     [Fact]
     public void UnknownKindsEventsAndResultsAreIgnored()
     {
-        Assert.Null(Decode("""{"kind":"telemetry","version":3}"""));
-        Assert.Null(Decode("""{"kind":"event","name":"weather","version":3}"""));
-        Assert.Null(Decode("""{"id":1,"kind":"result","name":"secrets","version":3}"""));
-        Assert.NotNull(Decode("""{"accepted":true,"future":[1,2],"kind":"ack","version":3}"""));
+        Assert.Null(Decode("""{"kind":"telemetry","version":4}"""));
+        Assert.Null(Decode("""{"kind":"event","name":"weather","version":4}"""));
+        Assert.Null(Decode("""{"id":1,"kind":"result","name":"secrets","version":4}"""));
+        Assert.NotNull(Decode("""{"accepted":true,"future":[1,2],"kind":"ack","version":4}"""));
     }
 
     [Fact]
@@ -570,18 +574,18 @@ public class MessageTests
         var other = Assert.Throws<MessageCodec.ValidationException>(() => Decode("""{"accepted":true,"action":"ping","message":"x","version":2}"""));
         Assert.Equal(MessageCodec.ValidationError.UnsupportedVersion, other.Error);
         Assert.Equal(2, other.Version);
-        Assert.Equal(MessageCodec.ValidationError.Malformed, DecodeError("""{"kind":"ack","version":3}"""));
+        Assert.Equal(MessageCodec.ValidationError.Malformed, DecodeError("""{"kind":"ack","version":4}"""));
         Assert.Equal(MessageCodec.ValidationError.Malformed, DecodeError("not json"));
-        Assert.Equal(MessageCodec.ValidationError.Malformed, DecodeError("""{"accepted":"yes","kind":"ack","version":3}"""));
+        Assert.Equal(MessageCodec.ValidationError.Malformed, DecodeError("""{"accepted":"yes","kind":"ack","version":4}"""));
         Assert.Equal(MessageCodec.ValidationError.Malformed, DecodeError("""{"kind":"ack","accepted":true}"""));
-        Assert.Equal(MessageCodec.ValidationError.InvalidNumber, DecodeError("""{"accepted":true,"kind":"ack","value":1e400,"version":3}"""));
+        Assert.Equal(MessageCodec.ValidationError.InvalidNumber, DecodeError("""{"accepted":true,"kind":"ack","value":1e400,"version":4}"""));
     }
 
     [Fact]
     public void LinesOverOneMegabyteAreRefused()
     {
         var name = new string('x', MessageCodec.MaximumLineBytes);
-        Assert.Equal(MessageCodec.ValidationError.LineTooLong, DecodeError($$"""{"kind":"event","name":"{{name}}","version":3}"""));
+        Assert.Equal(MessageCodec.ValidationError.LineTooLong, DecodeError($$"""{"kind":"event","name":"{{name}}","version":4}"""));
     }
 
     [Fact]
@@ -617,11 +621,11 @@ public class MessageTests
     {
         var ack = new LightroomMessage.Ack(new LightroomAck(12, true, "accepted", "Temperature", ParameterScope.Develop, 5100, 2000, 50000, "K"));
         Assert.Equal(
-            """{"accepted":true,"id":12,"kind":"ack","maximum":50000,"message":"accepted","minimum":2000,"parameter":"Temperature","scope":"develop","unit":"K","value":5100,"version":3}""" + "\n",
+            """{"accepted":true,"id":12,"kind":"ack","maximum":50000,"message":"accepted","minimum":2000,"parameter":"Temperature","scope":"develop","unit":"K","value":5100,"version":4}""" + "\n",
             Encoding.UTF8.GetString(MessageCodec.EncodeLine(ack)));
         var presets = new LightroomMessage.Result(new LightroomResult.Presets(4, [new PresetItem("A1-B2", "Café / Film", "Favourites")], false));
         Assert.Equal(
-            """{"id":4,"items":[{"group":"Favourites","id":"A1-B2","name":"Caf""" + "é" + """ / Film"}],"kind":"result","name":"presets","version":3}""" + "\n",
+            """{"id":4,"items":[{"group":"Favourites","id":"A1-B2","name":"Caf""" + "é" + """ / Film"}],"kind":"result","name":"presets","version":4}""" + "\n",
             Encoding.UTF8.GetString(MessageCodec.EncodeLine(presets)));
     }
 }

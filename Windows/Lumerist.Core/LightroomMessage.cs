@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Lumerist.Core;
 
 /// <summary>
-/// The plug-in's answer to one request (protocol 3). For an adjustment it may
+/// The plug-in's answer to one request (protocol 4). For an adjustment it may
 /// carry the parameter's resulting value, range and unit for the overlay.
 /// </summary>
 public sealed record LightroomAck
@@ -140,7 +140,7 @@ public abstract record LightroomMessage
     public sealed record Result(LightroomResult Value) : LightroomMessage;
 }
 
-/// <summary>JSON-lines codec for plug-in messages (protocol 3).</summary>
+/// <summary>JSON-lines codec for plug-in messages (protocol 4).</summary>
 public static class MessageCodec
 {
     /// <summary>Lines may be large (preset lists).</summary>

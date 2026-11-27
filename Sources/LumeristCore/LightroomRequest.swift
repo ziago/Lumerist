@@ -17,7 +17,7 @@ public enum LightroomQuery: String, Codable, Sendable, Hashable, CaseIterable {
     case catalog
 }
 
-/// Allow-listed Lightroom commands (docs/protocol-v3.md).
+/// Allow-listed Lightroom commands (docs/protocol-v4.md).
 public enum LightroomCommandName: String, Codable, Sendable, Hashable, CaseIterable {
     case undo, redo, autoTone, autoWhiteBalance, resetAll
     case nextPhoto, previousPhoto, flagPick, flagReject, flagRemove
@@ -62,10 +62,10 @@ public enum LightroomCommandName: String, Codable, Sendable, Hashable, CaseItera
     }
 }
 
-/// One request from the companion to the plug-in (protocol 3). The client
-/// assigns the wire `id` when it sends the request.
+/// One request from the companion to the plug-in (protocol 4). The client
+/// assigns the wire `id` and adds the bridge token when it sends the request.
 public struct LightroomRequest: Sendable, Hashable {
-    public static let protocolVersion = 3
+    public static let protocolVersion = 4
 
     public enum Kind: Sendable, Hashable {
         case ping
@@ -179,6 +179,7 @@ enum RequestCodec {
     struct Wire: Codable, Equatable {
         var version: Int
         var id: Int
+        var token: String?
         var kind: String
         var scope: String?
         var parameter: String?
@@ -188,8 +189,8 @@ enum RequestCodec {
         var argument: String?
     }
 
-    static func encodeLine(_ request: LightroomRequest, id: Int) throws -> Data {
-        var wire = Wire(version: LightroomRequest.protocolVersion, id: id, kind: "ping")
+    static func encodeLine(_ request: LightroomRequest, id: Int, token: String) throws -> Data {
+        var wire = Wire(version: LightroomRequest.protocolVersion, id: id, token: token, kind: "ping")
         switch request.kind {
         case .ping:
             break
@@ -220,7 +221,7 @@ enum RequestCodec {
     }
 
     /// Decodes a request line (used by the tests).
-    static func decodeLine(_ data: Data) throws -> (id: Int, request: LightroomRequest) {
+    static func decodeLine(_ data: Data) throws -> (id: Int, request: LightroomRequest, token: String?) {
         let trimmed = data.last == 0x0A ? data.dropLast() : data[...]
         let wire = try JSONDecoder().decode(Wire.self, from: Data(trimmed))
         guard wire.version == LightroomRequest.protocolVersion else {
@@ -252,7 +253,7 @@ enum RequestCodec {
         default:
             throw DecodingError.malformed
         }
-        return (wire.id, try LightroomRequest(kind))
+        return (wire.id, try LightroomRequest(kind), wire.token)
     }
 
     enum DecodingError: Error, Equatable, Sendable {

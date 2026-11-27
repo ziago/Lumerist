@@ -1,6 +1,6 @@
 import Foundation
 
-/// The plug-in's answer to one request (protocol 3). For an adjustment it may
+/// The plug-in's answer to one request (protocol 4). For an adjustment it may
 /// carry the parameter's resulting value, range and unit for the overlay.
 public struct LightroomAck: Sendable, Hashable {
     static let maximumMessageBytes = 1_024
@@ -114,7 +114,7 @@ public enum LightroomMessage: Sendable, Hashable {
     case result(LightroomResult)
 }
 
-/// JSON-lines codec for plug-in messages (protocol 3).
+/// JSON-lines codec for plug-in messages (protocol 4).
 enum MessageCodec {
     /// Lines may be large (preset lists).
     static let maximumLineBytes = 1_048_576

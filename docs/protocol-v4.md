@@ -1,4 +1,4 @@
-# Lumerist bridge protocol, version 3
+# Lumerist bridge protocol, version 4
 
 Contract between the Lumerist app (the companion, on macOS or Windows) and
 the Lightroom Classic plug-in. Transport: loopback only (`127.0.0.1`); the
@@ -8,8 +8,44 @@ plug-in listens on **50550** (`LrSocket` "receive", app → plug-in) and
 decoders.
 
 A peer that receives another version rejects the message (the plug-in answers
-with an `ack` whose `accepted` is false and whose message says "protocol 3
+with an `ack` whose `accepted` is false and whose message says "protocol 4
 required"), so stale builds fail visibly.
+
+Version 4 is version 3 plus the bridge token (below). Nothing else changed.
+
+## The bridge token
+
+`127.0.0.1` is shared by every account on the computer, and a web page can
+post to it too. So every request carries `"token"`: 64 lowercase
+hexadecimal characters (32 random bytes) that only the user's own account
+can read.
+
+- **Where.** macOS: `~/Library/Application Support/Lumerist/bridge-token`
+  (0600). Windows: `%APPDATA%\Lumerist\bridge-token`, next to
+  `plugin-link.json`. The file holds the token alone (surrounding whitespace
+  is ignored).
+- **Who writes it.** The app, at start, when the file is missing or does not
+  hold a valid token: from the system's secure random generator, created
+  private and renamed into place, so the plug-in never reads half of it.
+  The same token is then used at every start (`BridgeToken.swift`,
+  `BridgeToken.cs`).
+- **Who reads it.** The plug-in (`BridgeToken.lua`), on its worker task. It
+  reads the file again, at most once a second, after a request carried a
+  token it did not know, so a token created after Lightroom started is
+  picked up.
+- **What the plug-in refuses.** It checks, in this order, that the line is a
+  JSON object, that `version` is 4 and that `token` is the one in the file.
+  When any of them fails it runs nothing, answers with a rejected `ack`
+  (without an `id` for a wrong token, so the app never takes it for one of
+  its own answers), and disconnects the sender: what that sender sends until
+  the request socket reconnects is ignored. A web page's request therefore
+  fails at its first line, `POST / HTTP/1.1`.
+- **Not covered.** A process of the same user can read the file, and could
+  already do anything that user can. The response port (50551) is not
+  authenticated: whoever connects to it first receives the acks, the module
+  name and the preset names (never photos or keystrokes), and a program that
+  holds either port can keep the app from connecting. The token is never
+  logged.
 
 Parameter ids come from `Shared/parameters.json` (generated into
 `Parameters.lua`, `ParameterCatalogData.swift` and
@@ -19,8 +55,9 @@ stated scope that exists in the catalog, and `|delta|` must not exceed its
 
 ## Requests (app → plug-in)
 
-Every request has `"version": 3`, an integer `"id"` (assigned by the client,
-increasing; echoed in the matching `ack`/`result`), and `"kind"`.
+Every request has `"version": 4`, the bridge token `"token"`, an integer
+`"id"` (assigned by the client, increasing; echoed in the matching
+`ack`/`result`), and `"kind"`.
 
 | kind | fields | effect |
 | --- | --- | --- |
@@ -68,7 +105,11 @@ carrying the `id` of the last merged request.
 
 ## Plug-in notes (implementation)
 
-- Requests over 64 KB are rejected; malformed JSON gets an `ack` without `id`.
+- Requests over 64 KB are rejected; malformed JSON gets an `ack` without `id`
+  and disconnects the sender (see the bridge token above).
+- Text a peer sent (an unknown parameter, a bad argument) reaches the
+  plug-in's log shortened to 160 bytes, with control characters replaced, so
+  a request can neither flood nor forge log lines.
 - The `catalog` result also carries `skipped`: mask (`local_*`) parameters
   that could not be checked because no mask was selected. Run the query with
   a mask selected in the Masking panel to check them too.

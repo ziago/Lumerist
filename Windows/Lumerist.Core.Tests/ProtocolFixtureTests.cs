@@ -74,7 +74,8 @@ public class ProtocolFixtureTests
         if (OptionalInteger(testCase["wireId"]) is not { } id || testCase["line"] is not JsonObject line)
             throw new FixtureException("needs wireId and line");
 
-        var data = RequestCodec.EncodeLine(new LightroomRequest(kind), id);
+        // The line names the token the client was given (protocol 4).
+        var data = RequestCodec.EncodeLine(new LightroomRequest(kind), id, FixtureValues.OptionalText(line["token"]) ?? "");
         if (data.Length == 0 || data[^1] != (byte)'\n' || Array.IndexOf(data, (byte)'\n') != data.Length - 1)
             return ["a line must end with one newline"];
         var decoded = JsonNode.Parse(data.AsSpan(0, data.Length - 1));
@@ -205,14 +206,14 @@ public class ProtocolTests
     public void EncodesAnAdjustmentWithSortedKeysAndANewline()
     {
         var request = LightroomRequest.Adjust(ParameterScope.Develop, "Exposure", 0.05);
-        Assert.Equal("{\"delta\":0.05,\"id\":7,\"kind\":\"adjust\",\"parameter\":\"Exposure\",\"scope\":\"develop\",\"version\":3}\n",
-            Text(RequestCodec.EncodeLine(request, 7)));
+        Assert.Equal("{\"delta\":0.05,\"id\":7,\"kind\":\"adjust\",\"parameter\":\"Exposure\",\"scope\":\"develop\",\"token\":\"" + TestToken.Value + "\",\"version\":4}\n",
+            Text(RequestCodec.EncodeLine(request, 7, TestToken.Value)));
     }
 
     [Fact]
     public void WholeNumbersHaveNoFraction()
     {
-        var line = Text(RequestCodec.EncodeLine(LightroomRequest.Adjust(ParameterScope.Library, "Temperature", -20), 8));
+        var line = Text(RequestCodec.EncodeLine(LightroomRequest.Adjust(ParameterScope.Library, "Temperature", -20), 8, TestToken.Value));
         Assert.Contains("\"delta\":-20,", line);
     }
 
@@ -232,16 +233,17 @@ public class ProtocolTests
         ];
         for (var index = 0; index < requests.Length; index++)
         {
-            var decoded = RequestCodec.DecodeLine(RequestCodec.EncodeLine(requests[index], index));
+            var decoded = RequestCodec.DecodeLine(RequestCodec.EncodeLine(requests[index], index, TestToken.Value));
             Assert.Equal(index, decoded.Id);
             Assert.Equal(requests[index], decoded.Request);
+            Assert.Equal(TestToken.Value, decoded.Token);
         }
     }
 
     [Fact]
     public void SlashesInArgumentsAreNotEscaped()
     {
-        var line = Text(RequestCodec.EncodeLine(LightroomRequest.Command(LightroomCommandName.AddToMask, "rangeMask/luminance"), 1));
+        var line = Text(RequestCodec.EncodeLine(LightroomRequest.Command(LightroomCommandName.AddToMask, "rangeMask/luminance"), 1, TestToken.Value));
         Assert.Contains("\"argument\":\"rangeMask/luminance\"", line);
     }
 
@@ -335,10 +337,10 @@ public class ProtocolTests
     [Fact]
     public void RejectsOtherProtocolVersionsOnDecode()
     {
-        var error = Assert.Throws<RequestCodec.DecodingException>(() => RequestCodec.DecodeLine("{\"id\":1,\"kind\":\"ping\",\"version\":2}"u8.ToArray()));
+        var error = Assert.Throws<RequestCodec.DecodingException>(() => RequestCodec.DecodeLine("{\"id\":1,\"kind\":\"ping\",\"version\":3}"u8.ToArray()));
         Assert.Equal(RequestCodec.DecodingError.UnsupportedVersion, error.Error);
-        Assert.Equal(2, error.Version);
-        var malformed = Assert.Throws<RequestCodec.DecodingException>(() => RequestCodec.DecodeLine("{\"id\":1,\"kind\":\"dance\",\"version\":3}"u8.ToArray()));
+        Assert.Equal(3, error.Version);
+        var malformed = Assert.Throws<RequestCodec.DecodingException>(() => RequestCodec.DecodeLine("{\"id\":1,\"kind\":\"dance\",\"version\":4}"u8.ToArray()));
         Assert.Equal(RequestCodec.DecodingError.Malformed, malformed.Error);
         Assert.Throws<RequestCodec.DecodingException>(() => RequestCodec.DecodeLine("not json"u8.ToArray()));
     }

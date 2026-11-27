@@ -19,6 +19,7 @@ struct ClientTests {
         let client = LightroomCommandClient(
             port: port,
             responsePort: responsePort,
+            token: testToken,
             onState: { states.continuation.yield($0) }
         )
         defer {
@@ -31,6 +32,7 @@ struct ClientTests {
         let first = try LightroomRequest.adjust(.develop, "Exposure", delta: 0.1)
         let firstID = try await send(first, with: client)
         let received = try RequestCodec.decodeLine(try await receiver.nextLine())
+        #expect(received.token == testToken)
         #expect(received.request == first)
         #expect(received.id == firstID)
 
@@ -52,7 +54,7 @@ struct ClientTests {
         defer { responseSender.stop() }
 
         let states = AsyncStream.makeStream(of: LightroomCommandClient.State.self)
-        let client = LightroomCommandClient(port: port, responsePort: responsePort, onState: { states.continuation.yield($0) })
+        let client = LightroomCommandClient(port: port, responsePort: responsePort, token: testToken, onState: { states.continuation.yield($0) })
         defer {
             client.stop()
             states.continuation.finish()
@@ -82,6 +84,7 @@ struct ClientTests {
         let client = LightroomCommandClient(
             port: commandPort,
             responsePort: responsePort,
+            token: testToken,
             onState: { states.continuation.yield($0) },
             onMessage: { messages.continuation.yield($0) }
         )
@@ -99,7 +102,7 @@ struct ClientTests {
 
         // A preset list of more than 200 KB, split across many reads.
         let items = (0..<3_000).map { PresetItem(id: "UUID-\($0)", name: "Preset number \($0) with a long name", group: "Folder \($0 % 7)") }
-        let ack = try LightroomAck(id: id, accepted: true, message: "Lumerist plug-in ready (protocol 3)")
+        let ack = try LightroomAck(id: id, accepted: true, message: "Lumerist plug-in ready (protocol 4)")
         var payload = try MessageCodec.encodeLine(.context(LightroomContext(module: "develop", tool: "masking")))
         payload += try MessageCodec.encodeLine(.ack(ack))
         payload += try MessageCodec.encodeLine(.result(.presets(id: 99, items: items, truncated: false)))
@@ -119,7 +122,7 @@ struct ClientTests {
     @Test(.timeLimit(.minutes(1)))
     func refusesToSendBeforeTheCommandChannelIsReady() async throws {
         let unusedPort = try await reserveFreePort()
-        let client = LightroomCommandClient(port: unusedPort, responsePort: unusedPort, onState: { _ in })
+        let client = LightroomCommandClient(port: unusedPort, responsePort: unusedPort, token: testToken, onState: { _ in })
         defer { client.stop() }
         client.start()
 
@@ -142,6 +145,7 @@ struct ClientTests {
         let client = LightroomCommandClient(
             port: commandPort,
             responsePort: responsePort,
+            token: testToken,
             initialRetryDelay: 0.2,
             maximumRetryDelay: 0.4,
             onState: { states.continuation.yield($0) }
@@ -178,6 +182,7 @@ struct ClientTests {
         let client = LightroomCommandClient(
             port: commandPort,
             responsePort: responsePort,
+            token: testToken,
             initialRetryDelay: 0.1,
             maximumRetryDelay: 0.1,
             onState: { _ in }
@@ -196,6 +201,7 @@ struct ClientTests {
         let client = LightroomCommandClient(
             port: unusedPort,
             responsePort: unusedPort,
+            token: testToken,
             initialRetryDelay: 0.1,
             maximumRetryDelay: 0.1,
             onState: { states.continuation.yield($0) }
@@ -232,6 +238,7 @@ extension ClientTests {
         let client = LightroomCommandClient(
             port: commandPort,
             responsePort: responsePort,
+            token: testToken,
             initialRetryDelay: 1.5,
             maximumRetryDelay: 1.5,
             onState: { log.append($0) }
@@ -267,6 +274,7 @@ extension ClientTests {
         let client = LightroomCommandClient(
             port: unusedPort,
             responsePort: unusedPort,
+            token: testToken,
             initialRetryDelay: 0.02,
             maximumRetryDelay: 0.02,
             onState: { log.append($0) }

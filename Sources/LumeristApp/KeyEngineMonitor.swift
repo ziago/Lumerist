@@ -126,7 +126,10 @@ final class KeyEngineMonitor: @unchecked Sendable {
     private static func post(_ chord: KeyChord) {
         let flags = Self.flags(for: chord.modifiers)
         for down in [true, false] {
-            guard let event = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(chord.keyCode), keyDown: down) else { continue }
+            // CGKeyCode(exactly:): a key code out of range (a hand-edited or
+            // imported profile) is skipped instead of crashing the app.
+            guard let keyCode = CGKeyCode(exactly: chord.keyCode),
+                  let event = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: down) else { continue }
             event.flags = flags
             event.setIntegerValueField(.eventSourceUserData, value: replayMarker)
             event.post(tap: .cghidEventTap)

@@ -77,9 +77,11 @@ powershell -ExecutionPolicy Bypass -File Scripts\build-windows-installer.ps1
 ```
 
 It writes the installers, the portable zips and their checksums for x64 and
-arm64 to `build\release\<version>\windows`. `Scripts/release.sh` on the Mac
-publishes them with the Mac app, and refuses to when one is missing or was
-built from another commit.
+arm64 to `build\release\<version>\windows`. CI runs it on every push and
+pull request. `Scripts/release.sh` on the Mac publishes the Windows packages
+with the Mac app, and downloads them itself from the CI run of the push to
+`main` for the commit it releases: packages built by a pull request's run are
+never published.
 
 ## Project layout
 

@@ -10,8 +10,10 @@ import Network
 /// then rebind, so the client retries on its own with a capped backoff until
 /// `stop()` is called.
 ///
-/// Protocol 3: every request gets an increasing id, echoed by the plug-in's
-/// `ack`/`result`; `onMessage` receives acks, context events and results.
+/// Protocol 4: every request gets an increasing id, echoed by the plug-in's
+/// `ack`/`result`, and carries the bridge token (`BridgeToken`), without
+/// which the plug-in refuses it; `onMessage` receives acks, context events
+/// and results.
 public final class LightroomCommandClient: @unchecked Sendable {
     public enum State: Sendable, Equatable {
         case ready
@@ -33,6 +35,7 @@ public final class LightroomCommandClient: @unchecked Sendable {
     private let lock = NSLock()
     private let commandPort: NWEndpoint.Port
     private let responsePort: NWEndpoint.Port
+    private let token: String
     private let initialRetryDelay: TimeInterval
     private let maximumRetryDelay: TimeInterval
     private let onState: @Sendable (State) -> Void
@@ -64,6 +67,7 @@ public final class LightroomCommandClient: @unchecked Sendable {
     public init(
         port: UInt16,
         responsePort: UInt16 = 50_551,
+        token: String,
         initialRetryDelay: TimeInterval = 1,
         maximumRetryDelay: TimeInterval = 5,
         onState: @escaping @Sendable (State) -> Void,
@@ -71,6 +75,7 @@ public final class LightroomCommandClient: @unchecked Sendable {
     ) {
         self.commandPort = NWEndpoint.Port(rawValue: port)!
         self.responsePort = NWEndpoint.Port(rawValue: responsePort)!
+        self.token = token
         self.initialRetryDelay = initialRetryDelay
         self.maximumRetryDelay = maximumRetryDelay
         self.retryDelay = initialRetryDelay
@@ -154,7 +159,7 @@ public final class LightroomCommandClient: @unchecked Sendable {
         response?.cancel()
     }
 
-    /// Sends a protocol-3 request and returns the id it was given (nil when the
+    /// Sends a protocol-4 request and returns the id it was given (nil when the
     /// command channel is not connected; `completion` then reports the error).
     /// `completion` reports the TCP write only; Lightroom's verdict arrives as
     /// an `ack` (or `result`) with the same id through `onMessage`.
@@ -175,7 +180,7 @@ public final class LightroomCommandClient: @unchecked Sendable {
             return nil
         }
         do {
-            let line = try RequestCodec.encodeLine(request, id: id)
+            let line = try RequestCodec.encodeLine(request, id: id, token: token)
             connection.send(content: line, completion: .contentProcessed { error in
                 if let error {
                     completion(.failure(error))
@@ -305,9 +310,16 @@ public final class LightroomCommandClient: @unchecked Sendable {
             return
         }
         responseBuffer.append(data)
-        while let newline = responseBuffer.firstIndex(of: 0x0A) {
-            lines.append(Data(responseBuffer[..<newline]))
-            responseBuffer.removeSubrange(...newline)
+        // One pass and one removal per read: removing each line as it is found
+        // would move the rest of the buffer once per line, and a peer sending
+        // only newlines could keep a core busy.
+        var lineStart = responseBuffer.startIndex
+        while let newline = responseBuffer[lineStart...].firstIndex(of: 0x0A) {
+            lines.append(Data(responseBuffer[lineStart..<newline]))
+            lineStart = responseBuffer.index(after: newline)
+        }
+        if lineStart > responseBuffer.startIndex {
+            responseBuffer.removeSubrange(..<lineStart)
         }
         // A partial line longer than any valid message is dropped.
         let oversized = responseBuffer.count > MessageCodec.maximumLineBytes

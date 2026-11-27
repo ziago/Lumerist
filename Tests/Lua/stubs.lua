@@ -241,7 +241,10 @@ function Stubs.new()
             end,
         },
         LrSocket = {
-            bind = function() error("LrSocket.bind is not available in tests", 0) end,
+            bind = function(params)
+                if env.bindSocket then return env.bindSocket(params) end
+                error("LrSocket.bind is not available in tests", 0)
+            end,
         },
         LrFunctionContext = {
             callWithContext = function(_, fn) return fn({}) end,
@@ -271,7 +274,7 @@ function Stubs.new()
 
     env.executed = {}
     env.dialogs = {}
-    env.standardPaths = { appData = "/Users/test/Library/Application Support" }
+    env.standardPaths = { appData = "/Users/test/Library/Application Support", home = "/Users/test" }
     env.pathSeparator = "/"
     env.files = {}
 

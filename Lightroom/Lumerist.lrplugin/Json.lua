@@ -1,4 +1,4 @@
--- Minimal, strict JSON for the bridge protocol (protocol 3).
+-- Minimal, strict JSON for the bridge protocol (protocol 4).
 -- decode: objects, arrays, strings (with \u escapes), numbers, booleans, null.
 -- encode: objects with sorted keys, arrays marked with Json.array, finite
 -- numbers only (non-finite values are left out), strings escaped so the line

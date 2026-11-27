@@ -188,6 +188,7 @@ final class CommandStore {
 
         let client = LightroomCommandClient(
             port: 50_550,
+            token: bridgeToken(),
             onState: { [weak self] state in
                 Task { @MainActor in
                     guard let self else { return }
@@ -222,6 +223,19 @@ final class CommandStore {
 
         if shortcutsWanted && AccessibilityPermission.isGranted {
             startShortcutMonitor()
+        }
+    }
+
+    /// The secret the plug-in asks for with every request (BridgeToken).
+    /// If it cannot be saved, the app still runs, but the plug-in refuses
+    /// its requests, and the reason is shown with the errors.
+    private func bridgeToken() -> String {
+        do {
+            return try BridgeToken.loadOrCreate(in: BridgeToken.defaultFolder())
+        } catch {
+            DebugLog.write("Bridge token unavailable: \(error.localizedDescription)")
+            recordError("Lumerist could not save its bridge token, so the plug-in will refuse its requests: \(error.localizedDescription)")
+            return BridgeToken.generate()
         }
     }
 

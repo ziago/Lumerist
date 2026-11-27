@@ -563,7 +563,8 @@ private enum ProtocolRunner {
         guard let id = testCase["wireId"] as? Int, let line = testCase["line"] as? [String: Any] else {
             throw FixtureError("needs wireId and line")
         }
-        let data = try RequestCodec.encodeLine(try LightroomRequest(kind), id: id)
+        // The line names the token the client was given (protocol 4).
+        let data = try RequestCodec.encodeLine(try LightroomRequest(kind), id: id, token: line["token"] as? String ?? "")
         guard data.last == 0x0A, data.dropLast().firstIndex(of: 0x0A) == nil else { return ["a line must end with one newline"] }
         let decoded = try JSONSerialization.jsonObject(with: Data(data.dropLast())) as? NSDictionary
         return decoded?.isEqual(to: line) == true ? [] : ["expected \(line), got \(String(decoding: data, as: UTF8.self))"]

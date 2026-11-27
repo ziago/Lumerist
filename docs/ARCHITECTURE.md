@@ -99,10 +99,12 @@ allow.
   the next key is looked up as a combo; the Combo Key tapped alone is
   replayed. With the Masking tool active, sliders map to their `local_*`
   equivalents.
-- **Protocol 3.** `LightroomRequest`, `LightroomMessage` and
+- **Protocol 4.** `LightroomRequest`, `LightroomMessage` and
   `LightroomCommandClient` (two TCP connections, each reconnecting on its own
-  with a capped backoff). The wire format is specified in
-  [protocol-v3.md](protocol-v3.md).
+  with a capped backoff). Every request carries the bridge token
+  (`BridgeToken`), a secret only the user's account can read, without which
+  the plug-in refuses it. The wire format is specified in
+  [protocol-v4.md](protocol-v4.md).
 - **Plug-in install.** `PluginInstallOperation` installs, updates and removes
   the plug-in with plain file moves. A replaced copy goes to a backup folder
   outside Lightroom's Modules folder (`~/Library/Application

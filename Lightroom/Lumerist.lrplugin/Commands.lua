@@ -1,4 +1,4 @@
--- Allow-listed Lightroom commands and queries (protocol 3). Every handler runs
+-- Allow-listed Lightroom commands and queries (protocol 4). Every handler runs
 -- on the bridge's worker task inside the dispatcher's LrTasks.pcall and
 -- returns ok, message[, details]; queries return a result payload instead.
 

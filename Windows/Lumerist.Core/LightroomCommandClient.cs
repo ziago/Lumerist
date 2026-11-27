@@ -16,8 +16,10 @@ namespace Lumerist.Core;
 /// <see cref="Stop"/> is called. Each channel reconnects on its own: a healthy
 /// channel is never torn down because the other one is still waiting.
 ///
-/// Protocol 3: every request gets an increasing id, echoed by the plug-in's
-/// ack/result; the message callback receives acks, context events and results.
+/// Protocol 4: every request gets an increasing id, echoed by the plug-in's
+/// ack/result and carries the bridge token (<see cref="BridgeToken"/>), without
+/// which the plug-in refuses it; the message callback receives acks, context
+/// events and results.
 ///
 /// State and message callbacks run on a background thread, one at a time and
 /// in the order the client decided them. None starts after <see cref="Stop"/>
@@ -55,6 +57,7 @@ public sealed class LightroomCommandClient : IDisposable
     private readonly Lock gate = new();
     private readonly int commandPort;
     private readonly int responsePort;
+    private readonly string token;
     private readonly TimeSpan initialRetryDelay;
     private readonly TimeSpan maximumRetryDelay;
     private readonly Action<State> onState;
@@ -85,6 +88,7 @@ public sealed class LightroomCommandClient : IDisposable
     private readonly bool[] retryScheduled = new bool[2];
     private TimeSpan retryDelay;
 
+    /// <param name="token">The bridge token every request carries (<see cref="BridgeToken"/>); the plug-in refuses requests without it.</param>
     /// <param name="onState">Ready when both channels are up, Waiting with a reason when one goes down.</param>
     /// <param name="onMessage">Acks, context events and results, in the order they arrive.</param>
     /// <param name="port">The plug-in's request port (tests use their own).</param>
@@ -92,6 +96,7 @@ public sealed class LightroomCommandClient : IDisposable
     /// <param name="initialRetryDelay">First retry delay (default 1 s); doubled after each failure.</param>
     /// <param name="maximumRetryDelay">Cap of the retry delay (default 5 s).</param>
     public LightroomCommandClient(
+        string token,
         Action<State> onState,
         Action<LightroomMessage>? onMessage = null,
         int port = Contract.RequestPort,
@@ -99,11 +104,13 @@ public sealed class LightroomCommandClient : IDisposable
         TimeSpan? initialRetryDelay = null,
         TimeSpan? maximumRetryDelay = null)
     {
+        ArgumentNullException.ThrowIfNull(token);
         ArgumentNullException.ThrowIfNull(onState);
         ArgumentOutOfRangeException.ThrowIfLessThan(port, IPEndPoint.MinPort + 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(port, IPEndPoint.MaxPort);
         ArgumentOutOfRangeException.ThrowIfLessThan(responsePort, IPEndPoint.MinPort + 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(responsePort, IPEndPoint.MaxPort);
+        this.token = token;
         commandPort = port;
         this.responsePort = responsePort;
         this.initialRetryDelay = initialRetryDelay ?? TimeSpan.FromSeconds(1);
@@ -187,7 +194,7 @@ public sealed class LightroomCommandClient : IDisposable
             {
                 nextRequestId++;
                 // Queued under the lock, so lines reach the wire in id order.
-                queued = connection.Writes.Writer.TryWrite(new PendingWrite(RequestCodec.EncodeLine(request, id), completion));
+                queued = connection.Writes.Writer.TryWrite(new PendingWrite(RequestCodec.EncodeLine(request, id, token), completion));
             }
         }
         if (connection is null)

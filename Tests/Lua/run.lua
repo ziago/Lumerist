@@ -1,4 +1,4 @@
--- LuaJIT test suite for the Lumerist Lightroom plug-in (protocol 3).
+-- LuaJIT test suite for the Lumerist Lightroom plug-in (protocol 4).
 -- Run from the repository root: luajit Tests/Lua/run.lua
 -- (or zsh Scripts/test-lua.sh). Exits non-zero when a test fails.
 
@@ -9,6 +9,10 @@ local pluginDir = repoRoot .. "/Lightroom/Lumerist.lrplugin"
 package.path = pluginDir .. "/?.lua;" .. testsDir .. "/?.lua;" .. package.path
 
 local Stubs = require "stubs"
+
+-- The bridge token the app "wrote" for every test (BridgeToken.lua).
+local TEST_TOKEN = string.rep("0123456789abcdef", 4)
+local MAC_TOKEN_FILE = "/Users/test/Library/Application Support/Lumerist/bridge-token"
 
 -- Minimal test framework -----------------------------------------------------
 
@@ -52,7 +56,7 @@ local function contains(text, fragment, label)
     end
 end
 
-local PLUGIN_MODULES = { "Actions", "SocketBridge", "Json", "Catalog", "Develop", "Library", "Commands", "Parameters", "OpenApp" }
+local PLUGIN_MODULES = { "Actions", "SocketBridge", "BridgeToken", "Json", "Catalog", "Develop", "Library", "Commands", "Parameters", "OpenApp" }
 
 -- Fresh plug-in modules and globals for every test.
 local function fresh()
@@ -65,12 +69,14 @@ local function fresh()
         end
     end
     local env = Stubs.new()
+    env.files[MAC_TOKEN_FILE] = TEST_TOKEN .. "\n"
     _G.import = env.import
     _G._PLUGIN = { id = "io.github.ziago.lumerist.lightroom" }
     _G.WIN_ENV, _G.MAC_ENV = nil, true
     local Actions = require "Actions"
     Actions._resetForTests()
     local Bridge = require "SocketBridge"
+    require("BridgeToken").refresh(env.clock)
     return env, Actions, Bridge
 end
 
@@ -204,7 +210,7 @@ end
 local nextId = 0
 local function request(fields)
     nextId = nextId + 1
-    local object = { version = 3, id = nextId }
+    local object = { version = 4, id = nextId }
     for key, value in pairs(fields) do object[key] = value end
     return object
 end
@@ -262,19 +268,21 @@ end)
 
 -- Validation ------------------------------------------------------------------
 
-test("validate rejects other protocol versions and names protocol 3", function()
+test("validate rejects other protocol versions and names protocol 4", function()
     local _, Actions = fresh()
-    local ok, reason = Actions.validate({ version = 2, id = 1, kind = "ping" })
-    falsy(ok, "v2 accepted")
-    contains(reason, "protocol 3 required", "reason")
+    local ok, reason = Actions.validate({ version = 3, id = 1, kind = "ping" })
+    falsy(ok, "v3 accepted")
+    contains(reason, "protocol 4 required (got 3)", "reason")
+    _, reason = Actions.validate({ version = string.rep("9", 500), id = 1, kind = "ping" })
+    truthy(#reason < 80, "a long version is shortened in the reason")
 end)
 
 test("validate needs an integer id and a known kind", function()
     local _, Actions = fresh()
-    falsy((Actions.validate({ version = 3, kind = "ping" })), "missing id")
-    falsy((Actions.validate({ version = 3, id = 1.5, kind = "ping" })), "fractional id")
-    falsy((Actions.validate({ version = 3, id = 1, kind = "explode" })), "unknown kind")
-    truthy((Actions.validate({ version = 3, id = 1, kind = "ping" })), "ping")
+    falsy((Actions.validate({ version = 4, kind = "ping" })), "missing id")
+    falsy((Actions.validate({ version = 4, id = 1.5, kind = "ping" })), "fractional id")
+    falsy((Actions.validate({ version = 4, id = 1, kind = "explode" })), "unknown kind")
+    truthy((Actions.validate({ version = 4, id = 1, kind = "ping" })), "ping")
     falsy((Actions.validate("ping")), "non-table")
 end)
 
@@ -363,7 +371,7 @@ test("an older Lightroom without a controller function gets a clear rejection", 
     contains(reason, "does not provide", "reason")
     contains(reason, "setValue", "names the function")
     env.develop.resetToDefault = nil
-    ok, reason = run(Actions, { version = 3, id = 9, kind = "reset", scope = "develop", parameter = "Exposure" })
+    ok, reason = run(Actions, { version = 4, id = 9, kind = "reset", scope = "develop", parameter = "Exposure" })
     falsy(ok, "reset accepted without resetToDefault")
     contains(reason, "resetToDefault", "reset reason")
 end)
@@ -881,7 +889,7 @@ end)
 
 test("parseRequest decodes a Swift-encoded line", function()
     local _, _, Bridge = fresh()
-    local value = Bridge.parseRequest('{"delta":0.05,"id":7,"kind":"adjust","parameter":"Exposure","scope":"develop","version":3}')
+    local value = Bridge.parseRequest('{"delta":0.05,"id":7,"kind":"adjust","parameter":"Exposure","scope":"develop","token":"' .. TEST_TOKEN .. '","version":4}')
     eq(value.id, 7, "id")
     eq(value.parameter, "Exposure", "parameter")
     near(value.delta, 0.05, "delta")
@@ -905,7 +913,7 @@ test("encodeAck carries id, values, range and only known units", function()
         minimum = -5, maximum = 5, unit = "EV" })
     eq(line:sub(-1), "\n", "newline")
     local ack = decodeJSON(line:sub(1, -2))
-    eq(ack.version, 3, "version")
+    eq(ack.version, 4, "version")
     eq(ack.kind, "ack", "kind")
     eq(ack.id, 12, "id")
     eq(ack.accepted, true, "accepted")
@@ -967,7 +975,7 @@ test("enqueue answers invalid and malformed requests with a rejected ack", funct
     local env, _, Bridge = fresh()
     _G.lumeristQueue = {}
     _G.lumeristResponseSocket = env.responseSocket
-    Bridge.enqueue('{"id":5,"kind":"adjust","parameter":"Exposure","scope":"develop","delta":9,"version":3}')
+    Bridge.enqueue('{"id":5,"kind":"adjust","parameter":"Exposure","scope":"develop","delta":9,"token":"' .. TEST_TOKEN .. '","version":4}')
     local ack = sent(env)
     eq(ack.id, 5, "id echoed")
     eq(ack.accepted, false, "rejected")
@@ -976,7 +984,7 @@ test("enqueue answers invalid and malformed requests with a rejected ack", funct
     eq(ack.id, nil, "no id")
     eq(ack.accepted, false, "rejected")
     Bridge.enqueue('{"id":6,"kind":"ping","version":2}')
-    contains(sent(env).message, "protocol 3 required", "version message")
+    contains(sent(env).message, "protocol 4 required", "version message")
     eq(#_G.lumeristQueue, 0, "nothing queued")
 end)
 
@@ -984,13 +992,144 @@ test("enqueue queues valid requests and reports a full queue", function()
     local env, _, Bridge = fresh()
     _G.lumeristQueue = {}
     _G.lumeristResponseSocket = env.responseSocket
-    Bridge.enqueue('{"id":1,"kind":"ping","version":3}')
+    Bridge.enqueue('{"id":1,"kind":"ping","token":"' .. TEST_TOKEN .. '","version":4}')
     eq(#_G.lumeristQueue, 1, "queued")
     for index = 2, 256 do _G.lumeristQueue[index] = { kind = "ping", id = index } end
-    Bridge.enqueue('{"id":300,"kind":"ping","version":3}')
+    Bridge.enqueue('{"id":300,"kind":"ping","token":"' .. TEST_TOKEN .. '","version":4}')
     local ack = sent(env)
     eq(ack.id, 300, "id")
     contains(ack.message, "busy", "busy")
+end)
+
+-- Bridge: the token (protocol 4) ---------------------------------------------------
+
+local function line(fields)
+    local object = { version = 4, token = TEST_TOKEN }
+    for key, value in pairs(fields) do object[key] = value end
+    return (require "Json").encode(object)
+end
+
+test("enqueue refuses a request without this computer's token and drops the sender", function()
+    local env, _, Bridge = fresh()
+    _G.lumeristQueue = {}
+    _G.lumeristResponseSocket = env.responseSocket
+    eq(Bridge.enqueue('{"id":1,"kind":"command","name":"resetAll","version":4}'), true, "no token: drop")
+    local ack = sent(env)
+    eq(ack.accepted, false, "rejected")
+    eq(ack.id, nil, "no id, so the app never takes it for one of its own answers")
+    contains(ack.message, "not authorized", "message")
+    eq(Bridge.enqueue(line({ id = 2, kind = "command", name = "resetAll", token = string.rep("f", 64) })), true, "wrong token")
+    eq(Bridge.enqueue(line({ id = 3, kind = "command", name = "resetAll", token = 5 })), true, "a number")
+    eq(Bridge.enqueue(line({ id = 4, kind = "command", name = "resetAll", token = TEST_TOKEN:upper() })), true, "the app sends lower case")
+    eq(#_G.lumeristQueue, 0, "nothing queued")
+    eq(lastLog(env), "Rejected request: missing or wrong bridge token", "the token is never logged")
+    eq(Bridge.enqueue(line({ id = 5, kind = "command", name = "resetAll" })), false, "the app's token")
+    eq(#_G.lumeristQueue, 1, "queued")
+end)
+
+test("a web page's HTTP request and an older protocol are refused at their first line", function()
+    local env, _, Bridge = fresh()
+    _G.lumeristQueue = {}
+    _G.lumeristResponseSocket = env.responseSocket
+    eq(Bridge.enqueue("POST / HTTP/1.1\r"), true, "HTTP request line: drop")
+    eq(sent(env).accepted, false, "rejected")
+    eq(Bridge.enqueue('{"id":7,"kind":"ping","version":3}'), true, "protocol 3: drop")
+    local ack = sent(env)
+    eq(ack.id, 7, "a well-formed request keeps its id")
+    contains(ack.message, "protocol 4 required (got 3)", "says which protocol")
+    eq(#_G.lumeristQueue, 0, "nothing queued")
+end)
+
+test("an invalid request from the app is refused without dropping the app", function()
+    local env, _, Bridge = fresh()
+    _G.lumeristQueue = {}
+    _G.lumeristResponseSocket = env.responseSocket
+    eq(Bridge.enqueue(line({ id = 8, kind = "adjust", scope = "develop", parameter = "Exposure", delta = 9 })), false, "kept")
+    eq(sent(env).id, 8, "rejected with its id")
+end)
+
+test("the token comes from the user's own folder and must be 64 hexadecimal characters", function()
+    local env = fresh()
+    local BridgeToken = require "BridgeToken"
+    eq(BridgeToken.paths()[1], MAC_TOKEN_FILE, "macOS: ~/Library/Application Support/Lumerist")
+    eq(BridgeToken.parse("  " .. TEST_TOKEN:upper() .. "\r\n"), TEST_TOKEN, "whitespace and case")
+    eq(BridgeToken.parse(TEST_TOKEN:sub(2)), nil, "63 characters")
+    eq(BridgeToken.parse(TEST_TOKEN .. "0"), nil, "65 characters")
+    eq(BridgeToken.parse(TEST_TOKEN:sub(2) .. "g"), nil, "not hexadecimal")
+    eq(BridgeToken.parse(TEST_TOKEN .. " " .. TEST_TOKEN), nil, "two tokens")
+    eq(BridgeToken.parse(nil), nil, "no file")
+    env.files[MAC_TOKEN_FILE] = "garbage"
+    eq(BridgeToken.refresh(env.clock), nil, "an unreadable file gives no token")
+    falsy(BridgeToken.accepts(TEST_TOKEN), "so nothing is accepted")
+end)
+
+test("a token the app writes after Lightroom started is read again, at most once a second", function()
+    local env, _, Bridge = fresh()
+    local BridgeToken = require "BridgeToken"
+    _G.lumeristQueue = {}
+    _G.lumeristResponseSocket = env.responseSocket
+    env.files[MAC_TOKEN_FILE] = nil
+    BridgeToken.refresh(env.clock)
+    eq(Bridge.enqueue(line({ id = 1, kind = "ping" })), true, "no file yet: refused")
+    env.files[MAC_TOKEN_FILE] = TEST_TOKEN -- the app starts and writes it
+    BridgeToken.refreshIfNeeded(env.clock + 0.5)
+    eq(Bridge.enqueue(line({ id = 2, kind = "ping" })), true, "not read again within a second")
+    BridgeToken.refreshIfNeeded(env.clock + 1)
+    eq(Bridge.enqueue(line({ id = 3, kind = "ping" })), false, "read again")
+    -- The app made a new token: the old one is refused, the new one read.
+    local newToken = string.rep("a", 64)
+    env.files[MAC_TOKEN_FILE] = newToken
+    eq(Bridge.enqueue(line({ id = 4, kind = "ping", token = newToken })), true, "unknown until read")
+    BridgeToken.refreshIfNeeded(env.clock + 2)
+    eq(Bridge.enqueue(line({ id = 5, kind = "ping", token = newToken })), false, "the new token")
+    eq(Bridge.enqueue(line({ id = 6, kind = "ping" })), true, "the old one no longer works")
+end)
+
+test("peer text is shortened and stripped of control characters before it is logged", function()
+    local env, _, Bridge = fresh()
+    _G.lumeristQueue = {}
+    _G.lumeristResponseSocket = env.responseSocket
+    local parameter = "Exposure\nWARN forged line" .. string.rep("x", 1000)
+    Bridge.enqueue(line({ id = 1, kind = "adjust", scope = "develop", parameter = parameter, delta = 1 }))
+    local logged = lastLog(env)
+    falsy(logged:find("\n", 1, true), "no newline")
+    truthy(#logged < 260, "shortened: " .. #logged .. " bytes")
+    contains(logged, "Exposure?WARN forged line", "control characters replaced")
+    eq(Bridge.loggable(nil), "nil", "anything prints")
+end)
+
+test("the socket loop disconnects a sender that is not the app and ignores the rest of its lines", function()
+    local env, _, Bridge = fresh()
+    local receiver, reconnects = nil, 0
+    env.bindSocket = function(params)
+        local socket = {}
+        function socket:reconnect() reconnects = reconnects + 1 end
+        function socket:close() end
+        function socket:send(payload) env.responses[#env.responses + 1] = payload end
+        if params.mode == "receive" then receiver = params end
+        return socket
+    end
+    Bridge.start()
+    local step = 0
+    env.onSleep = function()
+        step = step + 1
+        if step == 1 then
+            -- A web page: its request line, then a body that would be valid.
+            receiver.onConnected()
+            receiver.onMessage(nil, "POST / HTTP/1.1\r")
+            receiver.onMessage(nil, line({ id = 1, kind = "command", name = "resetAll" }))
+        elseif step == 3 then
+            -- After the reconnect: the app.
+            receiver.onConnected()
+            receiver.onMessage(nil, line({ id = 2, kind = "ping" }))
+        elseif step >= 4 then
+            _G.lumeristStopping = true
+        end
+    end
+    env.tasks[2]() -- the socket loop
+    eq(reconnects, 1, "the request socket reconnected once")
+    eq(#_G.lumeristQueue, 1, "only the app's request was queued")
+    eq(_G.lumeristQueue[1].id, 2, "the app's ping")
 end)
 
 -- Bridge: worker ---------------------------------------------------------------------
@@ -1005,10 +1144,10 @@ test("the worker merges scroll steps and answers with the last id", function()
     local env, _, Bridge = fresh()
     startAndStopAfterFirstIdle(env, Bridge)
     for id = 1, 3 do
-        Bridge.enqueue('{"delta":0.05,"id":' .. id .. ',"kind":"adjust","parameter":"Exposure","scope":"develop","version":3}')
+        Bridge.enqueue('{"delta":0.05,"id":' .. id .. ',"kind":"adjust","parameter":"Exposure","scope":"develop","token":"' .. TEST_TOKEN .. '","version":4}')
     end
-    Bridge.enqueue('{"delta":2,"id":4,"kind":"adjust","parameter":"Contrast","scope":"develop","version":3}')
-    Bridge.enqueue('{"id":5,"kind":"ping","version":3}')
+    Bridge.enqueue('{"delta":2,"id":4,"kind":"adjust","parameter":"Contrast","scope":"develop","token":"' .. TEST_TOKEN .. '","version":4}')
+    Bridge.enqueue('{"id":5,"kind":"ping","token":"' .. TEST_TOKEN .. '","version":4}')
     env.tasks[1]()
     eq(#env.develop.sets, 2, "setValue calls")
     near(env.develop.sets[1].value, 0.15, "merged exposure")
@@ -1022,13 +1161,22 @@ test("the worker merges scroll steps and answers with the last id", function()
     eq(acks[1].parameter, "Exposure", "parameter")
     near(acks[1].value, 0.15, "value")
     eq(acks[2].id, 4, "contrast ack")
-    contains(acks[3].message, "protocol 3", "ping message")
+    contains(acks[3].message, "protocol 4", "ping message")
+end)
+
+test("the worker reads the token file", function()
+    local env, _, Bridge = fresh()
+    local BridgeToken = require "BridgeToken"
+    BridgeToken._resetForTests()
+    startAndStopAfterFirstIdle(env, Bridge)
+    env.tasks[1]()
+    truthy(BridgeToken.accepts(TEST_TOKEN), "read on the worker's first pass")
 end)
 
 test("the worker answers queries with a result instead of an ack", function()
     local env, _, Bridge = fresh()
     startAndStopAfterFirstIdle(env, Bridge)
-    Bridge.enqueue('{"id":11,"kind":"query","name":"presets","version":3}')
+    Bridge.enqueue('{"id":11,"kind":"query","name":"presets","token":"' .. TEST_TOKEN .. '","version":4}')
     env.tasks[1]()
     local result
     for index = 1, #env.responses do
@@ -1104,8 +1252,8 @@ test("the worker survives an SDK error and keeps answering", function()
     local env, _, Bridge = fresh()
     startAndStopAfterFirstIdle(env, Bridge)
     env.moduleError = "catalog is switching"
-    Bridge.enqueue('{"delta":0.05,"id":1,"kind":"adjust","parameter":"Exposure","scope":"develop","version":3}')
-    Bridge.enqueue('{"id":2,"kind":"ping","version":3}')
+    Bridge.enqueue('{"delta":0.05,"id":1,"kind":"adjust","parameter":"Exposure","scope":"develop","token":"' .. TEST_TOKEN .. '","version":4}')
+    Bridge.enqueue('{"id":2,"kind":"ping","token":"' .. TEST_TOKEN .. '","version":4}')
     env.tasks[1]()
     local acks = {}
     for index = 1, #env.responses do
@@ -1143,7 +1291,7 @@ test("start launches one worker and one socket loop", function()
     local generation = Bridge.start()
     eq(#env.tasks, 2, "async tasks started")
     eq(env.prefs.bridgeGeneration, generation, "generation claimed in shared prefs")
-    contains(lastLog(env), "protocol 3", "status")
+    contains(lastLog(env), "protocol 4", "status")
 end)
 
 test("a second start supersedes the first instead of adding a bridge", function()
@@ -1161,7 +1309,7 @@ test("a generation claimed in another script environment stops the worker", func
     local env, _, Bridge = fresh()
     local generation = Bridge.start()
     _G.lumeristResponseSocket = env.responseSocket
-    Bridge.enqueue('{"id":1,"kind":"ping","version":3}')
+    Bridge.enqueue('{"id":1,"kind":"ping","token":"' .. TEST_TOKEN .. '","version":4}')
     env.prefs.bridgeGeneration = generation + 1
     env.tasks[1]()
     eq(#env.responses, 0, "no work done by a superseded worker")
@@ -1366,6 +1514,13 @@ test("Windows: %APPDATA% is tried first, and other folders are never climbed out
     for _, folder in ipairs(OpenApp.windowsLinkFolders()) do
         falsy(folder == "C:\\Users\\Lumerist", "never C:\\Users")
     end
+end)
+
+test("Windows: the token sits next to plugin-link.json", function()
+    local env = onWindows(nil)
+    env.files["C:\\Users\\Test\\AppData\\Roaming\\Lumerist\\bridge-token"] = TEST_TOKEN
+    local BridgeToken = require "BridgeToken"
+    eq(BridgeToken.refresh(env.clock), TEST_TOKEN, "read from %APPDATA%\\Lumerist")
 end)
 
 test("Windows: a link file that is unreadable or names another program is ignored", function()

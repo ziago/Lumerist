@@ -10,7 +10,7 @@ every case.
 | --- | --- | --- | --- |
 | `gestures/*.json` | `KeyGestureEngine`: what every key, wheel and mouse event does | `Tests/LumeristCoreTests/SharedFixtureTests.swift` | `Windows/Lumerist.Core.Tests/GestureFixtureTests.cs` |
 | `keymap-rules/*.json` | keymap validation and conflict reports | same | `Windows/Lumerist.Core.Tests/KeymapFixtureTests.cs` |
-| `protocol/*.json` | bridge protocol 3: request lines, plug-in messages | same | `Windows/Lumerist.Core.Tests/ProtocolFixtureTests.cs` |
+| `protocol/*.json` | bridge protocol 4: request lines (with the bridge token), plug-in messages | same | `Windows/Lumerist.Core.Tests/ProtocolFixtureTests.cs` |
 | `standard-layout.json` | the standard layout and default options | same | `Windows/Lumerist.Core.Tests/KeymapFixtureTests.cs` |
 | `bug-report/*.json` | "Report a problem": the prefilled GitHub bug form | same | `Windows/Lumerist.Core.Tests/BugReportTests.cs` |
 | `../lightroom-shortcuts.json` | Lightroom Classic's own default keys in Library, Develop and the Import window, from Adobe's public help (see below) | `LightroomShortcutsTests.swift`; the warnings in `keymap-rules/lightroom-shortcuts.json` | the C# keymap rules read the same file |

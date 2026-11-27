@@ -3,66 +3,66 @@
   "cases": [
     {
       "id": "protocol-messages/ack-with-value",
-      "line": { "version": 3, "kind": "ack", "id": 7, "accepted": true, "parameter": "Exposure", "scope": "develop",
+      "line": { "version": 4, "kind": "ack", "id": 7, "accepted": true, "parameter": "Exposure", "scope": "develop",
                 "value": 0.35, "minimum": -5, "maximum": 5, "unit": "EV" },
       "message": { "ack": { "id": 7, "accepted": true, "parameter": "Exposure", "scope": "develop",
                             "value": 0.35, "minimum": -5, "maximum": 5, "unit": "EV" } }
     },
     {
       "id": "protocol-messages/rejected-ack-without-an-id",
-      "line": { "version": 3, "kind": "ack", "accepted": false, "message": "protocol 3 required" },
-      "message": { "ack": { "accepted": false, "message": "protocol 3 required" } }
+      "line": { "version": 4, "kind": "ack", "accepted": false, "message": "protocol 4 required" },
+      "message": { "ack": { "accepted": false, "message": "protocol 4 required" } }
     },
     {
       "id": "protocol-messages/unknown-fields-are-ignored",
-      "line": { "version": 3, "kind": "ack", "id": 2, "accepted": true, "somethingNew": [1, 2] },
+      "line": { "version": 4, "kind": "ack", "id": 2, "accepted": true, "somethingNew": [1, 2] },
       "message": { "ack": { "id": 2, "accepted": true } }
     },
     {
       "id": "protocol-messages/context-event",
-      "line": { "version": 3, "kind": "event", "name": "context", "module": "develop", "tool": "masking" },
+      "line": { "version": 4, "kind": "event", "name": "context", "module": "develop", "tool": "masking" },
       "message": { "context": { "module": "develop", "tool": "masking" } }
     },
     {
       "id": "protocol-messages/context-event-without-a-tool",
-      "line": { "version": 3, "kind": "event", "name": "context", "module": "library" },
+      "line": { "version": 4, "kind": "event", "name": "context", "module": "library" },
       "message": { "context": { "module": "library", "tool": "" } }
     },
     {
       "id": "protocol-messages/unknown-events-are-ignored",
-      "line": { "version": 3, "kind": "event", "name": "somethingNew" },
+      "line": { "version": 4, "kind": "event", "name": "somethingNew" },
       "message": null
     },
     {
       "id": "protocol-messages/context-result",
-      "line": { "version": 3, "kind": "result", "id": 3, "name": "context", "module": "develop", "tool": "crop" },
+      "line": { "version": 4, "kind": "result", "id": 3, "name": "context", "module": "develop", "tool": "crop" },
       "message": { "result": { "context": { "id": 3, "module": "develop", "tool": "crop" } } }
     },
     {
       "id": "protocol-messages/presets-result",
-      "line": { "version": 3, "kind": "result", "id": 4, "name": "presets", "truncated": true,
+      "line": { "version": 4, "kind": "result", "id": 4, "name": "presets", "truncated": true,
                 "items": [{ "id": "4A7E2C10-1B2D-4E5F-8A9B-0C1D2E3F4A5B", "name": "Warm", "group": "User Presets" }] },
       "message": { "result": { "presets": { "id": 4, "truncated": true,
                    "items": [{ "id": "4A7E2C10-1B2D-4E5F-8A9B-0C1D2E3F4A5B", "name": "Warm", "group": "User Presets" }] } } }
     },
     {
       "id": "protocol-messages/catalog-result",
-      "line": { "version": 3, "kind": "result", "id": 5, "name": "catalog", "unsupported": ["ProfileAmount"], "skipped": ["local_Exposure"] },
+      "line": { "version": 4, "kind": "result", "id": 5, "name": "catalog", "unsupported": ["ProfileAmount"], "skipped": ["local_Exposure"] },
       "message": { "result": { "catalog": { "id": 5, "unsupported": ["ProfileAmount"], "skipped": ["local_Exposure"] } } }
     },
     {
       "id": "protocol-messages/catalog-result-with-nothing-to-report",
-      "line": { "version": 3, "kind": "result", "id": 6, "name": "catalog" },
+      "line": { "version": 4, "kind": "result", "id": 6, "name": "catalog" },
       "message": { "result": { "catalog": { "id": 6, "unsupported": [], "skipped": [] } } }
     },
     {
       "id": "protocol-messages/unknown-results-are-ignored",
-      "line": { "version": 3, "kind": "result", "id": 7, "name": "somethingNew" },
+      "line": { "version": 4, "kind": "result", "id": 7, "name": "somethingNew" },
       "message": null
     },
     {
       "id": "protocol-messages/unknown-kinds-are-ignored",
-      "line": { "version": 3, "kind": "somethingNew" },
+      "line": { "version": 4, "kind": "somethingNew" },
       "message": null
     },
     {
@@ -72,17 +72,17 @@
     },
     {
       "id": "protocol-messages/a-line-without-a-kind",
-      "line": { "version": 3, "id": 1 },
+      "line": { "version": 4, "id": 1 },
       "error": "malformed"
     },
     {
       "id": "protocol-messages/an-ack-without-accepted",
-      "line": { "version": 3, "kind": "ack", "id": 1 },
+      "line": { "version": 4, "kind": "ack", "id": 1 },
       "error": "malformed"
     },
     {
       "id": "protocol-messages/a-unit-longer-than-eight-bytes",
-      "line": { "version": 3, "kind": "ack", "id": 1, "accepted": true, "unit": "kilometres" },
+      "line": { "version": 4, "kind": "ack", "id": 1, "accepted": true, "unit": "kilometres" },
       "error": "unitTooLong"
     }
   ]

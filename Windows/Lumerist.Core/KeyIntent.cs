@@ -2,7 +2,7 @@ namespace Lumerist.Core;
 
 /// <summary>
 /// What the user asked for with a key, wheel or mouse gesture. The app maps
-/// intents to bridge requests (docs/protocol-v3.md) or to its own UI.
+/// intents to bridge requests (docs/protocol-v4.md) or to its own UI.
 /// </summary>
 public abstract record KeyIntent
 {

@@ -92,7 +92,7 @@ public struct CommandKey: Codable, Sendable, Hashable, Identifiable {
     }
 
     public enum Action: Codable, Sendable, Hashable {
-        /// A protocol command name (see docs/protocol-v3.md) with an optional argument.
+        /// A protocol command name (see docs/protocol-v4.md) with an optional argument.
         case command(name: String, argument: String?)
         /// A Develop preset, by UUID; the name is for display.
         case preset(uuid: String, name: String)

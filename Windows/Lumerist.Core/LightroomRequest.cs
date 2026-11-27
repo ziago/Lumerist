@@ -61,7 +61,7 @@ public static class LightroomQueries
     };
 }
 
-/// <summary>Allow-listed Lightroom commands (docs/protocol-v3.md).</summary>
+/// <summary>Allow-listed Lightroom commands (docs/protocol-v4.md).</summary>
 public enum LightroomCommandName
 {
     Undo, Redo, AutoTone, AutoWhiteBalance, ResetAll,
@@ -165,7 +165,7 @@ public abstract record LightroomRequestKind
 }
 
 /// <summary>
-/// One request from the app to the plug-in (protocol 3). A request is checked
+/// One request from the app to the plug-in (protocol 4). A request is checked
 /// against the catalog when it is made; the client assigns the wire id when it
 /// sends the request.
 /// </summary>
@@ -303,13 +303,19 @@ public sealed record LightroomRequest
 /// <summary>The JSON-lines wire form of a request (sorted keys, newline-terminated).</summary>
 internal static class RequestCodec
 {
-    /// <summary>One UTF-8 JSON object with sorted keys, absent fields left out, ending with "\n".</summary>
-    public static byte[] EncodeLine(LightroomRequest request, long id)
+    /// <summary>
+    /// One UTF-8 JSON object with sorted keys, absent fields left out, ending
+    /// with "\n". <paramref name="token"/> is the bridge token the plug-in
+    /// asks for (protocol 4).
+    /// </summary>
+    public static byte[] EncodeLine(LightroomRequest request, long id, string token)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(token);
         var line = new JsonLine()
             .Add("version", LightroomRequest.ProtocolVersion)
-            .Add("id", id);
+            .Add("id", id)
+            .Add("token", token);
         switch (request.Kind)
         {
             case LightroomRequestKind.Adjust(var scope, var parameter, var delta):
@@ -337,7 +343,7 @@ internal static class RequestCodec
     /// <summary>Decodes a request line (used by tests and diagnostics).</summary>
     /// <exception cref="DecodingException">Another protocol version, or not a request.</exception>
     /// <exception cref="LightroomRequest.ValidationException">A request the plug-in would refuse.</exception>
-    public static (long Id, LightroomRequest Request) DecodeLine(ReadOnlyMemory<byte> data)
+    public static (long Id, LightroomRequest Request, string? Token) DecodeLine(ReadOnlyMemory<byte> data)
     {
         var trimmed = data.Span.Length > 0 && data.Span[^1] == (byte)'\n' ? data[..^1] : data;
         Wire wire;
@@ -370,7 +376,7 @@ internal static class RequestCodec
                 LightroomQueries.FromWireName(wire.Name) ?? throw new DecodingException(DecodingError.Malformed)),
             _ => throw new DecodingException(DecodingError.Malformed),
         };
-        return (wire.Id, new LightroomRequest(kind));
+        return (wire.Id, new LightroomRequest(kind), wire.Token);
     }
 
     public enum DecodingError
@@ -397,7 +403,7 @@ internal static class RequestCodec
     }
 
     /// <summary>Every field a request line may carry; version, id and kind are required.</summary>
-    private sealed record Wire(long Version, long Id, string Kind, string? Scope, string? Parameter, double? Delta,
+    private sealed record Wire(long Version, long Id, string? Token, string Kind, string? Scope, string? Parameter, double? Delta,
         string? Phase, string? Name, string? Argument)
     {
         public static Wire Read(ReadOnlyMemory<byte> data)
@@ -407,6 +413,7 @@ internal static class RequestCodec
             return new Wire(
                 WireJson.Integer(fields, "version") ?? throw new FormatException("version is missing"),
                 WireJson.Integer(fields, "id") ?? throw new FormatException("id is missing"),
+                WireJson.Text(fields, "token"),
                 WireJson.Text(fields, "kind") ?? throw new FormatException("kind is missing"),
                 WireJson.Text(fields, "scope"),
                 WireJson.Text(fields, "parameter"),

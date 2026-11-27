@@ -1,6 +1,7 @@
 {
   "about": "Values the Mac app, the Windows app and the Lightroom plug-in must agree on. Scripts/check-parity.py checks that each side uses them.",
-  "protocolVersion": 3,
+  "protocolVersion": 4,
+  "bridgeTokenFile": "bridge-token",
   "requestPort": 50550,
   "responsePort": 50551,
   "pluginId": "io.github.ziago.lumerist.lightroom",

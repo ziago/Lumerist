@@ -9,7 +9,7 @@ struct MessageTests {
     }
 
     @Test func decodesTheAckThePlugInWrites() throws {
-        let line = #"{"accepted":true,"id":12,"kind":"ack","maximum":50000,"message":"accepted","minimum":2000,"parameter":"Temperature","scope":"develop","unit":"K","value":5100,"version":3}"#
+        let line = #"{"accepted":true,"id":12,"kind":"ack","maximum":50000,"message":"accepted","minimum":2000,"parameter":"Temperature","scope":"develop","unit":"K","value":5100,"version":4}"#
         guard case .ack(let ack)? = try decode(line) else {
             Issue.record("not an ack")
             return
@@ -26,7 +26,7 @@ struct MessageTests {
     }
 
     @Test func rejectedAckWithoutIdOrValues() throws {
-        guard case .ack(let ack)? = try decode(#"{"accepted":false,"kind":"ack","message":"malformed JSON","version":3}"#) else {
+        guard case .ack(let ack)? = try decode(#"{"accepted":false,"kind":"ack","message":"malformed JSON","version":4}"#) else {
             Issue.record("not an ack")
             return
         }
@@ -36,7 +36,7 @@ struct MessageTests {
     }
 
     @Test func maskAckCarriesTheLocalParameter() throws {
-        let line = #"{"accepted":true,"id":3,"kind":"ack","maximum":4,"message":"accepted","minimum":-4,"parameter":"local_Exposure","scope":"develop","unit":"EV","value":0.25,"version":3}"#
+        let line = #"{"accepted":true,"id":3,"kind":"ack","maximum":4,"message":"accepted","minimum":-4,"parameter":"local_Exposure","scope":"develop","unit":"EV","value":0.25,"version":4}"#
         guard case .ack(let ack)? = try decode(line) else {
             Issue.record("not an ack")
             return
@@ -46,26 +46,26 @@ struct MessageTests {
     }
 
     @Test func decodesTheContextEvent() throws {
-        let message = try decode(#"{"kind":"event","module":"develop","name":"context","tool":"masking","version":3}"#)
+        let message = try decode(#"{"kind":"event","module":"develop","name":"context","tool":"masking","version":4}"#)
         #expect(message == .context(LightroomContext(module: "develop", tool: "masking")))
         guard case .context(let context)? = message else { return }
         #expect(context.isMasking)
     }
 
     @Test func decodesResults() throws {
-        let presets = try decode(#"{"id":4,"items":[{"group":"Favourites","id":"A1-B2","name":"Warm \"Film\""}],"kind":"result","name":"presets","version":3}"#)
+        let presets = try decode(#"{"id":4,"items":[{"group":"Favourites","id":"A1-B2","name":"Warm \"Film\""}],"kind":"result","name":"presets","version":4}"#)
         #expect(presets == .result(.presets(id: 4, items: [PresetItem(id: "A1-B2", name: #"Warm "Film""#, group: "Favourites")], truncated: false)))
-        let catalog = try decode(#"{"id":5,"kind":"result","name":"catalog","skipped":["local_Amount"],"unsupported":["LensBlurAmount"],"version":3}"#)
+        let catalog = try decode(#"{"id":5,"kind":"result","name":"catalog","skipped":["local_Amount"],"unsupported":["LensBlurAmount"],"version":4}"#)
         #expect(catalog == .result(.catalog(id: 5, unsupported: ["LensBlurAmount"], skipped: ["local_Amount"])))
-        let context = try decode(#"{"id":6,"kind":"result","module":"library","name":"context","tool":"","version":3}"#)
+        let context = try decode(#"{"id":6,"kind":"result","module":"library","name":"context","tool":"","version":4}"#)
         #expect(context == .result(.context(id: 6, LightroomContext(module: "library", tool: ""))))
     }
 
     @Test func unknownKindsEventsAndResultsAreIgnored() throws {
-        #expect(try decode(#"{"kind":"telemetry","version":3}"#) == nil)
-        #expect(try decode(#"{"kind":"event","name":"weather","version":3}"#) == nil)
-        #expect(try decode(#"{"id":1,"kind":"result","name":"secrets","version":3}"#) == nil)
-        #expect(try decode(#"{"accepted":true,"future":[1,2],"kind":"ack","version":3}"#) != nil)
+        #expect(try decode(#"{"kind":"telemetry","version":4}"#) == nil)
+        #expect(try decode(#"{"kind":"event","name":"weather","version":4}"#) == nil)
+        #expect(try decode(#"{"id":1,"kind":"result","name":"secrets","version":4}"#) == nil)
+        #expect(try decode(#"{"accepted":true,"future":[1,2],"kind":"ack","version":4}"#) != nil)
     }
 
     @Test func otherVersionsAndMalformedLinesThrow() {
@@ -73,7 +73,7 @@ struct MessageTests {
             _ = try decode(#"{"accepted":true,"action":"ping","message":"x","version":2}"#)
         }
         #expect(throws: MessageCodec.ValidationError.malformed) {
-            _ = try decode(#"{"kind":"ack","version":3}"#)
+            _ = try decode(#"{"kind":"ack","version":4}"#)
         }
         #expect(throws: (any Error).self) { _ = try decode("not json") }
     }

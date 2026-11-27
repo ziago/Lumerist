@@ -19,10 +19,12 @@
 # the matching "## [x.y.z]" (or "## x.y.z") section of CHANGELOG.md.
 # Output: build/release/<version>/ (git-ignored).
 #
-# Mac and Windows ship together. The Windows packages are built on Windows
-# from the same commit (Scripts/build-windows-installer.ps1) and copied to
-# build/release/<version>/windows/; a release refuses to publish without all
-# of them (a dry run only warns).
+# Mac and Windows ship together. A release downloads the Windows packages
+# itself: the "windows-packages" artifact of the one successful CI run that a
+# push to main started for this exact commit. A run started by a pull request
+# (whose workflow and build scripts the pull request controls) is never used.
+# A dry run uses build/release/<version>/windows/ as it is, and only warns
+# when packages are missing.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -108,10 +110,46 @@ if (( ! dry_run )); then
   [[ "$(git -C "$root" rev-parse HEAD)" == "$upstream" ]] || fail "HEAD is not pushed (or is behind its upstream)."
   [[ -z "$(git -C "$root" ls-remote --tags origin "refs/tags/$tag")" ]] || fail "Tag $tag already exists on the remote."
   head_commit="$(git -C "$root" rev-parse HEAD)"
+  # Folders that ship as they are (the plug-in is copied whole into the app and
+  # into Lightroom; the fonts by pattern): a file git ignores would ship too.
+  ignored="$(git -C "$root" status --porcelain --ignored -- Lightroom/Lumerist.lrplugin Resources/Fonts | sed -n 's/^!! //p')"
+  [[ -z "$ignored" ]] || fail "Files git ignores would ship with the release; remove them first:
+$ignored"
 fi
 
-# --- Windows packages (built on Windows, same version and commit) -----------
+# --- Windows packages (built by CI on Windows, same version and commit) ------
 windows="$out/windows"
+
+# Downloads the packages from the CI run of the push to main for $head_commit.
+# The search asks GitHub for push runs on main only, and the run is checked
+# again on its own before anything of it is used.
+fetch_windows_packages() {
+  local -a runs
+  runs=("${(@f)$(gh run list --repo "$repo" --workflow ci.yml --branch main --event push \
+    --commit "$head_commit" --status success --limit 10 --json databaseId --jq '.[].databaseId')}")
+  runs=(${runs:#}) # no run: no line, not an empty one
+  (( ${#runs} == 1 )) || fail "Expected exactly one successful CI run of the push to main for $head_commit, found ${#runs}.
+  Wait for CI to finish (gh run list --repo $repo --commit $head_commit), then try again."
+  local run="${runs[1]}"
+  local facts
+  facts="$(gh run view "$run" --repo "$repo" --json event,headBranch,headSha,conclusion \
+    --jq '[.event, .headBranch, .headSha, .conclusion] | join(" ")')"
+  [[ "$facts" == "push main $head_commit success" ]] \
+    || fail "CI run $run is not a successful push to main of $head_commit (it says: $facts)."
+  local download
+  download="$(mktemp -d "${TMPDIR:-/tmp}/lumerist-windows.XXXXXX")"
+  gh run download "$run" --repo "$repo" -n windows-packages -D "$download" \
+    || { rm -rf "$download"; fail "Could not download the windows-packages artifact of CI run $run (it is kept 14 days)."; }
+  [[ -d "$download/$version/windows" ]] \
+    || { rm -rf "$download"; fail "CI run $run has no Windows packages for $version."; }
+  rm -rf "$windows"
+  mv "$download/$version/windows" "$windows"
+  rm -rf "$download"
+  step "Windows packages: CI run $run (push to main, $head_commit)"
+}
+if (( ! dry_run )); then
+  fetch_windows_packages
+fi
 windows_assets=()
 for arch in x64 arm64; do
   for file in "Lumerist-$version-windows-$arch-setup.exe" "Lumerist-$version-windows-$arch.zip"; do
@@ -124,7 +162,8 @@ for file in "${windows_assets[@]}"; do
 done
 if (( ${#missing} )); then
   message="Windows packages missing: ${missing[*]}
-  Build them on Windows (Scripts/build-windows-installer.ps1) and copy its build/release/$version/windows folder to $windows."
+  A release downloads them from CI by itself; for a dry run, put a CI run's packages in $windows
+  (gh run download <run> -n windows-packages -D build/release)."
   if (( dry_run )); then warn "$message"; windows_assets=(); else fail "$message"; fi
 elif (( ! dry_run )); then
   [[ "$(cat "$windows/BUILD-COMMIT" 2>/dev/null)" == "$head_commit" ]] \

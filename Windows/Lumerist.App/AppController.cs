@@ -58,6 +58,7 @@ internal sealed class AppController : IDisposable
         });
         // The client calls back on a background thread, in order; BeginInvoke keeps the order.
         client = new LightroomCommandClient(
+            LoadBridgeToken(),
             state => ui.BeginInvoke(() => OnState(state)),
             message => ui.BeginInvoke(() => OnMessage(message)));
     }
@@ -316,6 +317,24 @@ internal sealed class AppController : IDisposable
         // "Open Lumerist when Lightroom starts" lives in the plug-in's link file.
         WritePluginLink();
         SettingsChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// The secret the plug-in asks for with every request (<see cref="BridgeToken"/>),
+    /// in %APPDATA%\Lumerist. If it cannot be saved the app still runs, but the
+    /// plug-in refuses its requests; the log says why.
+    /// </summary>
+    private static string LoadBridgeToken()
+    {
+        try
+        {
+            return BridgeToken.LoadOrCreate(AppPaths.DataFolder);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            Log.Write($"Bridge token not saved, so the plug-in will refuse Lumerist's requests: {error.Message}");
+            return BridgeToken.Generate();
+        }
     }
 
     /// <summary>Tells the plug-in where Lumerist.exe is, so it can open it with Lightroom (written at every start).</summary>

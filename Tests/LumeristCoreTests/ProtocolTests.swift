@@ -2,13 +2,13 @@ import Foundation
 import Testing
 @testable import LumeristCore
 
-/// Protocol 3 requests: validation against the catalog and the wire format.
+/// Protocol 4 requests: validation against the catalog and the wire format.
 struct ProtocolTests {
     @Test func encodesAnAdjustmentWithSortedKeysAndANewline() throws {
         let request = try LightroomRequest.adjust(.develop, "Exposure", delta: 0.05)
-        let line = try RequestCodec.encodeLine(request, id: 7)
+        let line = try RequestCodec.encodeLine(request, id: 7, token: testToken)
         #expect(String(decoding: line, as: UTF8.self)
-            == #"{"delta":0.05,"id":7,"kind":"adjust","parameter":"Exposure","scope":"develop","version":3}"# + "\n")
+            == #"{"delta":0.05,"id":7,"kind":"adjust","parameter":"Exposure","scope":"develop","token":"\#(testToken)","version":4}"# + "\n")
     }
 
     @Test func roundTripsEveryKind() throws {
@@ -23,14 +23,15 @@ struct ProtocolTests {
             .query(.presets),
         ]
         for (index, request) in requests.enumerated() {
-            let decoded = try RequestCodec.decodeLine(try RequestCodec.encodeLine(request, id: index))
+            let decoded = try RequestCodec.decodeLine(try RequestCodec.encodeLine(request, id: index, token: testToken))
             #expect(decoded.id == index)
             #expect(decoded.request == request)
+            #expect(decoded.token == testToken)
         }
     }
 
     @Test func slashesInArgumentsAreNotEscaped() throws {
-        let line = try RequestCodec.encodeLine(try .command(.addToMask, "rangeMask/luminance"), id: 1)
+        let line = try RequestCodec.encodeLine(try .command(.addToMask, "rangeMask/luminance"), id: 1, token: testToken)
         #expect(String(decoding: line, as: UTF8.self).contains(#""argument":"rangeMask/luminance""#))
     }
 
@@ -91,8 +92,8 @@ struct ProtocolTests {
     }
 
     @Test func rejectsOtherProtocolVersionsOnDecode() {
-        let line = #"{"id":1,"kind":"ping","version":2}"#
-        #expect(throws: RequestCodec.DecodingError.unsupportedVersion(2)) {
+        let line = #"{"id":1,"kind":"ping","version":3}"#
+        #expect(throws: RequestCodec.DecodingError.unsupportedVersion(3)) {
             _ = try RequestCodec.decodeLine(Data(line.utf8))
         }
     }

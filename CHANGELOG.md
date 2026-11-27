@@ -46,6 +46,26 @@ All notable changes to Lumerist are documented here. The format follows
   longer replaced by the standard layout: a copy is kept and the problem is
   logged. On the Mac, General → Profile shows the copy.
 
+### Security
+- **The plug-in obeys only the Lumerist app.** Every request from the app now
+  carries a secret, the bridge token, that only your own account on the
+  computer can read. The plug-in refuses anything without it and disconnects
+  the sender. Before, another account on the same Mac or PC, or possibly a web
+  page, could send Lightroom the commands Lumerist uses (reset, ratings,
+  flags, presets). This is bridge protocol 4: the app and the plug-in update
+  together, and the app installs the new plug-in by itself while Lightroom is
+  closed. Thanks to the person who reported it privately.
+- The plug-in's log keeps only a short, cleaned-up copy of what a sender
+  wrote, so nobody can flood it or forge lines in it.
+- Mac: a profile with an impossible key code no longer crashes the app when
+  that key is used.
+- Mac: a program pretending to be the plug-in can no longer keep the app busy
+  by sending it empty lines.
+- Releases: the release script downloads the Windows packages itself, from
+  the CI run of the push to `main` for the released commit, so packages built
+  by a pull request are never published. It also refuses to publish while the
+  plug-in or font folders hold files git ignores.
+
 ## [0.9.1] — the first release with the repository public
 
 Everything Lumerist does is described in the

@@ -5,6 +5,7 @@ local LrPrefs = import "LrPrefs"
 local LrSocket = import "LrSocket"
 local LrTasks = import "LrTasks"
 local Actions = require "Actions"
+local BridgeToken = require "BridgeToken"
 local Json = require "Json"
 
 local Bridge = {}
@@ -114,6 +115,21 @@ local function trimPartialUTF8(text)
     return text
 end
 
+-- At most this much of anything a peer sent goes into the log, with control
+-- characters replaced, so a request can neither flood nor forge log lines.
+local MAXIMUM_LOGGED_BYTES = 160
+
+--- Text from a peer, made safe for one log line.
+function Bridge.loggable(value)
+    local text = tostring(value):gsub("[%c\127]", "?")
+    if #text > MAXIMUM_LOGGED_BYTES then
+        text = trimPartialUTF8(text:sub(1, MAXIMUM_LOGGED_BYTES)) .. "..."
+    end
+    return text
+end
+
+Bridge.unauthorizedMessage = "not authorized: the request did not carry this computer's Lumerist bridge token"
+
 local ALLOWED_UNITS = { EV = true, K = true, deg = true, px = true, ["%"] = true, pt = true, choice = true }
 local DETAIL_NUMBERS = { "value", "minimum", "maximum" }
 
@@ -209,28 +225,46 @@ end
 --- Called from LrSocket's onMessage (which cannot yield). Validation happens
 --- immediately; Lightroom work happens later on the single worker task, one
 --- batch at a time, so two requests never race each other.
+---
+--- Returns true when the sender must be disconnected, because it is not the
+--- Lumerist app: a line that is not a JSON object (a web page posting to
+--- 127.0.0.1 starts with "POST / HTTP/1.1"), another protocol version, or a
+--- missing or wrong token. Nothing such a sender asks for is run.
 function Bridge.enqueue(message)
     local request, parseError = Bridge.parseRequest(message)
     if not request then
-        logger:warn("Rejected request: " .. tostring(parseError))
+        logger:warn("Rejected request: " .. Bridge.loggable(parseError))
         send(Bridge.encodeAck(nil, false, parseError))
-        return
+        return true
+    end
+    local id = Json.isFinite(request.id) and request.id == math.floor(request.id) and request.id or nil
+    if request.version ~= Actions.protocolVersion then
+        local reason = Actions.versionMessage(request.version)
+        logger:warn("Rejected request: " .. Bridge.loggable(reason))
+        send(Bridge.encodeAck(id, false, reason))
+        return true
+    end
+    if not BridgeToken.accepts(request.token) then
+        -- No id: the answer must never be taken for one of the app's own.
+        logger:warn("Rejected request: missing or wrong bridge token")
+        send(Bridge.encodeAck(nil, false, Bridge.unauthorizedMessage))
+        return true
     end
     local valid, reason = Actions.validate(request)
     if not valid then
-        logger:warn("Rejected request: " .. tostring(reason))
-        local id = Json.isFinite(request.id) and request.id == math.floor(request.id) and request.id or nil
+        logger:warn("Rejected request: " .. Bridge.loggable(reason))
         send(Bridge.encodeAck(id, false, reason))
-        return
+        return false
     end
 
     local queue = _G.lumeristQueue
     if #queue >= MAXIMUM_QUEUE_LENGTH then
         send(Bridge.encodeAck(request.id, false, "Lightroom is busy; request dropped"))
-        return
+        return false
     end
     queue[#queue + 1] = request
     _G.lumeristLastActivity = LrDate.currentTime()
+    return false
 end
 
 --- Pushes the context event when the module/tool changed, or when a client
@@ -257,7 +291,7 @@ local function runQueue(queue)
             send(Bridge.encodeResult(batch.id, result))
         else
             if not ok then
-                logger:warn("Rejected " .. tostring(batch.kind) .. ": " .. tostring(message))
+                logger:warn("Rejected " .. tostring(batch.kind) .. ": " .. Bridge.loggable(message))
             end
             send(Bridge.encodeAck(batch.id, ok, message or (ok and "accepted" or "rejected"), details))
         end
@@ -271,6 +305,8 @@ local function startWorker(generation)
             local lastContextPoll = 0
             while isCurrent(generation) do
                 local now = LrDate.currentTime()
+                -- File access is allowed here (a task), never in onMessage.
+                BridgeToken.refreshIfNeeded(now)
                 if now - (_G.lumeristSocketHeartbeat or now) > Bridge.SOCKET_STALL_SECONDS then
                     setStatus("bridge stalled; starting it again")
                     Bridge.start()
@@ -307,6 +343,9 @@ local function runSockets(generation)
         local called, socketError = LrTasks.pcall(LrFunctionContext.callWithContext, "LumeristSocket", function(context)
             local running = true
             local reconnectRequest = false
+            -- Set when the sender is not the Lumerist app: what it sends until
+            -- the request socket reconnects is ignored.
+            local ignoringSender = false
             local ok, receiver = pcall(function()
                 return LrSocket.bind {
                     functionContext = context,
@@ -317,11 +356,21 @@ local function runSockets(generation)
                         setStatus("bridge listening on localhost:" .. REQUEST_PORT)
                     end,
                     onConnected = function()
+                        ignoringSender = false
                         _G.lumeristContextDirty = true
                         setStatus("local companion connected")
                     end,
                     onMessage = function(_, message)
-                        Bridge.enqueue(message)
+                        if ignoringSender then
+                            return
+                        end
+                        if Bridge.enqueue(message) then
+                            -- Disconnect it: reconnecting the request
+                            -- ("receive") socket is the same step as after
+                            -- a timeout.
+                            ignoringSender = true
+                            reconnectRequest = true
+                        end
                     end,
                     onError = function(_, err)
                         reconnectRequest = true
@@ -395,6 +444,7 @@ local function runSockets(generation)
                     local reconnectOK, reconnectError = pcall(function()
                         receiver:reconnect()
                     end)
+                    ignoringSender = false
                     if not reconnectOK then
                         setStatus("request socket reconnect failed: " .. tostring(reconnectError))
                         running = false
