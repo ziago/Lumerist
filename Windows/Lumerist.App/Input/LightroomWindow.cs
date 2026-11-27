@@ -21,6 +21,13 @@ internal static class LightroomWindow
     /// </summary>
     public static (bool IsInFront, uint ThreadId) Foreground()
     {
+        var (isInFront, threadId, _) = ForegroundWindow();
+        return (isInFront, threadId);
+    }
+
+    /// <summary><see cref="Foreground"/> plus the foreground window itself.</summary>
+    public static (bool IsInFront, uint ThreadId, nint Window) ForegroundWindow()
+    {
         var window = GetForegroundWindow();
         lock (Gate)
         {
@@ -35,7 +42,7 @@ internal static class LightroomWindow
                     lastIsLightroom = process != 0 && IsLightroomClassic(process);
                 }
             }
-            return (lastIsLightroom, lastThread);
+            return (lastIsLightroom, lastThread, window);
         }
     }
 

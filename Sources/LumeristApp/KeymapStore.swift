@@ -3,7 +3,7 @@ import LumeristCore
 import Observation
 
 /// Owns the persisted Keymap (format 3): Dial Keys, Nudge Keys, Command Keys,
-/// system keys, Palette and input options.
+/// system keys, Import keys, Palette and input options.
 @MainActor
 @Observable
 final class KeymapStore {
@@ -42,13 +42,15 @@ final class KeymapStore {
         Keymap.standardLayout(isoKeyboard: KeyboardLayout.physicalShape == .iso)
     }
 
-    /// Puts back the standard keys; input options and the Palette are kept.
+    /// Puts back the standard keys (no Import keys); input options, the
+    /// Palette and "Move to the next photo" are kept.
     func restoreStandardLayout() throws {
-        let (input, palette) = (keymap.input, keymap.palette)
+        let (input, palette, advance) = (keymap.input, keymap.palette, keymap.importKeys.advance)
         try mutate {
             $0 = Self.standardLayout
             $0.input = input
             $0.palette = palette
+            $0.importKeys.advance = advance
         }
     }
 

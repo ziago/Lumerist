@@ -167,13 +167,13 @@ struct AboutSupportSection: View {
                     link("GitHub", SupportLinks.repository)
                     Button("Report a problem") { NSWorkspace.shared.open(SupportLinks.bugReport) }
                         .buttonStyle(.neonQuiet)
-                        .help("Opens GitHub's bug form with the version, macOS, Mac and keyboard filled in")
+                        .themedTooltip("Opens GitHub's bug form with the version, macOS, Mac and keyboard filled in")
                     link("Ideas", SupportLinks.discussions)
                 }
             }
             SettingRow(title: "Galerist", detail: GaleristOptIn.Copy.credit) {
                 link("Visit Galerist", SupportLinks.galeristFromSettings)
-                    .help(SupportLinks.galeristFromSettings.absoluteString)
+                    .themedTooltip(SupportLinks.galeristFromSettings.absoluteString)
             }
             // Text above, buttons below: several buttons beside the text would
             // squeeze it at the minimum window width.
@@ -190,7 +190,7 @@ struct AboutSupportSection: View {
                             Label(donation.title, systemImage: donation.systemImage)
                         }
                         .buttonStyle(.neonSecondary)
-                        .help(donation.detail)
+                        .themedTooltip(donation.detail)
                     }
                 }
                 .padding(.top, 2)

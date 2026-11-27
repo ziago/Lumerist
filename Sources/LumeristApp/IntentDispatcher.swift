@@ -173,3 +173,16 @@ final class IntentDispatcher {
         }
     }
 }
+
+extension ImportShortcuts {
+    /// Lightroom's Import keys for the active keyboard layout. P and X go
+    /// out as the keys that type p and x, like Lightroom's flag shortcuts
+    /// above; Toggle stays key code 50 (` on US keyboards) and → is the same
+    /// everywhere.
+    @MainActor static var forCurrentLayout: ImportShortcuts {
+        var shortcuts = ImportShortcuts.standard
+        if let include = IntentDispatcher.fallbackShortcut(for: .flagPick) { shortcuts.include = include }
+        if let exclude = IntentDispatcher.fallbackShortcut(for: .flagReject) { shortcuts.exclude = exclude }
+        return shortcuts
+    }
+}

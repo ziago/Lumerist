@@ -312,7 +312,7 @@ internal sealed class GeneralScreen(ScreenContext context) : Screen(context)
         var restore = SynthControls.Button("Restore…", SynthControls.Kind.Destructive, () =>
         {
             if (!SynthDialog.Confirm(View, "Restore the standard layout?",
-                    "Dial Keys, Nudge Keys, Command Keys, System Keys and steps return to the layout Lumerist ships with. Your mouse, trackpad and Lightroom options and the Palette are kept. To keep the current keys, export the profile first.",
+                    "Dial Keys, Nudge Keys, Command Keys, System Keys and steps return to the layout Lumerist ships with, and the Import keys are cleared. Your mouse, trackpad, Import and Lightroom options and the Palette are kept. To keep the current keys, export the profile first.",
                     "Restore", isDestructive: true)) return;
             profileError = Controller.UpdateKeymap(KeymapEditing.StandardLayoutKeeping(Controller.Keymap));
             if (profileError is not null) Refresh();

@@ -5,7 +5,9 @@ import LumeristCore
 
 /// Feeds keyboard, scroll, and mouse events to `KeyGestureEngine` while the
 /// user has enabled shortcuts, and applies its decisions. Lightroom context
-/// (module and tool) comes from the plug-in's context events.
+/// (module and tool) comes from the plug-in's context events; while
+/// `ImportWindowDetector` sees Lightroom's Import window, the module is
+/// "import" instead.
 final class KeyEngineMonitor: @unchecked Sendable {
     /// Marks events Lumerist posts itself so the tap lets them through.
     static let replayMarker: Int64 = 0x4C4B_5250 // "LKRP"
@@ -20,6 +22,7 @@ final class KeyEngineMonitor: @unchecked Sendable {
     private var engine: KeyGestureEngine<CGEvent>
     private var module = "develop"
     private var tool = ""
+    private var isImportWindowOpen = false
     private var pointerAnchor: CGPoint?
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -86,6 +89,16 @@ final class KeyEngineMonitor: @unchecked Sendable {
         lock.unlock()
     }
 
+    /// Lightroom's Import window came to the front or went away. Its
+    /// shortcuts are taken again at each opening, for the keyboard layout
+    /// in use then.
+    func update(isImportWindowOpen open: Bool, shortcuts: ImportShortcuts) {
+        lock.lock()
+        isImportWindowOpen = open
+        if open { engine.update(importShortcuts: shortcuts) }
+        lock.unlock()
+    }
+
     func paletteDidClose() {
         lock.lock()
         engine.paletteDidClose()
@@ -139,7 +152,8 @@ final class KeyEngineMonitor: @unchecked Sendable {
         let now = ProcessInfo.processInfo.systemUptime
 
         lock.lock()
-        let context = EngineContext(isLightroomFrontmost: isLightroomFrontmost, module: module, tool: tool)
+        let context = EngineContext(isLightroomFrontmost: isLightroomFrontmost,
+                                    module: isImportWindowOpen ? EngineContext.importModule : module, tool: tool)
         let wasEngaged = engine.isEngaged
         let outcome: KeyGestureEngine<CGEvent>.Outcome
         switch type {

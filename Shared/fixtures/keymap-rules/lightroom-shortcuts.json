@@ -1,0 +1,109 @@
+{
+  "group": "keymap-rules",
+  "about": "Warnings for tap keys on Lightroom Classic's own default keys (Shared/lightroom-shortcuts.json), in the key's own place: Develop, Library or the Import window. A warning never blocks saving. The chords here mean the same on both systems.",
+  "cases": [
+    {
+      "id": "keymap-rules/a-command-key-on-a-lightroom-key-warns",
+      "keymap": { "commandKeys": [
+        { "scope": "library", "chord": "Z", "title": "Next photo", "action": { "command": "nextPhoto" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 1, "matches": [
+        { "severity": "warning", "chord": "Z", "scope": "library", "lightroomAction": "Toggle Zoom view",
+          "message": "Lightroom uses Z for “Toggle Zoom view” in Library. Lumerist takes it over there." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/the-warning-follows-the-keys-own-module",
+      "about": "Z means something else in Develop; a key for all modules warns once per module.",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Z", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "any", "chord": "B", "title": "Redo", "action": { "command": "redo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 3, "matches": [
+        { "severity": "warning", "chord": "Z", "scope": "develop", "lightroomAction": "Toggle between Loupe and 1:1 Zoom preview",
+          "message": "Lightroom uses Z for “Toggle between Loupe and 1:1 Zoom preview” in Develop. Lumerist takes it over there." },
+        { "severity": "warning", "chord": "B", "scope": "library", "lightroomAction": "Add to Quick Collection" },
+        { "severity": "warning", "chord": "B", "scope": "develop", "lightroomAction": "Add to Quick Collection" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/lightroom-chords-with-modifiers-warn",
+      "about": "Primary+U is Auto tone in Develop: that warning replaces the general one about modifier keys. Library has no Primary+U, so the general warning stays there.",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Primary+U", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "library", "chord": "Primary+U", "title": "Redo", "action": { "command": "redo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 2, "matches": [
+        { "severity": "warning", "chord": "Primary+U", "scope": "develop", "lightroomAction": "Auto tone" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/nudge-keys-warn-for-their-key-and-its-shift-step",
+      "about": "A plain Nudge Key also takes Shift with it for the larger step: H is free in Library, Shift+H is not.",
+      "keymap": { "slots": {
+        "library/Exposure": { "nudgeUp": "H" },
+        "develop/GrainAmount": { "nudgeDown": "Y" }
+      } },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 2, "matches": [
+        { "severity": "warning", "chord": "Shift+H", "scope": "library", "lightroomAction": "Toggle HDR view" },
+        { "severity": "warning", "chord": "Y", "scope": "develop", "lightroomAction": "View Before and After left/right",
+          "message": "Lightroom uses Y for “View Before and After left/right” in Develop. Lumerist takes it over there." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/dial-keys-and-combos-never-warn",
+      "about": "A Dial Key tapped alone still reaches Lightroom, and a combo is Lumerist's own key.",
+      "keymap": {
+        "slots": { "develop/GrainAmount": { "dial": "Y" }, "library/Exposure": { "nudgeUp": "Combo+Z" } },
+        "commandKeys": [{ "scope": "develop", "chord": "Combo+Z", "title": "Undo", "action": { "command": "undo" } }]
+      },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 0 }
+    },
+    {
+      "id": "keymap-rules/f-keys-and-arrows-warn",
+      "keymap": { "commandKeys": [
+        { "scope": "library", "chord": "F2", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "develop", "chord": "ArrowRight", "title": "Redo", "action": { "command": "redo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 2, "matches": [
+        { "severity": "warning", "chord": "F2", "scope": "library", "lightroomAction": "Rename photo" },
+        { "severity": "warning", "chord": "ArrowRight", "scope": "develop", "lightroomAction": "Go to next/previous photo in the Filmstrip" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/punctuation-keys-never-warn",
+      "about": "Which key types [ or = depends on the keyboard layout, so these Lightroom keys are not matched.",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "]", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "library", "chord": "=", "title": "Redo", "action": { "command": "redo" } },
+        { "scope": "develop", "chord": "\\", "title": "Auto Tone", "action": { "command": "autoTone" } },
+        { "scope": "library", "chord": "/", "title": "Next", "action": { "command": "nextPhoto" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 0 }
+    },
+    {
+      "id": "keymap-rules/import-keys-warn-in-the-import-window",
+      "about": "The Import window's keys are community-reported. Z is free there.",
+      "keymap": { "importKeys": { "include": "X", "exclude": "Z", "toggle": "ArrowRight" } },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 2, "matches": [
+        { "severity": "warning", "chord": "X", "scope": null, "lightroomAction": "Exclude",
+          "message": "Lightroom uses X for “Exclude” in the Import window. Lumerist takes it over there." },
+        { "severity": "warning", "chord": "ArrowRight", "scope": null, "lightroomAction": "Move between photos" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/an-import-key-on-the-key-it-sends-does-not-warn",
+      "keymap": { "importKeys": { "include": "P", "exclude": "X" } },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 0 }
+    }
+  ]
+}

@@ -128,7 +128,7 @@ public sealed record InputOptions
 
 /// <summary>
 /// Everything the user assigns: per-scope parameter keys, Command Keys,
-/// System Keys, Palette and input options. A mutable value: take a
+/// System Keys, Import keys, Palette and input options. A mutable value: take a
 /// <see cref="Clone"/> before handing it to another owner.
 /// Validation and conflicts: KeymapRules.cs. Storage: KeymapStore.cs.
 /// </summary>
@@ -142,6 +142,10 @@ public sealed partial class Keymap
 
     public List<CommandKey> CommandKeys { get; set; } = [];
     public SystemKeys SystemKeys { get; set; } = new();
+
+    /// <summary>Culling keys for Lightroom's Import window (none in the standard layout).</summary>
+    public ImportKeys ImportKeys { get; set; } = new();
+
     public PaletteOptions Palette { get; set; } = new();
     public InputOptions Input { get; set; } = new();
 
@@ -152,6 +156,7 @@ public sealed partial class Keymap
         Library = new Dictionary<string, ParameterSlot>(Library),
         CommandKeys = [.. CommandKeys],
         SystemKeys = SystemKeys with { },
+        ImportKeys = ImportKeys with { },
         Palette = Palette with { Favourites = [.. Palette.Favourites] },
         Input = Input with { },
     };
@@ -242,6 +247,7 @@ public sealed partial class Keymap
     /// Quick Develop. Four combos in Develop: Tab + A Auto Tone, Tab + W Auto
     /// White Balance, Tab + R Reset all, Tab + Q Lightroom's Ctrl+Alt+V (Paste
     /// Settings from Previous). Fixed ids keep them the same keys across launches.
+    /// No Import key is assigned.
     /// </summary>
     public static Keymap StandardLayout()
     {

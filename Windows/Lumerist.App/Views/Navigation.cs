@@ -8,6 +8,8 @@ internal enum MainSection
 {
     Develop,
     Library,
+    /// <summary>Import keys, for culling in Lightroom's Import window.</summary>
+    Import,
     MouseTrackpad,
     FloatingPanels,
     General,
@@ -24,12 +26,13 @@ internal enum ModuleTab
 internal static class MainSections
 {
     public static IReadOnlyList<MainSection> All { get; } =
-        [MainSection.Develop, MainSection.Library, MainSection.MouseTrackpad, MainSection.FloatingPanels, MainSection.General];
+        [MainSection.Develop, MainSection.Library, MainSection.Import, MainSection.MouseTrackpad, MainSection.FloatingPanels, MainSection.General];
 
     public static string Title(this MainSection section) => section switch
     {
         MainSection.Develop => "Develop",
         MainSection.Library => "Library",
+        MainSection.Import => "Import",
         MainSection.MouseTrackpad => "Mouse & Trackpad",
         MainSection.FloatingPanels => "Floating panels",
         _ => "General",
@@ -40,13 +43,15 @@ internal static class MainSections
     {
         MainSection.Develop => Icons.Sliders,
         MainSection.Library => Icons.Grid,
+        MainSection.Import => Icons.Import,
         MainSection.MouseTrackpad => Icons.Mouse,
         MainSection.FloatingPanels => Icons.Windows,
         _ => Icons.Settings,
     };
 
-    /// <summary>Module pages left of the divider, settings on the right.</summary>
-    public static bool IsModulePage(this MainSection section) => section is MainSection.Develop or MainSection.Library;
+    /// <summary>Pages for Lightroom's modules and its Import window left of the divider, settings on the right.</summary>
+    public static bool IsModulePage(this MainSection section) =>
+        section is MainSection.Develop or MainSection.Library or MainSection.Import;
 
     public static ParameterScope? Scope(this MainSection section) => section switch
     {
@@ -60,6 +65,7 @@ internal static class MainSections
     {
         MainSection.Develop => "develop",
         MainSection.Library => "library",
+        MainSection.Import => "importWindow",
         MainSection.MouseTrackpad => "mouseTrackpad",
         MainSection.FloatingPanels => "floatingPanels",
         _ => "general",

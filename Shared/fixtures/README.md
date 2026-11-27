@@ -13,6 +13,7 @@ every case.
 | `protocol/*.json` | bridge protocol 3: request lines, plug-in messages | same | `Windows/Lumerist.Core.Tests/ProtocolFixtureTests.cs` |
 | `standard-layout.json` | the standard layout and default options | same | `Windows/Lumerist.Core.Tests/KeymapFixtureTests.cs` |
 | `bug-report/*.json` | "Report a problem": the prefilled GitHub bug form | same | `Windows/Lumerist.Core.Tests/BugReportTests.cs` |
+| `../lightroom-shortcuts.json` | Lightroom Classic's own default keys in Library, Develop and the Import window, from Adobe's public help (see below) | `LightroomShortcutsTests.swift`; the warnings in `keymap-rules/lightroom-shortcuts.json` | the C# keymap rules read the same file |
 | `../contract.json` | ports, plug-in id, protocol version, consent hash | `Scripts/check-parity.py` | `Scripts/check-parity.py` |
 
 A new feature or fix is finished when it has a case here and both runners
@@ -29,9 +30,12 @@ scan codes in C#. The tables live in the test code only.
 | --- | --- |
 | `A` … `Z`, `0` … `9` | letter and digit keys (US positions) |
 | `LeftOf1` | the key left of 1 (the Palette Key) |
-| `Tab`, `Esc`, `Space`, `Return`, `Backspace` | as printed |
+| `Tab`, `Esc`, `Space`, `Return`, `Backspace` | as printed (`Backspace` is the Mac's Delete key) |
+| `ForwardDelete`, `Home`, `End`, `PageUp`, `PageDown` | as printed (`ForwardDelete` is Delete on Windows, ⌦ on the Mac) |
 | `[`, `]` | the two keys right of P |
-| `ArrowLeft`, `ArrowRight` | arrow keys |
+| `=`, `-`, `'`, `;`, `\`, `,`, `.`, `/` | the other punctuation keys, at their US positions |
+| `ArrowLeft`, `ArrowRight`, `ArrowUp`, `ArrowDown` | arrow keys |
+| `F1` … `F12` | function keys |
 
 A chord joins modifiers and a key with `+`: `Shift+Q`, `Combo+K`.
 
@@ -74,8 +78,10 @@ thing and states what must follow:
 | `"setKeymap": changes` | | load the standard layout plus `changes` |
 
 `in` is the Lightroom context: `develop` (default), `masking` (Develop with
-the Masking tool), `library`, `map` (any other module) or `away` (Lightroom
-is not frontmost).
+the Masking tool), `library`, `map` (any other module), `import` (Lightroom's
+Import window is in front: the app recognises the window and uses the module
+name `import`, which Lightroom itself never reports) or `away` (Lightroom is
+not frontmost).
 
 Expectations, all optional:
 
@@ -102,27 +108,57 @@ Actions: `{"command": "undo"}` (optional `"argument"`), `{"shortcut": chord}`,
 { "input": { "invertWheel": true },
   "palette": { "keepVisible": true },
   "systemKeys": { "comboKey": "H", "paletteKey": null },
+  "importKeys": { "include": "Z", "exclude": "X", "toggle": null, "advance": true },
   "slots": { "develop/Exposure": { "dial": null, "nudgeUp": "Combo+]", "normalStep": 3 } },
   "commandKeys": [ { "scope": "develop", "chord": "Combo+K", "title": "Undo", "action": { "command": "undo" } } ],
   "replaceCommandKeys": false }
 ```
 
 Slot fields are merged into the existing slot; `null` clears one. Command
-Keys are appended unless `replaceCommandKeys` is true.
+Keys are appended unless `replaceCommandKeys` is true. `importKeys` sets
+the Import keys (`include`, `exclude`, `toggle`: a chord or `null`) and
+`advance` ("Move to the next photo"); the standard layout assigns none.
+
+In the Import window an Import key sends Lightroom's own key as
+`{"shortcut": chord}`: Include `P`, Exclude `X`, Toggle `LeftOf1`, and
+`ArrowRight` after Include or Exclude when `advance` is on.
 
 ## Keymap rule cases
 
 `validate` is `"ok"` or the expected error: `{"error": "invalidStep",
 "parameter": p}`, `{"error": "invalidOption", "option": name}`,
 `{"error": "invalidCommandKey", "reason": text}`, `{"error": "invalidCombo",
-"misuse": "dialKey" | "lightroomShortcut" | "systemKey", ...}` or
-`{"error": "conflicts"}`.
+"misuse": "dialKey" | "lightroomShortcut" | "systemKey" | "importKey", ...}`
+(`systemKey` and `importKey` name the `role`) or `{"error": "conflicts"}`.
 
 `conflicts` gives the number of `errors` and `warnings` and a list of
 `matches`: each must match at least one reported conflict by `severity`,
-`chord`, `scope` (`null` for system keys), `usesSystem` (a system key role)
-and `message`. Messages are compared only for chords without modifiers,
+`chord`, `scope` (`null` for system keys and Import keys), `usesSystem` (a
+system key role), `lightroomAction` (see below) and `message`. Messages are compared only for chords without modifiers,
 whose names read the same on both systems.
+
+## Lightroom's own keys
+
+`Shared/lightroom-shortcuts.json` lists Lightroom Classic's default keys for
+Library, Develop and the Import window, per system, in the key names above,
+with the source and retrieval date of each section (the Import window's keys
+are community reports, marked `communityReported`). A tap key on one of them
+in its own place gets a warning, which never blocks saving:
+
+- Command Keys and Nudge Keys in their module (a Command Key for all modules
+  in each), and Import keys in the Import window. Never a Dial Key (a tap
+  still reaches Lightroom) or a combo (Lumerist's own key).
+- A Nudge Key with no modifiers also takes its Shift chord (the larger
+  step): when the key itself is free, the Shift chord is checked.
+- An Import key never warns about the key it sends itself (`importRole`).
+- Letters and digits match by the character the key types on the active
+  layout, arrows, F-keys and named keys by key. Punctuation (`LeftOf1` and
+  the keys above) never matches.
+- The first entry in file order names the key: the warning reads
+  "Lightroom uses Z for “Toggle Zoom view” in Library. Lumerist takes it
+  over there." (`in Develop`, `in the Import window`), and its
+  `lightroomAction` is that name. It replaces the general warning about
+  typing keys and modifiers for the same chord.
 
 ## Protocol cases
 

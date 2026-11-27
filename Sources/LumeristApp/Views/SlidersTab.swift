@@ -59,6 +59,8 @@ struct SlidersTab: View {
             }
             if let error = KeymapEditor.shared.lastError {
                 Label(error, systemImage: "exclamationmark.triangle.fill").synthBody(12, color: Synth.error)
+            } else if let warning = KeymapEditor.shared.currentWarning(in: keymap, scope: scope) {
+                Label(warning, systemImage: "exclamationmark.triangle.fill").synthBody(12, color: Synth.amber)
             }
         }
     }
@@ -89,9 +91,13 @@ struct SlidersTab: View {
         HStack(spacing: Self.columnSpacing) {
             Text(scope == .develop ? "Adjustment" : "Quick Develop").frame(maxWidth: .infinity, alignment: .leading)
             Text("Dial Key").frame(width: Self.dialColumnWidth, alignment: .leading)
+                .themedTooltip(KeyKindHelp.dialKey(scope))
             Text("Nudge −").frame(width: Self.nudgeColumnWidth, alignment: .leading)
+                .themedTooltip(KeyKindHelp.nudgeDown(scope))
             Text("Nudge +").frame(width: Self.nudgeColumnWidth, alignment: .leading)
+                .themedTooltip(KeyKindHelp.nudgeUp(scope))
             Text("Step").frame(width: Self.stepColumnWidth, alignment: .leading)
+                .themedTooltip(KeyKindHelp.step(scope))
         }
         .synthLabel(10)
         .padding(.horizontal, Synth.rowInset)
@@ -178,7 +184,7 @@ private struct ParameterRow: View {
                     Label("not in this Lightroom", systemImage: "exclamationmark.triangle")
                         .labelStyle(.iconOnly)
                         .foregroundStyle(Synth.amber)
-                        .help("This Lightroom did not accept \(descriptor.id) in the last catalog check.")
+                        .themedTooltip("This Lightroom did not accept \(descriptor.id) in the last catalog check.")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -235,7 +241,7 @@ private struct StepCell: View {
             // Choice parameters move one option at a time.
             Text("1 option")
                 .synthLabel(9)
-                .help("Each step moves to the next option.")
+                .themedTooltip("Each step moves to the next option.")
         } else {
             Button { isEditing.toggle() } label: {
                 HStack(spacing: 4) {
@@ -262,7 +268,7 @@ private struct StepCell: View {
                 .contentShape(RoundedRectangle(cornerRadius: Synth.Radius.control))
             }
             .buttonStyle(.plain)
-            .help(steps.isCustom ? "Your own steps. Click to change them." : "Click to change the steps")
+            .themedTooltip(steps.isCustom ? "Your own steps. Click to change them." : "Click to change the steps")
             .accessibilityLabel("\(descriptor.label) steps")
             .accessibilityValue("\(StepPair.text(steps.plain)), with Shift \(StepPair.text(steps.shifted))"
                                 + (steps.isCustom ? ", changed" : ""))

@@ -71,15 +71,24 @@ internal static class KeymapEditor
     /// <summary>Why the last edit was not saved, shown under the slider tables.</summary>
     public static string? LastError { get; private set; }
 
+    /// <summary>
+    /// A Lightroom key the last assignment took over. It never blocks; the
+    /// key's box keeps its own ⚠ while the clash lasts.
+    /// </summary>
+    public sealed record Warning(KeyUsage Usage, string Message);
+
+    public static Warning? LastWarning { get; private set; }
+
     /// <summary>Raised when <see cref="LastError"/> changes without a new keymap.</summary>
     public static event Action? Changed;
 
-    public static void Apply(AppController controller, KeymapEdit edit, DependencyObject? from)
+    /// <param name="usage">The key being assigned, for the warning about Lightroom's own keys (none when clearing).</param>
+    public static void Apply(AppController controller, KeymapEdit edit, DependencyObject? from, KeyUsage? usage = null)
     {
         switch (edit)
         {
             case KeymapEdit.Commit commit:
-                Save(controller, commit.Keymap);
+                if (Save(controller, commit.Keymap)) NoteWarning(commit.Keymap, usage);
                 break;
             case KeymapEdit.Refuse refuse:
                 SetError(refuse.Message);
@@ -87,8 +96,14 @@ internal static class KeymapEditor
                 break;
             case KeymapEdit.AskToMove ask when ask.CanMove:
                 if (!SynthDialog.Confirm(from, ask.Title, ask.Message, "Move here")) return;
-                if (ask.Moved is { } moved) Save(controller, moved);
-                else SetError(ask.MoveError);
+                if (ask.Moved is { } moved)
+                {
+                    if (Save(controller, moved)) NoteWarning(moved, usage);
+                }
+                else
+                {
+                    SetError(ask.MoveError);
+                }
                 break;
             case KeymapEdit.AskToMove ask:
                 SynthDialog.Inform(from, ask.Title, ask.Message);
@@ -97,10 +112,21 @@ internal static class KeymapEditor
     }
 
     public static void Assign(AppController controller, KeyChord? chord, SlotRole role, ParameterKey key, DependencyObject? from) =>
-        Apply(controller, KeymapEditing.PlanAssign(controller.Keymap, chord, role, key), from);
+        Apply(controller, KeymapEditing.PlanAssign(controller.Keymap, chord, role, key), from, chord is null ? null : role.Usage(key));
 
     public static void SetSystem(AppController controller, SystemKeyRole role, KeyChord? chord, DependencyObject? from) =>
         Apply(controller, KeymapEditing.PlanSystemKey(controller.Keymap, role, chord), from);
+
+    /// <summary>An Import key (null clears it). A combo is refused with its reason; a key of another Import key can move.</summary>
+    public static void SetImport(AppController controller, ImportKeyRole role, KeyChord? chord, DependencyObject? from) =>
+        Apply(controller, KeymapEditing.PlanImportKey(controller.Keymap, role, chord), from,
+            chord is null ? null : new KeyUsage.ImportKey(role));
+
+    /// <summary>The last warning about a Nudge Key of <paramref name="scope"/>, while <paramref name="keymap"/> still has it.</summary>
+    public static string? CurrentWarning(Keymap keymap, ParameterScope scope) =>
+        LastWarning is { } warning && warning.Usage.SlotScope() == scope && keymap.LightroomWarning(warning.Usage) == warning.Message
+            ? warning.Message
+            : null;
 
     /// <summary>An option or list change (switches, favourites, Command Keys): on a copy, then saved.</summary>
     public static void Edit(AppController controller, Action<Keymap> change)
@@ -110,7 +136,16 @@ internal static class KeymapEditor
         Save(controller, proposed);
     }
 
-    private static void Save(AppController controller, Keymap keymap) => SetError(controller.UpdateKeymap(keymap));
+    /// <summary>True when the keymap was saved and is in use.</summary>
+    private static bool Save(AppController controller, Keymap keymap)
+    {
+        var error = controller.UpdateKeymap(keymap);
+        SetError(error);
+        return error is null;
+    }
+
+    private static void NoteWarning(Keymap saved, KeyUsage? usage) =>
+        LastWarning = usage is not null && saved.LightroomWarning(usage) is { } message ? new Warning(usage, message) : null;
 
     private static void SetError(string? message)
     {

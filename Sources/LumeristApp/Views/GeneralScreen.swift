@@ -40,7 +40,7 @@ struct GeneralScreen: View {
                 store.withKeymapStore { try $0.restoreStandardLayout() }
             }
         } message: {
-            Text("Dial Keys, Nudge Keys, Command Keys, System Keys and steps return to the layout Lumerist ships with. Your mouse, trackpad and Lightroom options and the Palette are kept. To keep the current keys, export the profile first.")
+            Text("Dial Keys, Nudge Keys, Command Keys, System Keys and steps return to the layout Lumerist ships with, and the Import keys are cleared. Your mouse, trackpad, Import and Lightroom options and the Palette are kept. To keep the current keys, export the profile first.")
         }
     }
 

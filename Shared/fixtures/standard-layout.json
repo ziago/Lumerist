@@ -32,6 +32,7 @@
     "keyReferenceToggle": "Combo+H",
     "pauseToggle": "Control+Esc"
   },
+  "importKeys": { "include": null, "exclude": null, "toggle": null, "advance": false },
   "input": {
     "invertWheel": false,
     "swapNormalAndCoarse": false,
@@ -50,6 +51,7 @@
   "platformNotes": [
     "LeftOf1 is the key left of 1: key code 50 on ANSI Mac keyboards and 10 on ISO ones (the app picks the right one); scan code 0x29 on Windows for both.",
     "Primary+Alt+V is Lightroom's Paste Settings from Previous: ⌥⌘V on macOS, Ctrl+Alt+V on Windows.",
-    "Control+Esc pauses: ⌃Esc on macOS, Ctrl+Esc on Windows (the keyboard hook takes it before the Start menu; to be confirmed on Windows)."
+    "Control+Esc pauses: ⌃Esc on macOS, Ctrl+Esc on Windows (the keyboard hook takes it before the Start menu; to be confirmed on Windows).",
+    "No Import key is assigned: Lumerist takes over a Lightroom key in the Import window only when the user picks one. A keymap saved without importKeys reads as this."
   ]
 }

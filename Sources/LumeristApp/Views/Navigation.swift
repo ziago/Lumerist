@@ -5,6 +5,8 @@ import LumeristCore
 enum MainSection: String, CaseIterable, Identifiable {
     case develop
     case library
+    /// Import keys, for culling in Lightroom's Import window.
+    case importWindow
     case mouseTrackpad
     case floatingPanels
     case general
@@ -15,6 +17,7 @@ enum MainSection: String, CaseIterable, Identifiable {
         switch self {
         case .develop: "Develop"
         case .library: "Library"
+        case .importWindow: "Import"
         case .mouseTrackpad: "Mouse & Trackpad"
         case .floatingPanels: "Floating panels"
         case .general: "General"
@@ -26,14 +29,16 @@ enum MainSection: String, CaseIterable, Identifiable {
         switch self {
         case .develop: "slider.horizontal.3"
         case .library: "square.grid.2x2"
+        case .importWindow: "square.and.arrow.down.on.square"
         case .mouseTrackpad: "computermouse"
         case .floatingPanels: "rectangle.on.rectangle"
         case .general: "gearshape"
         }
     }
 
-    /// Module pages left of the divider, settings on the right.
-    var isModulePage: Bool { self == .develop || self == .library }
+    /// Pages for Lightroom's modules and its Import window left of the
+    /// divider, settings on the right.
+    var isModulePage: Bool { self == .develop || self == .library || self == .importWindow }
 
     var scope: ParameterScope? {
         switch self {

@@ -100,7 +100,8 @@ enum HUDSnapshots {
     }
 
     private static func writePNG(_ view: some View, to url: URL) {
-        let renderer = ImageRenderer(content: view)
+        // No tooltip anchors: ImageRenderer would draw them as placeholders.
+        let renderer = ImageRenderer(content: view.environment(\.isSnapshotRendering, true))
         renderer.scale = 2
         guard let png = renderer.nsImage?.pngData else { return }
         try? png.write(to: url)

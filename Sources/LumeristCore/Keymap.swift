@@ -369,7 +369,7 @@ public struct InputOptions: Codable, Sendable, Hashable {
 // MARK: - Keymap
 
 /// Everything the user assigns: per-scope parameter keys, command keys,
-/// system keys, Palette and input options. Persisted as format 3.
+/// system keys, Import keys, Palette and input options. Persisted as format 3.
 public struct Keymap: Codable, Sendable, Hashable {
     public static let currentFormat = 3
 
@@ -380,6 +380,8 @@ public struct Keymap: Codable, Sendable, Hashable {
     public var library: [String: ParameterSlot]
     public var commandKeys: [CommandKey]
     public var systemKeys: SystemKeys
+    /// Culling keys for Lightroom's Import window (none in the standard layout).
+    public var importKeys: ImportKeys
     public var palette: PaletteOptions
     public var input: InputOptions
 
@@ -388,6 +390,7 @@ public struct Keymap: Codable, Sendable, Hashable {
         library: [String: ParameterSlot] = [:],
         commandKeys: [CommandKey] = [],
         systemKeys: SystemKeys = SystemKeys(),
+        importKeys: ImportKeys = ImportKeys(),
         palette: PaletteOptions = PaletteOptions(),
         input: InputOptions = InputOptions()
     ) {
@@ -396,12 +399,13 @@ public struct Keymap: Codable, Sendable, Hashable {
         self.library = library
         self.commandKeys = commandKeys
         self.systemKeys = systemKeys
+        self.importKeys = importKeys
         self.palette = palette
         self.input = input
     }
 
     fileprivate enum CodingKeys: String, CodingKey, CaseIterable {
-        case format, develop, library, commandKeys, systemKeys, palette, input
+        case format, develop, library, commandKeys, systemKeys, importKeys, palette, input
     }
 
     public init(from decoder: Decoder) throws {
@@ -411,8 +415,24 @@ public struct Keymap: Codable, Sendable, Hashable {
         library = try c.decodeIfPresent([String: ParameterSlot].self, forKey: .library) ?? [:]
         commandKeys = try c.decodeIfPresent([CommandKey].self, forKey: .commandKeys) ?? []
         systemKeys = try c.decodeIfPresent(SystemKeys.self, forKey: .systemKeys) ?? SystemKeys()
+        // Keymaps saved before Import keys existed get the standard: none assigned.
+        importKeys = try c.decodeIfPresent(ImportKeys.self, forKey: .importKeys) ?? ImportKeys()
         palette = try c.decodeIfPresent(PaletteOptions.self, forKey: .palette) ?? PaletteOptions()
         input = try c.decodeIfPresent(InputOptions.self, forKey: .input) ?? InputOptions()
+    }
+
+    /// Import keys are written only once one is set: an untouched keymap keeps
+    /// the exact shape older builds read, since their decoding is strict.
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(format, forKey: .format)
+        try c.encode(develop, forKey: .develop)
+        try c.encode(library, forKey: .library)
+        try c.encode(commandKeys, forKey: .commandKeys)
+        try c.encode(systemKeys, forKey: .systemKeys)
+        if importKeys != ImportKeys() { try c.encode(importKeys, forKey: .importKeys) }
+        try c.encode(palette, forKey: .palette)
+        try c.encode(input, forKey: .input)
     }
 
     // MARK: Slots
@@ -504,7 +524,8 @@ public struct Keymap: Codable, Sendable, Hashable {
     /// top-level, slot, Command Key or system key field this build does not
     /// know, throws instead of silently loading empty key slots (callers then
     /// fall back to the standard layout). Fields of older files that are
-    /// still read (the Layer Key flags, turned into combos) are accepted.
+    /// still read (the Layer Key flags, turned into combos) are accepted;
+    /// a file without Import keys gets the standard (none assigned).
     public static func decodeStored(_ data: Data) throws -> Keymap {
         let decoder = JSONDecoder()
         guard let format = (try? decoder.decode(FormatProbe.self, from: data))?.format else {
@@ -535,6 +556,9 @@ public struct Keymap: Codable, Sendable, Hashable {
         }
         if let systemKeys = root[CodingKeys.systemKeys.stringValue] as? [String: Any] {
             unknown.formUnion(Set(systemKeys.keys).subtracting(SystemKeys.CodingKeys.allCases.map(\.stringValue)))
+        }
+        if let importKeys = root[CodingKeys.importKeys.stringValue] as? [String: Any] {
+            unknown.formUnion(Set(importKeys.keys).subtracting(ImportKeys.CodingKeys.allCases.map(\.stringValue)))
         }
         guard unknown.isEmpty else { throw KeymapError.unknownFields(unknown.sorted()) }
     }
@@ -645,6 +669,8 @@ public enum ComboMisuse: Sendable, Hashable {
     /// Lumerist sends a Lightroom shortcut as a plain key press.
     case lightroomShortcut
     case systemKey(SystemKeys.Role)
+    /// In Lightroom's Import window the Combo Key does nothing.
+    case importKey(ImportKeys.Role)
 
     public var message: String {
         switch self {
@@ -654,6 +680,8 @@ public enum ComboMisuse: Sendable, Hashable {
             "A Lightroom shortcut can't be a combo: Lumerist sends it to Lightroom as a plain key press."
         case .systemKey:
             "Only the Key Reference toggle can be a combo. Press a single key, with modifiers if you like."
+        case .importKey:
+            "An Import key can't be a combo: the Combo Key does nothing in Lightroom's Import window. Press a single key, with modifiers if you like."
         }
     }
 }
@@ -665,6 +693,7 @@ public enum KeyUsage: Sendable, Hashable {
     case nudgeUp(ParameterKey)
     case action(UUID, title: String)
     case system(SystemKeys.Role)
+    case importKey(ImportKeys.Role)
 
     var isNudge: Bool {
         switch self {
@@ -672,6 +701,8 @@ public enum KeyUsage: Sendable, Hashable {
         default: false
         }
     }
+
+    var isAction: Bool { if case .action = self { true } else { false } }
 }
 
 public struct KeyConflict: Sendable, Hashable {
@@ -680,10 +711,23 @@ public struct KeyConflict: Sendable, Hashable {
     public let severity: Severity
     /// The chord in conflict; combos keep their `.combo` modifier.
     public let chord: KeyChord
-    /// nil for conflicts among system keys.
+    /// nil for conflicts among system keys and among Import keys.
     public let scope: ParameterScope?
     public let usages: [KeyUsage]
     public let message: String
+    /// For a warning about one of Lightroom's own keys: what the key does
+    /// there ("Toggle Zoom view"). See `LightroomShortcuts`.
+    public let lightroomAction: String?
+
+    init(severity: Severity, chord: KeyChord, scope: ParameterScope?, usages: [KeyUsage], message: String,
+         lightroomAction: String? = nil) {
+        self.severity = severity
+        self.chord = chord
+        self.scope = scope
+        self.usages = usages
+        self.message = message
+        self.lightroomAction = lightroomAction
+    }
 }
 
 extension Keymap {
@@ -714,6 +758,10 @@ extension Keymap {
         for role in SystemKeys.Role.allCases where role != .keyReferenceToggle
             && systemKeys.chord(for: role)?.isCombo == true {
             throw KeymapError.invalidCombo(.systemKey(role))
+        }
+        // The Combo Key does nothing in the Import window.
+        for role in ImportKeys.Role.allCases where importKeys[role]?.isCombo == true {
+            throw KeymapError.invalidCombo(.importKey(role))
         }
         for action in commandKeys {
             let title = action.title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -751,6 +799,9 @@ extension Keymap {
     /// Every problem, errors first. Allowed on purpose: one Dial Key and
     /// one tap Command Key on the same chord (hold adjusts, tap runs the action).
     /// A combo is simply another chord: "Tab + K" and "K" never conflict.
+    /// Import keys act only in Lightroom's Import window, where every other
+    /// key but the pause toggle pauses, so they clash only with each other
+    /// and with the pause toggle.
     public func conflicts() -> [KeyConflict] {
         var result: [KeyConflict] = []
         let reservedTypingKeys: Set<Int64> = [36, 49, 51, 53] // Return, Space, Delete, Esc
@@ -775,6 +826,7 @@ extension Keymap {
                                           message: "\(name(toggle)) can't work: a combo can't use the Combo Key itself."))
             }
         }
+        result += importKeyConflicts(name: name)
 
         for scope in ParameterScope.allCases {
             var byChord: [KeyChord: [KeyUsage]] = [:]
@@ -805,15 +857,72 @@ extension Keymap {
                     result.append(KeyConflict(severity: .error, chord: chord, scope: scope, usages: roles + usages,
                                               message: "\(text) is a system key and cannot be assigned here."))
                 }
+                // A tap key on one of Lightroom's own keys: the specific
+                // warning replaces the general one below.
+                let lightroom = lightroomWarning(chord, scope: scope, usages: usages)
+                result += lightroom.map { [$0] } ?? []
                 if chord.isCombo {
                     result += comboProblems(chord, text: text, scope: scope, usages: usages)
-                } else if reservedTypingKeys.contains(chord.keyCode) || chord.usesReservedModifiers {
+                } else if lightroom == nil, reservedTypingKeys.contains(chord.keyCode) || chord.usesReservedModifiers {
                     result.append(KeyConflict(severity: .warning, chord: chord, scope: scope, usages: usages,
                                               message: "\(text) is also used for typing or by Lightroom and macOS."))
                 }
             }
         }
         return result.sorted { ($0.severity == .error ? 0 : 1) < ($1.severity == .error ? 0 : 1) }
+    }
+
+    /// A Command Key or Nudge Key on a key Lightroom uses in this module
+    /// (never a Dial Key: its tap still reaches Lightroom). A plain Nudge
+    /// Key also takes its ⇧ chord, for the larger step.
+    private func lightroomWarning(_ chord: KeyChord, scope: ParameterScope, usages: [KeyUsage]) -> KeyConflict? {
+        let taps = usages.filter { $0.isAction || $0.isNudge }
+        guard !taps.isEmpty, !chord.isCombo else { return nil }
+        let context = LightroomShortcuts.Context(scope)
+        var taken = chord
+        var match = LightroomShortcuts.match(chord, in: context)
+        if match == nil, chord.modifiers.isEmpty, taps.contains(where: \.isNudge) {
+            taken = KeyChord(chord.keyCode, .shift)
+            match = LightroomShortcuts.match(taken, in: context)
+        }
+        guard let match else { return nil }
+        return Self.lightroomWarning(match, chord: taken, text: displayText(for: taken), scope: scope,
+                                     usages: taken == chord ? taps : taps.filter(\.isNudge))
+    }
+
+    static func lightroomWarning(_ match: LightroomShortcuts.Match, chord: KeyChord, text: String,
+                                 scope: ParameterScope?, usages: [KeyUsage]) -> KeyConflict {
+        KeyConflict(severity: .warning, chord: chord, scope: scope, usages: usages,
+                    message: "Lightroom uses \(text) for “\(match.name)” in \(match.context.place). Lumerist takes it over there.",
+                    lightroomAction: match.name)
+    }
+
+    /// Two Import keys on one chord, or an Import key on the pause toggle,
+    /// and the warning for an Import key on another of Lightroom's keys in
+    /// the Import window (never for the key that Import key sends itself).
+    private func importKeyConflicts(name: (KeyChord) -> String) -> [KeyConflict] {
+        var result: [KeyConflict] = []
+        var byChord: [KeyChord: [KeyUsage]] = [:]
+        for role in ImportKeys.Role.allCases {
+            if let chord = importKeys[role] { byChord[chord, default: []].append(.importKey(role)) }
+        }
+        for (chord, usages) in byChord.sorted(by: { name($0.key) < name($1.key) }) {
+            if usages.count > 1 {
+                result.append(KeyConflict(severity: .error, chord: chord, scope: nil, usages: usages,
+                                          message: "\(name(chord)) is used by more than one Import key."))
+            }
+            if chord == systemKeys.pauseToggle {
+                result.append(KeyConflict(severity: .error, chord: chord, scope: nil, usages: usages + [.system(.pauseToggle)],
+                                          message: "\(name(chord)) is the pause toggle, so it can't be an Import key."))
+            }
+            if let match = LightroomShortcuts.match(chord, in: .importWindow) {
+                let taking = usages.filter { if case .importKey(let role) = $0 { role != match.importRole } else { false } }
+                if !taking.isEmpty {
+                    result.append(Self.lightroomWarning(match, chord: chord, text: name(chord), scope: nil, usages: taking))
+                }
+            }
+        }
+        return result
     }
 
     /// A combo can't use the Combo Key itself (that key is already held) or

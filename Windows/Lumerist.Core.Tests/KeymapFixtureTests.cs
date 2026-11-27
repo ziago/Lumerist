@@ -91,6 +91,9 @@ internal static class RuleRunner
                 case "message":
                     if (conflict.Message != FixtureValues.OptionalText(value)) return false;
                     break;
+                case "lightroomAction":
+                    if (conflict.LightroomAction != FixtureValues.OptionalText(value)) return false;
+                    break;
                 case "usesSystem":
                     var role = SystemKeyRoles.FromWireName(FixtureValues.OptionalText(value))
                         ?? throw new FixtureException("unknown role " + Json(value));
@@ -120,6 +123,7 @@ internal static class RuleRunner
                 ComboMisuse.DialKey dial => misuse == "dialKey" && dial.Parameter == parameter,
                 ComboMisuse.LightroomShortcut => misuse == "lightroomShortcut",
                 ComboMisuse.SystemKey system => misuse == "systemKey" && system.Role.WireName() == FixtureValues.OptionalText(obj["role"]),
+                ComboMisuse.ImportKey import => misuse == "importKey" && import.Role.WireName() == FixtureValues.OptionalText(obj["role"]),
                 _ => false,
             },
             KeymapErrorKind.Conflicts => name == "conflicts",
@@ -167,6 +171,20 @@ internal static class LayoutRunner
             if (keymap.SystemKeys.ChordFor(role) != FixtureValues.ChordOrNull(system[role.WireName()]))
                 failures.Add($"system key {role.WireName()} differs");
         }
+
+        var importKeys = fixture["importKeys"] as JsonObject ?? [];
+        string[] importFields = [.. ImportKeyRoles.All.Select(role => role.WireName()), "advance"];
+        if (!importKeys.Select(pair => pair.Key).ToHashSet().SetEquals(importFields))
+            failures.Add($"Import key fields differ: {string.Join(", ", importKeys.Select(pair => pair.Key).Order(StringComparer.Ordinal))}");
+        foreach (var role in ImportKeyRoles.All)
+        {
+            if (keymap.ImportKeys.ChordFor(role) != FixtureValues.ChordOrNull(importKeys[role.WireName()]))
+                failures.Add($"Import key {role.WireName()} differs");
+        }
+        var advance = importKeys["advance"]?.GetValueKind() is JsonValueKind.True or JsonValueKind.False
+            ? importKeys["advance"]!.GetValue<bool>()
+            : (bool?)null;
+        if (keymap.ImportKeys.Advance != advance) failures.Add("Import advance differs");
 
         var input = fixture["input"] as JsonObject ?? [];
         var options = keymap.Input;

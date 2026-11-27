@@ -93,6 +93,9 @@ internal sealed class LumeristApplication(IReadOnlyList<string> arguments, strin
     private TrayIcon? tray;
     private CancellationTokenSource? listening;
 
+    /// <summary>Before any window: every tooltip waits the same delay.</summary>
+    static LumeristApplication() => Tooltips.UseAppDelay();
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);

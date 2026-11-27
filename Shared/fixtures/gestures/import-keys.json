@@ -1,0 +1,183 @@
+{
+  "group": "import-keys",
+  "about": "Culling in Lightroom's Import window (\"in\": \"import\", set by the app, never reported by Lightroom). Only the Import keys and the pause toggle act there; each Import key sends Lightroom's own Import key: Include P, Exclude X, Toggle the key left of 1, then ArrowRight with advance. No Import key is assigned in the standard layout, so most cases set Z, X and C.",
+  "cases": [
+    {
+      "id": "import-keys/the-standard-layout-takes-no-key-in-the-import-window",
+      "about": "With no Import key assigned, Z, X and C reach Lightroom untouched (Z is Lightroom's zoom).",
+      "steps": [
+        { "down": "Z", "in": "import", "decision": "pass", "intents": [], "focusQueries": 0 },
+        { "up": "Z", "in": "import", "decision": "pass" },
+        { "down": "X", "in": "import", "decision": "pass", "intents": [] },
+        { "up": "X", "in": "import", "decision": "pass" },
+        { "down": "C", "in": "import", "decision": "pass", "intents": [] },
+        { "up": "C", "in": "import", "decision": "pass", "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "import-keys/each-key-sends-lightrooms-own-import-key",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "Z", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "P" } }], "focusQueries": 1 },
+        { "up": "Z", "in": "import", "decision": "consume" },
+        { "down": "X", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "X" } }] },
+        { "up": "X", "in": "import", "decision": "consume" },
+        { "down": "C", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "LeftOf1" } }] },
+        { "up": "C", "in": "import", "decision": "consume", "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "import-keys/move-to-the-next-photo-after-include-or-exclude",
+      "about": "With advance on, Include and Exclude also press ArrowRight; Toggle does not.",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C", "advance": true } },
+      "steps": [
+        { "down": "Z", "in": "import", "intents": [{ "action": { "shortcut": "P" } }, { "action": { "shortcut": "ArrowRight" } }] },
+        { "up": "Z", "in": "import", "decision": "consume" },
+        { "down": "X", "in": "import", "intents": [{ "action": { "shortcut": "X" } }, { "action": { "shortcut": "ArrowRight" } }] },
+        { "up": "X", "in": "import", "decision": "consume" },
+        { "down": "C", "in": "import", "intents": [{ "action": { "shortcut": "LeftOf1" } }] },
+        { "up": "C", "in": "import", "decision": "consume" }
+      ]
+    },
+    {
+      "id": "import-keys/auto-repeat-is-swallowed",
+      "about": "One press, one Lightroom key: a held Import key does not repeat.",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "Z", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "P" } }] },
+        { "down": "Z", "in": "import", "repeat": true, "decision": "consume", "intents": [], "focusQueries": 0 },
+        { "down": "Z", "in": "import", "repeat": true, "decision": "consume", "intents": [] },
+        { "up": "Z", "in": "import", "decision": "consume" }
+      ]
+    },
+    {
+      "id": "import-keys/text-fields-take-every-key",
+      "about": "Typing a keyword in the Import window: the key and its repeats reach the field.",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "Z", "in": "import", "textFocused": true, "decision": "pass", "intents": [], "focusQueries": 1 },
+        { "down": "Z", "in": "import", "repeat": true, "textFocused": true, "decision": "pass", "focusQueries": 0 },
+        { "up": "Z", "in": "import", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "import-keys/an-import-key-is-its-exact-chord",
+      "about": "Shift + Z and ⌘Z are other keys; an Import key may carry modifiers of its own.",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "Shift+Z", "in": "import", "decision": "pass", "intents": [] },
+        { "up": "Z", "in": "import", "decision": "pass" },
+        { "down": "Primary+Z", "in": "import", "decision": "pass", "intents": [] },
+        { "up": "Z", "in": "import", "decision": "pass" },
+        { "setKeymap": { "importKeys": { "include": "Shift+Z" } } },
+        { "down": "Shift+Z", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "P" } }] },
+        { "up": "Z", "in": "import", "decision": "consume" },
+        { "down": "Z", "in": "import", "decision": "pass" }
+      ]
+    },
+    {
+      "id": "import-keys/every-other-key-the-mouse-and-the-trackpad-pass",
+      "about": "No Dial Key, Nudge Key, combo, Palette, Key Reference or side button acts in the Import window.",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "Q", "in": "import", "decision": "pass", "intents": [], "state": { "engaged": false } },
+        { "wheel": 1, "in": "import", "decision": "pass", "intents": [] },
+        { "up": "Q", "in": "import", "decision": "pass" },
+        { "down": "Tab", "in": "import", "decision": "pass", "state": { "engaged": false } },
+        { "down": "H", "in": "import", "decision": "pass", "intents": [] },
+        { "up": "H", "in": "import", "decision": "pass" },
+        { "up": "Tab", "in": "import", "decision": "pass" },
+        { "down": "LeftOf1", "in": "import", "decision": "pass", "intents": [], "state": { "paletteOpen": false } },
+        { "up": "LeftOf1", "in": "import", "decision": "pass" },
+        { "down": "ArrowRight", "in": "import", "decision": "pass" },
+        { "up": "ArrowRight", "in": "import", "decision": "pass" },
+        { "swipe": 30, "in": "import", "decision": "pass", "intents": [] },
+        { "click": "back", "in": "import", "decision": "pass", "intents": [] },
+        { "release": "back", "in": "import", "decision": "pass" },
+        { "click": "left", "count": 2, "in": "import", "decision": "pass", "intents": [] },
+        { "release": "left", "in": "import", "decision": "pass" },
+        { "move": 10, "in": "import", "decision": "pass", "intents": [] }
+      ]
+    },
+    {
+      "id": "import-keys/import-keys-act-only-in-the-import-window",
+      "about": "Elsewhere Z passes and X is still the Develop Dial Key of the tone curve's Shadows.",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "Z", "decision": "pass", "intents": [] },
+        { "up": "Z", "decision": "pass" },
+        { "down": "Z", "in": "library", "decision": "pass", "intents": [] },
+        { "up": "Z", "in": "library", "decision": "pass" },
+        { "down": "X", "decision": "consume", "intents": [], "state": { "activeParameter": "develop/ParametricShadows" } },
+        { "up": "X", "decision": ["X↓", "X↑"] },
+        { "down": "X", "in": "map", "decision": "pass", "intents": [] }
+      ]
+    },
+    {
+      "id": "import-keys/an-import-key-may-also-be-a-develop-key",
+      "keymap": { "importKeys": { "include": "Q" } },
+      "steps": [
+        { "down": "Q", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "P" } }] },
+        { "up": "Q", "in": "import", "decision": "consume" },
+        { "down": "Q", "decision": "consume", "state": { "activeParameter": "develop/Exposure" } },
+        { "wheel": 1, "intents": [{ "gestureBegan": "develop/Exposure" }, { "adjust": "develop/Exposure", "delta": 0.05 }] },
+        { "up": "Q", "intents": [{ "gestureEnded": "develop/Exposure" }] }
+      ]
+    },
+    {
+      "id": "import-keys/pause-hands-everything-back",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "Control+Esc", "in": "import", "intents": [{ "togglePause": true }], "state": { "paused": true } },
+        { "up": "Esc", "in": "import", "decision": "consume" },
+        { "down": "Z", "in": "import", "decision": "pass", "intents": [] },
+        { "up": "Z", "in": "import", "decision": "pass" },
+        { "down": "Control+Esc", "in": "import", "intents": [{ "togglePause": false }], "state": { "paused": false } },
+        { "up": "Esc", "in": "import", "decision": "consume" },
+        { "down": "Z", "in": "import", "decision": "consume", "intents": [{ "action": { "shortcut": "P" } }] }
+      ]
+    },
+    {
+      "id": "import-keys/a-key-held-when-the-import-window-opens-reaches-lightroom",
+      "about": "Q was held back in Library as a possible tap; the first event in the Import window delivers it, ahead of the new key.",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "Q", "in": "library", "decision": "consume", "state": { "engaged": true } },
+        { "down": "Z", "in": "import", "decision": ["Q↓"], "intents": [{ "action": { "shortcut": "P" } }], "state": { "engaged": false } },
+        { "up": "Z", "in": "import", "decision": "consume" },
+        { "up": "Q", "in": "import", "decision": "pass" },
+        { "down": "Q", "in": "library" },
+        { "down": "H", "in": "import", "decision": ["Q↓", "H↓"], "intents": [] },
+        { "up": "H", "in": "import", "decision": "pass" },
+        { "up": "Q", "in": "import", "decision": "pass" },
+        { "down": "Q", "in": "library" },
+        { "up": "Q", "in": "import", "decision": ["Q↓", "Q↑"], "state": { "engaged": false } },
+        { "down": "Q", "in": "library" },
+        { "click": "left", "in": "import", "decision": ["Q↓", "click"], "state": { "engaged": false } }
+      ]
+    },
+    {
+      "id": "import-keys/the-import-window-ends-a-gesture",
+      "about": "A Library gesture does not go on behind the Import window: Quick Develop would change the catalog's selected photos.",
+      "steps": [
+        { "down": "Q", "in": "library" },
+        { "wheel": 1, "in": "library", "intents": [{ "gestureBegan": "library/Exposure" }, { "adjust": "library/Exposure", "delta": 0.33 }] },
+        { "wheel": 1, "in": "import", "decision": "pass", "intents": [{ "gestureEnded": "library/Exposure" }],
+          "state": { "engaged": false, "activeParameter": null, "needsScrollEvents": false } },
+        { "swipe": 40, "momentum": true, "in": "import", "decision": "pass", "intents": [] },
+        { "up": "Q", "in": "import", "decision": "pass", "intents": [] }
+      ]
+    },
+    {
+      "id": "import-keys/the-palette-closes-in-the-import-window",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "X", "toggle": "C" } },
+      "steps": [
+        { "down": "LeftOf1", "at": 0, "intents": ["openPalette"] },
+        { "up": "LeftOf1", "at": 0.1, "state": { "paletteOpen": true } },
+        { "down": "Z", "in": "import", "decision": "consume", "intents": ["closePalette", { "action": { "shortcut": "P" } }],
+          "state": { "paletteOpen": false } },
+        { "up": "Z", "in": "import", "decision": "consume" }
+      ]
+    }
+  ]
+}

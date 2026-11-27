@@ -74,6 +74,32 @@ internal static class SynthControls
         return button;
     }
 
+    /// <summary>
+    /// The small × that clears a key box. Under the pointer it turns the
+    /// theme's Error red, so it reads as delete; otherwise it has
+    /// <paramref name="restColor"/> (Steel when null), which may change while
+    /// it is shown.
+    /// </summary>
+    public static Button ClearButton(double size, Action onClick, string name, Func<Brush>? restColor = null)
+    {
+        var glyph = SynthText.Icon(Icons.Cancel, size, restColor?.Invoke() ?? Ink.Steel);
+        var button = Plain(glyph, onClick);
+        AutomationProperties.SetName(button, name);
+        void Paint() => glyph.Foreground = button.IsMouseOver ? Ink.Error : restColor?.Invoke() ?? Ink.Steel;
+        button.MouseEnter += (_, _) => Paint();
+        button.MouseLeave += (_, _) => Paint();
+        return button;
+    }
+
+    /// <summary>A quiet × that removes an item from a list (a favourite, a macro step), red under the pointer like <see cref="ClearButton"/>.</summary>
+    public static Button RemoveButton(Action onClick, string name)
+    {
+        var button = IconButton(Icons.Cancel, Kind.Quiet, onClick, name);
+        button.MouseEnter += (_, _) => button.Foreground = Ink.Error;
+        button.MouseLeave += (_, _) => button.ClearValue(Control.ForegroundProperty);
+        return button;
+    }
+
     /// <summary>A button with no chrome around <paramref name="content"/>.</summary>
     public static Button Plain(UIElement content, Action onClick)
     {

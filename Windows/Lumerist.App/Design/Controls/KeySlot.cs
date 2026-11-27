@@ -53,7 +53,8 @@ internal sealed class KeySlot : ContentControl
         isHovering = hovering;
         if (clearButton?.Content is TextBlock glyph)
         {
-            glyph.Foreground = hovering ? Ink.Ice : Ink.Steel;
+            // Red only while the pointer is on the × itself (ClearButton).
+            glyph.Foreground = clearButton.IsMouseOver ? Ink.Error : hovering ? Ink.Ice : Ink.Steel;
             clearButton.Opacity = hovering ? 1 : 0.55;
         }
     }
@@ -89,10 +90,9 @@ internal sealed class KeySlot : ContentControl
         UIElement trailing;
         if (chord is not null && !recording)
         {
-            clearButton = SynthControls.Plain(SynthText.Icon(Icons.Cancel, 8, Ink.Steel), onClear);
+            clearButton = SynthControls.ClearButton(8, onClear, $"Clear {accessibilityName}", () => isHovering ? Ink.Ice : Ink.Steel);
             clearButton.Width = 14;
             clearButton.Height = 14;
-            AutomationProperties.SetName(clearButton, $"Clear {accessibilityName}");
             trailing = clearButton;
             SetHover(isHovering);
         }

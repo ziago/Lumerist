@@ -106,15 +106,20 @@ internal static class SynthText
     }
 
     /// <summary>A warning line in the error colour ("Label(error, systemImage: exclamationmark.triangle.fill)").</summary>
-    public static FrameworkElement ErrorLine(string text, double size = 12)
+    public static FrameworkElement ErrorLine(string text, double size = 12) => WarningSignLine(text, size, Ink.Error);
+
+    /// <summary>A note that never blocks, in amber (the Mac's Label(…, systemImage: "exclamationmark.triangle.fill") in Synth.amber).</summary>
+    public static FrameworkElement WarningLine(string text, double size = 12) => WarningSignLine(text, size, Ink.Amber);
+
+    private static FrameworkElement WarningSignLine(string text, double size, Brush color)
     {
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var icon = Icon(Icons.Warning, size - 1, Ink.Error);
+        var icon = Icon(Icons.Warning, size - 1, color);
         icon.VerticalAlignment = VerticalAlignment.Top;
         icon.Margin = new Thickness(0, 2, 6, 0);
-        var body = Body(text, size, color: Ink.Error);
+        var body = Body(text, size, color: color);
         Grid.SetColumn(body, 1);
         grid.Children.Add(icon);
         grid.Children.Add(body);
@@ -159,6 +164,9 @@ internal static class Icons
     public const string Keyboard = "\uE765";
     public const string Sliders = "\uE9E9";
     public const string Grid = "\uE80A";
+    public const string Import = "\uE8B5";
+    public const string CheckboxChecked = "\uE73A";
+    public const string Forward = "\uE72A";
     public const string Mouse = "\uE962";
     public const string Windows = "\uE737";
     public const string Gauge = "\uEC4A";

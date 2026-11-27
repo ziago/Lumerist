@@ -105,6 +105,8 @@ internal static class SlidersTab
             }
         }
         if (KeymapEditor.LastError is { } error) stack.Children.Add(SynthText.ErrorLine(error));
+        // A Nudge Key just assigned on one of Lightroom's keys: never blocking, shown while it lasts.
+        else if (KeymapEditor.CurrentWarning(keymap, page.Scope) is { } warning) stack.Children.Add(SynthText.WarningLine(warning));
         return stack;
     }
 
@@ -147,8 +149,12 @@ internal static class SlidersTab
     private static FrameworkElement TableHeader(ParameterScope scope)
     {
         var grid = Columns();
-        string[] titles = [scope == ParameterScope.Develop ? "Adjustment" : "Quick Develop", "Dial Key", "Nudge −", "Nudge +", "Step"];
-        for (var column = 0; column < titles.Length; column++) Place(grid, SynthText.Label(titles[column], 10), column);
+        Place(grid, SynthText.Label(scope == ParameterScope.Develop ? "Adjustment" : "Quick Develop", 10), 0);
+        // The key types, each explained on hover.
+        var column = 1;
+        foreach (var role in SlotRoles.All)
+            Place(grid, Tooltips.Explained(SynthText.Label(role.Title(), 10), KeyTypeHelp.For(role, scope)), column++);
+        Place(grid, Tooltips.Explained(SynthText.Label("Step", 10), KeyTypeHelp.Step(scope)), column);
         var header = new Border
         {
             Child = grid,

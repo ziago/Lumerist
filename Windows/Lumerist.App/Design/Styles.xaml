@@ -16,4 +16,61 @@
     <Setter Property="UseLayoutRounding" Value="True" />
     <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
   </Style>
+
+  <!--
+    The look of every tooltip, in every window (floating panels and the guide
+    included), following the theme like the other small surfaces:
+    Galerist: paper (Panel), ink text (Ice), its hairline border (Outline),
+    square corners, its body font (Outfit).
+    Miami: the dark raised panel, a teal neon edge with its glow, rounded
+    corners, its text font (Inter).
+    The Synth.ToolTip.* keys are written by Theme.WriteResources, so an open
+    window follows a theme change. The snapshots draw this same look.
+  -->
+  <Style x:Key="Synth.ToolTip.Look" TargetType="ContentControl">
+    <Setter Property="Foreground" Value="{DynamicResource Synth.Ice}" />
+    <Setter Property="FontFamily" Value="{DynamicResource Synth.Font.Text}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="MaxWidth" Value="420" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Grid Margin="{DynamicResource Synth.ToolTip.Margin}">
+            <!-- The glow sits behind the frame, so the text itself stays crisp (none in Galerist). -->
+            <Border CornerRadius="{DynamicResource Synth.Radius.Control}" Background="{DynamicResource Synth.ToolTip.Background}"
+                    Effect="{DynamicResource Synth.ToolTip.Glow}" />
+            <Border Background="{DynamicResource Synth.ToolTip.Background}" BorderBrush="{DynamicResource Synth.ToolTip.Border}"
+                    BorderThickness="1" CornerRadius="{DynamicResource Synth.Radius.Control}" Padding="8,5" SnapsToDevicePixels="True">
+              <ContentPresenter>
+                <ContentPresenter.Resources>
+                  <Style TargetType="TextBlock">
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                  </Style>
+                </ContentPresenter.Resources>
+              </ContentPresenter>
+            </Border>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Every ToolTip, the ones made from a plain ToolTip = "text" included. -->
+  <Style TargetType="ToolTip">
+    <Setter Property="HasDropShadow" Value="False" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToolTip">
+          <ContentControl Style="{StaticResource Synth.ToolTip.Look}" Content="{TemplateBinding Content}"
+                          ContentTemplate="{TemplateBinding ContentTemplate}" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
 </ResourceDictionary>

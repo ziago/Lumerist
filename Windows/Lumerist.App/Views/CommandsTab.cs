@@ -119,7 +119,9 @@ internal static class CommandsTab
         summary.TextTrimming = TextTrimming.CharacterEllipsis;
         var text = Layout.VStack(2,
             SynthText.Body(commandKey.Title, Theme.IsFlat ? 14 : 13, FontWeights.SemiBold, Ink.Ice),
-            summary);
+            summary,
+            // Only warnings get here: a keymap with errors is never saved.
+            conflict is null ? null : SynthText.WarningLine(conflict));
 
         var run = SynthControls.Button("Run", SynthControls.Kind.Quiet, () => controller.Run(commandKey.Action), "Run it now in Lightroom");
         var edit = SynthControls.Button("Edit", SynthControls.Kind.Secondary, () => ActionEditor.Open(page.View, controller, commandKey, isNew: false));
@@ -144,7 +146,7 @@ internal static class CommandsTab
         return new Border
         {
             Child = row,
-            Padding = new Thickness(Surfaces.RowInset, 6, Surfaces.RowInset, 6),
+            Padding = new Thickness(Surfaces.RowInset, conflict is null ? 6 : 10, Surfaces.RowInset, conflict is null ? 6 : 10),
             MinHeight = Theme.IsFlat ? 52 : 48,
             BorderBrush = Ink.RowDivider,
             BorderThickness = new Thickness(0, 0, 0, 1),

@@ -33,8 +33,9 @@ struct KeyboardTab: View {
                     case .combos: comboKey.map { "Combos (hold \($0.displayText))" } ?? "Combos"
                     }
                 }
+                .themedTooltip(KeyKindHelp.combos(comboKey: comboKey))
                 Spacer(minLength: Synth.Space.m)
-                KeyboardLegend()
+                KeyboardLegend(scope: scope)
             }
 
             keyboardCard(
@@ -156,7 +157,7 @@ struct KeyboardTab: View {
                         Text(assignment.kind.title).synthLabel(9, color: Synth.isFlat ? Synth.steel : assignment.kind.textColor)
                     }
                     .listRow()
-                    .help(assignment.description(keymap: keymap))
+                    .themedTooltip(assignment.description(keymap: keymap))
                     .accessibilityElement(children: .combine)
                 }
             }
@@ -458,7 +459,7 @@ private struct KeyFace: View {
                 face(clickable: false).accessibilityElement(children: .ignore)
             }
         }
-        .help(tooltip)
+        .themedTooltip(tooltip)
         .accessibilityLabel(isInert ? keyName : "Key \(keyName)")
         .accessibilityValue(accessibilityValue)
         .accessibilityHidden(isInert)
@@ -700,8 +701,10 @@ private struct KeyOutline: Shape {
     }
 }
 
-/// Colour key for the drawing.
+/// Colour key for the drawing; each name explains itself on hover.
 private struct KeyboardLegend: View {
+    let scope: ParameterScope
+
     var body: some View {
         if Synth.isFlat { flat } else { neon }
     }
@@ -709,47 +712,53 @@ private struct KeyboardLegend: View {
     /// Galerist: the same fills and borders as the keys.
     private var flat: some View {
         HStack(spacing: Synth.Space.m) {
-            item("Dial Key") { Rectangle().fill(Synth.teal).frame(width: 12, height: 12) }
-            item("Nudge − / +") { Rectangle().strokeBorder(Synth.teal, lineWidth: 2).frame(width: 12, height: 12) }
-            item("Command Key") {
+            item("Dial Key", KeyKindHelp.dialKey(scope)) { Rectangle().fill(Synth.teal).frame(width: 12, height: 12) }
+            item("Nudge − / +", KeyKindHelp.nudgeKeys(scope)) {
+                Rectangle().strokeBorder(Synth.teal, lineWidth: 2).frame(width: 12, height: 12)
+            }
+            item("Command Key", KeyKindHelp.commandKey) {
                 Rectangle().fill(Synth.tint)
                     .overlay(Rectangle().strokeBorder(Synth.magenta.opacity(0.45), lineWidth: 1))
                     .frame(width: 12, height: 12)
             }
-            item("System key") {
+            item("System key", KeyKindHelp.systemKey) {
                 Rectangle().fill(Synth.panel)
                     .overlay(Rectangle().strokeBorder(Synth.ice, lineWidth: 1))
                     .frame(width: 12, height: 12)
             }
-            item("Conflict") { Circle().fill(Synth.live).frame(width: 7, height: 7).frame(width: 12, height: 12) }
+            item("Conflict", KeyKindHelp.conflict) {
+                Circle().fill(Synth.live).frame(width: 7, height: 7).frame(width: 12, height: 12)
+            }
         }
         .accessibilityElement(children: .combine)
     }
 
-    private func item<Swatch: View>(_ title: String, @ViewBuilder swatch: () -> Swatch) -> some View {
+    private func item<Swatch: View>(_ title: String, _ help: String, @ViewBuilder swatch: () -> Swatch) -> some View {
         HStack(spacing: 6) {
             swatch()
             Text(title).synthLabel(9)
         }
+        .themedTooltip(help)
     }
 
     private var neon: some View {
         HStack(spacing: Synth.Space.m) {
-            swatch(KeyAssignment.Kind.dial.color, "Dial Key")
-            swatch(KeyAssignment.Kind.nudgeUp.color, "Nudge − / +")
-            swatch(KeyAssignment.Kind.command.color, "Command Key")
-            swatch(KeyAssignment.Kind.system.color, "System key")
+            swatch(KeyAssignment.Kind.dial.color, "Dial Key", KeyKindHelp.dialKey(scope))
+            swatch(KeyAssignment.Kind.nudgeUp.color, "Nudge − / +", KeyKindHelp.nudgeKeys(scope))
+            swatch(KeyAssignment.Kind.command.color, "Command Key", KeyKindHelp.commandKey)
+            swatch(KeyAssignment.Kind.system.color, "System key", KeyKindHelp.systemKey)
             HStack(spacing: 4) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Synth.error)
                 Text("Conflict").synthLabel(9)
             }
+            .themedTooltip(KeyKindHelp.conflict)
         }
         .accessibilityElement(children: .combine)
     }
 
-    private func swatch(_ color: Color, _ title: String) -> some View {
+    private func swatch(_ color: Color, _ title: String, _ help: String) -> some View {
         HStack(spacing: 4) {
             RoundedRectangle(cornerRadius: 2)
                 .fill(color.opacity(0.18))
@@ -757,6 +766,7 @@ private struct KeyboardLegend: View {
                 .frame(width: 12, height: 12)
             Text(title).synthLabel(9)
         }
+        .themedTooltip(help)
     }
 }
 

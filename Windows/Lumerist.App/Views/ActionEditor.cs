@@ -23,6 +23,8 @@ internal sealed class ActionEditor : Window
     private readonly TextBox groupField;
     private readonly ContentControl keyRow = new() { Focusable = false, IsTabStop = false };
     private readonly ContentControl scopeRow = new() { Focusable = false, IsTabStop = false };
+    /// <summary>Lightroom's own keys the recorded key would take over; shown at once, never blocking.</summary>
+    private readonly ContentControl warningHost = new() { Focusable = false, IsTabStop = false };
     private readonly ContentControl actionHost = new() { Focusable = false, IsTabStop = false };
     private readonly ContentControl errorHost = new() { Focusable = false, IsTabStop = false };
     private readonly ContentControl buttonBar = new() { Focusable = false, IsTabStop = false };
@@ -76,6 +78,7 @@ internal sealed class ActionEditor : Window
                 Surfaces.SettingRow("Group", "Command Keys are listed under their group.", Layout.HStack(Theme.Space.S, groupField, existing)),
                 keyRow,
                 scopeRow)),
+            warningHost,
             SynthText.Title("What it does", 15),
             actionHost,
             errorHost);
@@ -130,13 +133,29 @@ internal sealed class ActionEditor : Window
                 BuildButtons();
             });
         keyRow.Content = Surfaces.SettingRow("Key", CommandTitles.KeyDetail(ComboKey), slot);
+        BuildWarnings();
+    }
+
+    /// <summary>Shown as soon as the key is recorded, for each module the key works in; saving is never blocked.</summary>
+    private void BuildWarnings()
+    {
+        var warnings = chord is { } key
+            ? KeymapEditing.LightroomWarnings(controller.Keymap, original with { Chord = key, Scope = scope })
+            : [];
+        warningHost.Content = warnings.Count == 0
+            ? null
+            : Layout.VStack(Theme.Space.S, [.. warnings.Select(warning => SynthText.WarningLine(warning))]);
     }
 
     private void BuildScopeRow()
     {
         scopeRow.Content = Surfaces.SettingRow("Works in", null,
             SynthControls.Segmented([CommandScope.Develop, CommandScope.Library, CommandScope.Any], scope, item => item.Title(),
-                item => scope = item, name: "Works in"));
+                item =>
+                {
+                    scope = item;
+                    BuildWarnings();
+                }, name: "Works in"));
     }
 
     private void BuildAction()
@@ -425,7 +444,7 @@ internal sealed class ActionEditor : Window
                 Changed();
             }, "Move step down");
             down.IsEnabled = index < macro.Steps.Count - 1;
-            var remove = SynthControls.IconButton(Icons.Cancel, SynthControls.Kind.Quiet, () =>
+            var remove = SynthControls.RemoveButton(() =>
             {
                 macro.Steps.RemoveAt(position);
                 Changed();

@@ -49,6 +49,7 @@ extension KeyUsage {
         case .nudgeUp(let key): "the Nudge + key of \(Self.parameterLabel(key))"
         case .action(_, let title): "the Command Key “\(title)”"
         case .system(let role): "the \(role.title)"
+        case .importKey(let role): "the \(role.title) key of the Import window"
         }
     }
 
@@ -57,6 +58,33 @@ extension KeyUsage {
     }
 
     var isSystem: Bool { if case .system = self { true } else { false } }
+    var isImportKey: Bool { if case .importKey = self { true } else { false } }
+
+    /// The module of a parameter's key.
+    var parameterScope: ParameterScope? {
+        switch self {
+        case .dial(let key), .nudgeDown(let key), .nudgeUp(let key): key.scope
+        default: nil
+        }
+    }
+}
+
+extension ImportKeys.Role {
+    var title: String {
+        switch self {
+        case .include: "Include"
+        case .exclude: "Exclude"
+        case .toggle: "Toggle"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .include: "Ticks the photo, so Lightroom imports it."
+        case .exclude: "Unticks the photo, so Lightroom leaves it out."
+        case .toggle: "Ticks or unticks the photo."
+        }
+    }
 }
 
 extension SystemKeys.Role {
@@ -107,6 +135,18 @@ extension Keymap {
         }
     }
 
+    /// Clears `chord` from every Import key except the one being assigned.
+    mutating func removeImportChord(_ chord: KeyChord, keeping usage: KeyUsage?) {
+        for role in ImportKeys.Role.allCases where importKeys[role] == chord && usage != .importKey(role) {
+            importKeys[role] = nil
+        }
+    }
+
+    /// The warning about one of Lightroom's own keys that `usage` takes over, if any.
+    func lightroomWarning(for usage: KeyUsage) -> String? {
+        conflicts().first { $0.lightroomAction != nil && $0.usages.contains(usage) }?.message
+    }
+
     /// Error conflicts that involve `chord` in `scope` (or system keys).
     func blockingConflicts(for chord: KeyChord, in scope: ParameterScope?) -> [KeyConflict] {
         conflicts().filter { $0.severity == .error && $0.chord == chord && ($0.scope == nil || $0.scope == scope) }
@@ -128,8 +168,16 @@ final class KeymapEditor {
         let apply: () -> Void
     }
 
+    /// A Lightroom key the last assignment took over. It never blocks; the
+    /// key's row keeps its own ⚠ while the clash lasts.
+    struct Warning: Equatable {
+        let usage: KeyUsage
+        let message: String
+    }
+
     var pending: Pending?
     var lastError: String?
+    var lastWarning: Warning?
 
     /// Validates `change` on a copy; commits it, or asks to move conflicting
     /// keys. Anything that moving keys can't fix (a combo on a Dial Key, a
@@ -142,6 +190,7 @@ final class KeymapEditor {
             try proposed.validate()
             store.editKeymap { change(&$0) }
             lastError = nil
+            noteWarning(in: proposed, chord: chord, usage: usage)
         } catch {
             guard let chord, case .conflicts? = error as? KeymapError else { refuse(error); return }
             let blocking = proposed.blockingConflicts(for: chord, in: scope)
@@ -150,18 +199,35 @@ final class KeymapEditor {
             let system = others.contains(where: \.isSystem)
             let names = Array(Set(others.map(\.label))).sorted().joined(separator: ", ")
             let text = proposed.displayText(for: chord)
+            // Keys of a module move within it; Import keys move among themselves.
+            let movable = !system && (scope != nil || others.allSatisfy(\.isImportKey))
             pending = Pending(
                 title: "\(text) is already in use",
                 message: system
                     ? "\(text) is \(names). Change that system key first (General → System Keys)."
                     : "\(text) is \(names). Move it here?",
-                canMove: !system && scope != nil,
+                canMove: movable,
                 apply: { [weak self] in
-                    guard let scope else { return }
+                    guard movable else { return }
                     self?.commitAfterMoving(store, chord: chord, scope: scope, usage: usage, change: change)
                 }
             )
         }
+    }
+
+    private func noteWarning(in keymap: Keymap, chord: KeyChord?, usage: KeyUsage?) {
+        guard chord != nil, let usage, let message = keymap.lightroomWarning(for: usage) else {
+            lastWarning = nil
+            return
+        }
+        lastWarning = Warning(usage: usage, message: message)
+    }
+
+    /// The last warning about a Nudge Key of `scope`, while `keymap` still has it.
+    func currentWarning(in keymap: Keymap, scope: ParameterScope) -> String? {
+        guard let lastWarning, lastWarning.usage.parameterScope == scope,
+              keymap.lightroomWarning(for: lastWarning.usage) == lastWarning.message else { return nil }
+        return lastWarning.message
     }
 
     /// Shows why a key can't be used: inline (`lastError`) and in an alert.
@@ -171,18 +237,24 @@ final class KeymapEditor {
         pending = Pending(title: "This key can't go here", message: message, canMove: false, apply: {})
     }
 
-    private func commitAfterMoving(_ store: CommandStore, chord: KeyChord, scope: ParameterScope,
+    /// `scope` nil: the chord leaves the other Import keys.
+    private func commitAfterMoving(_ store: CommandStore, chord: KeyChord, scope: ParameterScope?,
                                    usage: KeyUsage?, change: @escaping (inout Keymap) -> Void) {
+        func move(_ keymap: inout Keymap) {
+            if let scope {
+                keymap.removeChord(chord, in: scope, keeping: usage)
+            } else {
+                keymap.removeImportChord(chord, keeping: usage)
+            }
+            change(&keymap)
+        }
         var proposed = store.keymap.keymap
-        proposed.removeChord(chord, in: scope, keeping: usage)
-        change(&proposed)
+        move(&proposed)
         do {
             try proposed.validate()
-            store.editKeymap { keymap in
-                keymap.removeChord(chord, in: scope, keeping: usage)
-                change(&keymap)
-            }
+            store.editKeymap { move(&$0) }
             lastError = nil
+            noteWarning(in: proposed, chord: chord, usage: usage)
         } catch {
             lastError = error.localizedDescription
         }
@@ -194,6 +266,12 @@ final class KeymapEditor {
         commit(store, chord: chord, scope: key.scope, usage: role.usage(key)) { keymap in
             keymap.updateSlot(for: key) { role.set(chord, in: &$0) }
         }
+    }
+
+    /// Assigns `chord` (nil clears) to an Import key. A combo is refused by
+    /// validation, with its reason; a key used by another Import key can move.
+    func setImport(_ store: CommandStore, role: ImportKeys.Role, chord: KeyChord?) {
+        commit(store, chord: chord, scope: nil, usage: .importKey(role)) { $0.importKeys[role] = chord }
     }
 
     func setSystem(_ store: CommandStore, role: SystemKeys.Role, chord: KeyChord?) {

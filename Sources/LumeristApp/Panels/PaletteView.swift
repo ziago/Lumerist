@@ -127,7 +127,7 @@ struct PaletteView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(options.keepVisible ? "Pinned: the Palette stays open after you release its key"
+                .themedTooltip(options.keepVisible ? "Pinned: the Palette stays open after you release its key"
                                           : "Pin to keep the Palette open after you release its key")
                 .accessibilityLabel("Pin the Palette")
                 .accessibilityValue(options.keepVisible ? "On" : "Off")

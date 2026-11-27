@@ -7,4 +7,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Lumerist.Core.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Lightroom Classic's own keys (LightroomShortcuts.cs), read from the shared file itself. -->
+    <EmbeddedResource Include="..\..\Shared\lightroom-shortcuts.json" LogicalName="lightroom-shortcuts.json" Link="Shared\lightroom-shortcuts.json" />
+  </ItemGroup>
 </Project>

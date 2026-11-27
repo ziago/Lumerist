@@ -88,8 +88,14 @@ public static class WinKeys
         ["L"] = 0x26, ["J"] = 0x24, ["K"] = 0x25, ["N"] = 0x31, ["M"] = 0x32,
         ["1"] = 0x02, ["2"] = 0x03, ["3"] = 0x04, ["4"] = 0x05, ["5"] = 0x06, ["6"] = 0x07, ["7"] = 0x08,
         ["8"] = 0x09, ["9"] = 0x0A, ["0"] = 0x0B,
-        ["["] = 0x1A, ["]"] = 0x1B, ["Return"] = 0x1C, ["Tab"] = 0x0F, ["Space"] = 0x39, ["LeftOf1"] = 0x29,
-        ["Backspace"] = 0x0E, ["Esc"] = 0x01, ["ArrowLeft"] = 0xE04B, ["ArrowRight"] = 0xE04D,
+        ["["] = 0x1A, ["]"] = 0x1B, ["="] = 0x0D, ["-"] = 0x0C, ["'"] = 0x28, [";"] = 0x27, ["\\"] = 0x2B,
+        [","] = 0x33, ["."] = 0x34, ["/"] = 0x35,
+        ["Return"] = 0x1C, ["Tab"] = 0x0F, ["Space"] = 0x39, ["LeftOf1"] = 0x29,
+        ["Backspace"] = 0x0E, ["Esc"] = 0x01, ["ForwardDelete"] = 0xE053, ["Home"] = 0xE047, ["End"] = 0xE04F,
+        ["PageUp"] = 0xE049, ["PageDown"] = 0xE051,
+        ["ArrowLeft"] = 0xE04B, ["ArrowRight"] = 0xE04D, ["ArrowUp"] = 0xE048, ["ArrowDown"] = 0xE050,
+        ["F1"] = 0x3B, ["F2"] = 0x3C, ["F3"] = 0x3D, ["F4"] = 0x3E, ["F5"] = 0x3F, ["F6"] = 0x40,
+        ["F7"] = 0x41, ["F8"] = 0x42, ["F9"] = 0x43, ["F10"] = 0x44, ["F11"] = 0x57, ["F12"] = 0x58,
     };
 
     /// <summary>Primary (Lightroom's command key) and Control are both Ctrl on Windows.</summary>
@@ -209,7 +215,8 @@ public static class FixtureValues
 /// <summary>Builds the standard layout plus the changes a case lists ("keymap" or "setKeymap").</summary>
 public static class KeymapChanges
 {
-    private static readonly HashSet<string> Known = ["input", "palette", "systemKeys", "slots", "commandKeys", "replaceCommandKeys"];
+    private static readonly HashSet<string> Known =
+        ["input", "palette", "systemKeys", "importKeys", "slots", "commandKeys", "replaceCommandKeys"];
 
     public static Keymap Apply(JsonNode? node)
     {
@@ -255,6 +262,16 @@ public static class KeymapChanges
                 case "pauseToggle": keymap.SystemKeys.PauseToggle = chord; break;
                 default: throw new FixtureException("unknown system key " + name);
             }
+        }
+        foreach (var (name, value) in changes["importKeys"] as JsonObject ?? [])
+        {
+            if (name == "advance")
+            {
+                keymap.ImportKeys.Advance = FixtureValues.Flag(value, name);
+                continue;
+            }
+            var role = ImportKeyRoles.FromWireName(name) ?? throw new FixtureException("unknown Import key " + name);
+            keymap.ImportKeys.Set(role, FixtureValues.ChordOrNull(value));
         }
         foreach (var (name, value) in changes["slots"] as JsonObject ?? [])
         {

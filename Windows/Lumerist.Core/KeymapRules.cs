@@ -88,12 +88,17 @@ public abstract record ComboMisuse
 
     public sealed record SystemKey(SystemKeyRole Role) : ComboMisuse;
 
+    /// <summary>In Lightroom's Import window the Combo Key does nothing.</summary>
+    public sealed record ImportKey(ImportKeyRole Role) : ComboMisuse;
+
     public string Message => this switch
     {
         DialKey =>
             "A Dial Key can't be a combo: you hold it on its own while you scroll. Combos work for Nudge Keys and Command Keys.",
         LightroomShortcut =>
             "A Lightroom shortcut can't be a combo: Lumerist sends it to Lightroom as a plain key press.",
+        ImportKey =>
+            "An Import key can't be a combo: the Combo Key does nothing in Lightroom's Import window. Press a single key, with modifiers if you like.",
         _ => "Only the Key Reference toggle can be a combo. Press a single key, with modifiers if you like.",
     };
 }
@@ -114,7 +119,12 @@ public abstract record KeyUsage
 
     public sealed record SystemKey(SystemKeyRole Role) : KeyUsage;
 
+    /// <summary>A key of Lightroom's Import window.</summary>
+    public sealed record ImportKey(ImportKeyRole Role) : KeyUsage;
+
     internal bool IsNudge => this is NudgeDown or NudgeUp;
+
+    internal bool IsAction => this is Action;
 }
 
 public enum ConflictSeverity
@@ -125,19 +135,24 @@ public enum ConflictSeverity
 
 /// <summary>A problem with one chord.</summary>
 /// <param name="Chord">The chord in conflict; combos keep their <see cref="KeyModifiers.Combo"/> modifier.</param>
-/// <param name="Scope">Null for conflicts among System Keys.</param>
+/// <param name="Scope">Null for conflicts among System Keys and among Import keys.</param>
+/// <param name="LightroomAction">
+/// For a warning about one of Lightroom's own keys: what the key does there
+/// ("Toggle Zoom view"). See <see cref="LightroomShortcuts"/>.
+/// </param>
 public sealed record KeyConflict(
     ConflictSeverity Severity,
     KeyChord Chord,
     ParameterScope? Scope,
     IReadOnlyList<KeyUsage> Usages,
-    string Message)
+    string Message,
+    string? LightroomAction = null)
 {
     public bool Equals(KeyConflict? other) =>
         other is not null && Severity == other.Severity && Chord == other.Chord && Scope == other.Scope
-        && Message == other.Message && Usages.SequenceEqual(other.Usages);
+        && Message == other.Message && LightroomAction == other.LightroomAction && Usages.SequenceEqual(other.Usages);
 
-    public override int GetHashCode() => HashCode.Combine(Severity, Chord, Scope, Message, Usages.Count);
+    public override int GetHashCode() => HashCode.Combine(Severity, Chord, Scope, Message, LightroomAction, Usages.Count);
 }
 
 public sealed partial class Keymap
@@ -149,8 +164,8 @@ public sealed partial class Keymap
     /// <summary>
     /// Throws <see cref="KeymapException"/> for the first problem: an unknown
     /// parameter, a Dial Key combo, steps or options out of range, a System Key
-    /// combo other than the Key Reference toggle, an invalid Command Key, or
-    /// conflicts of severity error.
+    /// combo other than the Key Reference toggle, an Import key combo, an
+    /// invalid Command Key, or conflicts of severity error.
     /// </summary>
     public void Validate()
     {
@@ -179,6 +194,11 @@ public sealed partial class Keymap
         {
             if (role != SystemKeyRole.KeyReferenceToggle && SystemKeys.ChordFor(role) is { IsCombo: true })
                 throw KeymapException.InvalidCombo(new ComboMisuse.SystemKey(role));
+        }
+        // The Combo Key does nothing in the Import window.
+        foreach (var role in ImportKeyRoles.All)
+        {
+            if (ImportKeys.ChordFor(role) is { IsCombo: true }) throw KeymapException.InvalidCombo(new ComboMisuse.ImportKey(role));
         }
         foreach (var commandKey in CommandKeys)
         {
@@ -224,6 +244,9 @@ public sealed partial class Keymap
     /// Every problem, errors first. Allowed on purpose: one Dial Key and one
     /// tap Command Key on the same chord (hold adjusts, tap runs the action).
     /// A combo is simply another chord: "Tab + K" and "K" never conflict.
+    /// Import keys act only in Lightroom's Import window, where every other
+    /// key but the pause toggle pauses, so they clash only with each other and
+    /// with the pause toggle.
     /// </summary>
     public IReadOnlyList<KeyConflict> Conflicts()
     {
@@ -257,6 +280,7 @@ public sealed partial class Keymap
                     $"{Name(toggle)} can't work: a combo can't use the Combo Key itself."));
             }
         }
+        result.AddRange(ImportKeyConflicts(Name));
 
         foreach (var scope in ParameterScopes.All)
         {
@@ -294,11 +318,15 @@ public sealed partial class Keymap
                     result.Add(new(ConflictSeverity.Error, chord, scope, [.. roles, .. usages],
                         $"{text} is a system key and cannot be assigned here."));
                 }
+                // A tap key on one of Lightroom's own keys: the specific warning
+                // replaces the general one below.
+                var lightroom = LightroomWarning(chord, scope, usages);
+                if (lightroom is not null) result.Add(lightroom);
                 if (chord.IsCombo)
                 {
                     result.AddRange(ComboProblems(chord, text, scope, usages));
                 }
-                else if (ReservedTypingKeys.Contains(chord.ScanCode) || chord.UsesReservedModifiers)
+                else if (lightroom is null && (ReservedTypingKeys.Contains(chord.ScanCode) || chord.UsesReservedModifiers))
                 {
                     result.Add(new(ConflictSeverity.Warning, chord, scope, usages,
                         $"{text} is also used for typing or by Lightroom and Windows."));
@@ -306,6 +334,66 @@ public sealed partial class Keymap
             }
         }
         return result.OrderBy(conflict => conflict.Severity == ConflictSeverity.Error ? 0 : 1).ToList();
+    }
+
+    /// <summary>
+    /// A Command Key or Nudge Key on a key Lightroom uses in this module
+    /// (never a Dial Key: its tap still reaches Lightroom). A plain Nudge Key
+    /// also takes its Shift chord, for the larger step.
+    /// </summary>
+    private KeyConflict? LightroomWarning(KeyChord chord, ParameterScope scope, List<KeyUsage> usages)
+    {
+        var taps = usages.Where(usage => usage.IsAction || usage.IsNudge).ToList();
+        if (taps.Count == 0 || chord.IsCombo) return null;
+        var context = LightroomShortcuts.ContextOf(scope);
+        var taken = chord;
+        var match = LightroomShortcuts.For(chord, context);
+        if (match is null && chord.Modifiers == KeyModifiers.None && taps.Any(usage => usage.IsNudge))
+        {
+            taken = new KeyChord(chord.ScanCode, KeyModifiers.Shift);
+            match = LightroomShortcuts.For(taken, context);
+        }
+        if (match is null) return null;
+        return LightroomWarning(match, taken, DisplayText(taken), scope,
+            taken == chord ? taps : [.. taps.Where(usage => usage.IsNudge)]);
+    }
+
+    private static KeyConflict LightroomWarning(LightroomShortcuts.Match match, KeyChord chord, string text, ParameterScope? scope,
+        IReadOnlyList<KeyUsage> usages) =>
+        new(ConflictSeverity.Warning, chord, scope, usages,
+            $"Lightroom uses {text} for “{match.Name}” in {match.Context.Place()}. Lumerist takes it over there.", match.Name);
+
+    /// <summary>
+    /// Two Import keys on one chord, or an Import key on the pause toggle, and
+    /// the warning for an Import key on another of Lightroom's keys in the
+    /// Import window (never for the key that Import key sends itself).
+    /// </summary>
+    private List<KeyConflict> ImportKeyConflicts(Func<KeyChord, string> name)
+    {
+        var result = new List<KeyConflict>();
+        var byChord = new Dictionary<KeyChord, List<KeyUsage>>();
+        foreach (var role in ImportKeyRoles.All)
+        {
+            if (ImportKeys.ChordFor(role) is not { } chord) continue;
+            if (!byChord.TryGetValue(chord, out var list)) byChord[chord] = list = [];
+            list.Add(new KeyUsage.ImportKey(role));
+        }
+        foreach (var (chord, usages) in byChord.OrderBy(pair => name(pair.Key), StringComparer.Ordinal))
+        {
+            if (usages.Count > 1)
+                result.Add(new(ConflictSeverity.Error, chord, null, usages, $"{name(chord)} is used by more than one Import key."));
+            if (chord == SystemKeys.PauseToggle)
+            {
+                result.Add(new(ConflictSeverity.Error, chord, null, [.. usages, new KeyUsage.SystemKey(SystemKeyRole.PauseToggle)],
+                    $"{name(chord)} is the pause toggle, so it can't be an Import key."));
+            }
+            if (LightroomShortcuts.For(chord, LightroomShortcuts.Context.ImportWindow) is { } match)
+            {
+                var taking = usages.Where(usage => usage is KeyUsage.ImportKey import && import.Role != match.ImportRole).ToList();
+                if (taking.Count > 0) result.Add(LightroomWarning(match, chord, name(chord), null, taking));
+            }
+        }
+        return result;
     }
 
     /// <summary>

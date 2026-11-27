@@ -12,9 +12,11 @@ It fails when
 - a value of Shared/contract.json (ports, protocol version, plug-in id,
   consent version and hash) is missing from a side or from the plug-in;
 - a row of docs/feature-spec.md has an empty macOS or Windows column;
-- a theme colour of the Windows app differs from the Mac's.
+- a theme colour of the Windows app differs from the Mac's;
+- Shared/lightroom-shortcuts.json is invalid, or the Mac's table made from
+  it (Scripts/generate-lightroom-shortcuts.py) is out of date.
 """
-import argparse, json, pathlib, re, sys
+import argparse, json, pathlib, re, subprocess, sys
 
 # The Windows console may not be UTF-8 (cp1252 on the CI runner): the report prints ✔ and ✘.
 sys.stdout.reconfigure(encoding="utf-8")
@@ -197,6 +199,18 @@ def check_theme_palettes():
         bad(f"themes: {name} exists only on Windows")
 
 
+# Lightroom's own keys ----------------------------------------------------------
+
+def check_lightroom_shortcuts():
+    """The shared list is valid and the Mac's generated table is current."""
+    run = subprocess.run([sys.executable, str(root / "Scripts/generate-lightroom-shortcuts.py"), "--check"],
+                         capture_output=True, text=True, encoding="utf-8")
+    if run.returncode == 0:
+        ok("Lightroom shortcuts: Shared/lightroom-shortcuts.json is valid and the Swift table is up to date")
+    else:
+        bad("Lightroom shortcuts: " + (run.stdout or run.stderr).strip().replace("\n", " "))
+
+
 # Main --------------------------------------------------------------------------
 
 def main():
@@ -211,6 +225,8 @@ def main():
         check_runs(name)
     check_feature_spec()
     check_theme_palettes()
+    if "swift" in sides:
+        check_lightroom_shortcuts()
 
     for message in passes:
         print("✔ " + message)

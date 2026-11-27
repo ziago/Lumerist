@@ -96,8 +96,9 @@ final class ChordRecorder {
 }
 
 /// One key slot: a KeyCap that records a chord on click, with a clear button
-/// when assigned. States: assigned, empty "+", recording, conflict (⚠ + tooltip).
-/// Combos read with the current Combo Key ("Tab + K").
+/// when assigned (its × turns the theme's error red under the pointer, so it
+/// reads as delete). States: assigned, empty "+", recording, conflict (⚠ +
+/// tooltip). Combos read with the current Combo Key ("Tab + K").
 struct KeySlot: View {
     let id: String
     let chord: KeyChord?
@@ -109,6 +110,7 @@ struct KeySlot: View {
 
     @Environment(\.comboKey) private var comboKey
     @State private var isHovering = false
+    @State private var isHoveringClear = false
     private var recorder: ChordRecorder { .shared }
 
     var body: some View {
@@ -126,7 +128,7 @@ struct KeySlot: View {
                 KeyCap(text: recording ? recordingPrompt : (text ?? "+"), state: state, minWidth: minWidth)
             }
             .buttonStyle(.plain)
-            .help(conflict ?? (chord == nil ? "Click, then press a key (Esc cancels)" : "Click to record another key; Delete clears"))
+            .themedTooltip(conflict ?? (chord == nil ? "Click, then press a key (Esc cancels)" : "Click to record another key; Delete clears"))
             .accessibilityLabel(accessibilityName)
             .accessibilityValue(recording ? "Recording, press a key" : text ?? "Not assigned")
             .accessibilityHint(conflict ?? "Records a new key")
@@ -135,11 +137,12 @@ struct KeySlot: View {
                 Button(action: onClear) {
                     Image(systemName: "xmark")
                         .font(.system(size: 8, weight: .heavy))
-                        .foregroundStyle(isHovering ? Synth.ice : Synth.steel)
+                        .foregroundStyle(isHoveringClear ? Synth.error : isHovering ? Synth.ice : Synth.steel)
                         .frame(width: 14, height: 14)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .onHover { isHoveringClear = $0 }
                 .opacity(isHovering ? 1 : 0.55)
                 .accessibilityLabel("Clear \(accessibilityName)")
             } else {

@@ -2,8 +2,14 @@ import Foundation
 
 /// What the engine needs to know about Lightroom at the time of an event.
 public struct EngineContext: Sendable, Hashable {
+    /// The module while Lightroom's Import window is in front. Lightroom
+    /// never reports it (its module stays "library"): the app sets it when
+    /// it recognises the window.
+    public static let importModule = "import"
+
     public var isLightroomFrontmost: Bool
-    /// `LrApplicationView.getCurrentModuleName()`: "develop", "library", …
+    /// `LrApplicationView.getCurrentModuleName()`: "develop", "library", …,
+    /// or `importModule`.
     public var module: String
     /// `LrDevelopController.getSelectedTool()`: "masking", "crop", "" …
     public var tool: String
@@ -14,7 +20,8 @@ public struct EngineContext: Sendable, Hashable {
         self.tool = tool
     }
 
-    /// The keymap scope for this module; other modules only get system keys.
+    /// The keymap scope for this module; other modules only get system keys,
+    /// and the Import window only the Import keys and the pause toggle.
     public var scope: ParameterScope? {
         switch module {
         case "develop": .develop
@@ -24,6 +31,9 @@ public struct EngineContext: Sendable, Hashable {
     }
 
     public var isMasking: Bool { tool == "masking" }
+
+    /// Lightroom's Import window is in front.
+    public var isImportWindow: Bool { module == Self.importModule }
 }
 
 public enum MouseButton: Sendable, Hashable {
@@ -57,6 +67,11 @@ public enum MouseButton: Sendable, Hashable {
 /// - **System keys**: Palette (hold), Key Reference and pause toggles.
 /// - **Mouse**: double / middle click resets the held slider, back / forward
 ///   buttons change photo.
+/// - **Import keys**: in Lightroom's Import window (module "import") only
+///   they and the pause toggle act. Each press sends Lightroom's own Import
+///   shortcut (P, X, the key left of 1), then → with "Move to the next
+///   photo". Every other key, the wheel, the trackpad and the mouse reach
+///   Lightroom untouched.
 ///
 /// Typing stays safe: held keys are replayed in order when another key
 /// arrives, nothing is captured in text fields, and ⌘/⌃/⌥ chords belong to
@@ -166,6 +181,8 @@ public struct KeyGestureEngine<Event> {
     private var dragResidual = 0.0
     private var suppressesMomentum = false
     private var indexes: [ParameterScope: ScopeIndex] = [:]
+    /// The keys the Import keys press in Lightroom's Import window.
+    public private(set) var importShortcuts = ImportShortcuts.standard
 
     public init(keymap: Keymap) {
         self.keymap = keymap
@@ -175,6 +192,11 @@ public struct KeyGestureEngine<Event> {
     public mutating func update(keymap: Keymap) {
         self.keymap = keymap
         rebuildIndexes()
+    }
+
+    /// The app may pass Lightroom's Import shortcuts for the active keyboard layout.
+    public mutating func update(importShortcuts: ImportShortcuts) {
+        self.importShortcuts = importShortcuts
     }
 
     // MARK: Queries for the event tap
@@ -280,6 +302,9 @@ public struct KeyGestureEngine<Event> {
             return Outcome(released.decision.replacingPass(with: .consume), intents)
         }
         if isPaused { return Outcome(.pass) }
+        if context.isImportWindow {
+            return importKeyDown(chord, event: event, isAutoRepeat: isAutoRepeat, textFocused: textFocused)
+        }
 
         switch phase {
         case .held(let held):
@@ -400,6 +425,9 @@ public struct KeyGestureEngine<Event> {
     }
 
     public mutating func keyUp(keyCode: Int64, event: Event, timestamp: TimeInterval, context: EngineContext) -> Outcome {
+        if context.isImportWindow && context.isLightroomFrontmost && isInterrupted {
+            return releaseEverything(then: event)
+        }
         if consumedKeyUps.remove(keyCode) != nil { return Outcome(.consume) }
 
         switch phase {
@@ -459,6 +487,12 @@ public struct KeyGestureEngine<Event> {
     ) -> Outcome {
         // Scrolling another app never changes a gesture; key events settle it.
         guard context.isLightroomFrontmost, !isPaused else { return Outcome(.pass) }
+        if context.isImportWindow {
+            // Lightroom scrolls the Import window as usual. This event can't
+            // be posted again, so a key still held back is delivered alone.
+            suppressesMomentum = false
+            return isInterrupted ? releaseEverything(then: nil) : Outcome(.pass)
+        }
 
         var intents = followContext(context)
         switch phase {
@@ -509,6 +543,7 @@ public struct KeyGestureEngine<Event> {
     ) -> Outcome {
         if button == .left { leftButtonDown = true }
         guard context.isLightroomFrontmost, !isPaused else { return Outcome(.pass) }
+        if context.isImportWindow { return isInterrupted ? releaseEverything(then: event) : Outcome(.pass) }
 
         if (button == .back || button == .forward), keymap.input.mouseBackForward, context.scope != nil {
             consumedMouseUps.insert(button)
@@ -549,6 +584,7 @@ public struct KeyGestureEngine<Event> {
         context: EngineContext
     ) -> Outcome {
         guard context.isLightroomFrontmost, !isPaused, needsMouseMoves else { return Outcome(.pass) }
+        if context.isImportWindow { return releaseEverything(then: event) }
         let dragging = leftButtonDown
         guard dragging || !keymap.input.requireMouseDown else { return Outcome(.pass) }
         guard dx.isFinite else { return Outcome(dragging ? .consume : .pass) }
@@ -565,6 +601,42 @@ public struct KeyGestureEngine<Event> {
             intents += adjust(direction: steps, coarse: isCoarse(shift: modifiers.contains(.shift)))
         }
         return Outcome(dragging ? .consume : .pass, intents)
+    }
+
+    // MARK: Import window
+
+    /// A gesture, a held key or an open Palette is left over from before the
+    /// Import window came to the front.
+    private var isInterrupted: Bool { isEngaged || isPaletteOpen }
+
+    /// In Lightroom's Import window only the Import keys act. Anything left
+    /// over from Develop or Library ends first, as when Lightroom loses
+    /// focus: held keys reach Lightroom, a gesture ends, the Palette closes.
+    /// The Develop and Library keys mean nothing there, so a held Dial Key
+    /// does not keep its slider (Quick Develop would change the catalog's
+    /// photos behind the window).
+    private mutating func importKeyDown(_ chord: KeyChord, event: Event, isAutoRepeat: Bool,
+                                        textFocused: () -> Bool) -> Outcome {
+        let released = isInterrupted ? releaseEverything(then: nil) : Outcome(.pass)
+        let own = importKey(chord, isAutoRepeat: isAutoRepeat, textFocused: textFocused)
+        guard case .replace(let held) = released.decision else { return Outcome(own.decision, released.intents + own.intents) }
+        let consumed = if case .consume = own.decision { true } else { false }
+        return Outcome(.replace(consumed ? held : held + [event]), released.intents + own.intents)
+    }
+
+    /// An Import key presses Lightroom's own shortcut, plus → after Include
+    /// or Exclude with "Move to the next photo". Auto-repeats are swallowed
+    /// when the first press was taken, and pass when it went to a text field.
+    private mutating func importKey(_ chord: KeyChord, isAutoRepeat: Bool, textFocused: () -> Bool) -> Outcome {
+        guard let role = keymap.importKeys.role(for: chord) else { return Outcome(.pass) }
+        if isAutoRepeat { return Outcome(consumedKeyUps.contains(chord.keyCode) ? .consume : .pass) }
+        if textFocused() { return Outcome(.pass) }
+        consumedKeyUps.insert(chord.keyCode)
+        var intents: [KeyIntent] = [.action(.shortcut(importShortcuts.chord(for: role)))]
+        if keymap.importKeys.advance && role != .toggle {
+            intents.append(.action(.shortcut(importShortcuts.nextPhoto)))
+        }
+        return Outcome(.consume, intents)
     }
 
     // MARK: Helpers

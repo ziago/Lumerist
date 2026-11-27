@@ -10,7 +10,7 @@ namespace Lumerist.App.Views;
 
 /// <summary>
 /// The main window (ContentView.swift): the header row, the section tabs
-/// (Develop, Library | Mouse &amp; Trackpad, Floating panels, General) and the
+/// (Develop, Library, Import | Mouse &amp; Trackpad, Floating panels, General) and the
 /// current screen, scrolling. A theme change rebuilds everything, as the
 /// Mac rebuilds its views; keymap and settings changes rebuild the screen.
 /// </summary>
@@ -182,6 +182,7 @@ internal sealed class MainWindow : Window
     {
         MainSection.Develop => new ModulePage(context, ParameterScope.Develop),
         MainSection.Library => new ModulePage(context, ParameterScope.Library),
+        MainSection.Import => new ImportScreen(context),
         MainSection.MouseTrackpad => new MouseTrackpadScreen(context),
         MainSection.FloatingPanels => new FloatingPanelsScreen(context),
         _ => new GeneralScreen(context),

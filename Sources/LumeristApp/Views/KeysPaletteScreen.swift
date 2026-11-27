@@ -181,7 +181,7 @@ struct KeysPaletteScreen: View {
             Button { move(index, by: 1) } label: { Image(systemName: "arrow.down") }
                 .buttonStyle(.neonQuiet).disabled(index == count - 1).accessibilityLabel("Move \(entry.title) down")
             Button { store.editKeymap { $0.palette.favourites.remove(at: index) } } label: { Image(systemName: "xmark") }
-                .buttonStyle(.neonQuiet).accessibilityLabel("Remove \(entry.title)")
+                .buttonStyle(.neonRemove).accessibilityLabel("Remove \(entry.title)")
         }
         .padding(.horizontal, 14)
         .frame(minHeight: 38)

@@ -69,7 +69,7 @@ internal static class KeyboardTab
         }
 
         var stack = Layout.VStack(Theme.Space.L,
-            Layout.Bar(Theme.Space.M, [layers], [Legend()]),
+            Layout.Bar(Theme.Space.M, [Tooltips.Explained(layers, KeyTypeHelp.Combos(comboKey))], [Legend(scope)]),
             card);
         if (state.Layer == KeyboardLayer.Combos && comboKey is null)
             stack.Children.Add(SynthText.Body("There is no Combo Key, so combos are off. Set one to use them.", 12, color: Ink.Amber));
@@ -170,10 +170,18 @@ internal static class KeyboardTab
         BorderThickness = new Thickness(0, 0, 0, 1),
     };
 
-    /// <summary>Colour key for the drawing.</summary>
-    private static FrameworkElement Legend()
+    /// <summary>Colour key for the drawing; each kind is explained on hover.</summary>
+    private static FrameworkElement Legend(ParameterScope scope)
     {
-        static FrameworkElement Item(UIElement swatch, string title) => Layout.HStack(Theme.IsFlat ? 6 : 4, swatch, SynthText.Label(title, 9));
+        FrameworkElement Item(UIElement swatch, string title) =>
+            Tooltips.Explained(Layout.HStack(Theme.IsFlat ? 6 : 4, swatch, SynthText.Label(title, 9)), title switch
+            {
+                "Dial Key" => KeyTypeHelp.Dial(scope),
+                "Nudge − / +" => KeyTypeHelp.NudgeKeys(scope),
+                "Command Key" => KeyTypeHelp.CommandKey,
+                "System key" => KeyTypeHelp.SystemKey,
+                _ => KeyTypeHelp.Conflict,
+            });
 
         if (Theme.IsFlat)
         {

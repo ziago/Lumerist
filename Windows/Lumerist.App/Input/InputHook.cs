@@ -9,7 +9,9 @@ namespace Lumerist.App.Input;
 /// <summary>
 /// Feeds keyboard, wheel and mouse events to <see cref="KeyGestureEngine{TEvent}"/>
 /// and applies its decisions (KeyEngineMonitor.swift). Low-level hooks run on
-/// a thread of their own with its own message loop.
+/// a thread of their own with its own message loop. Lightroom's module and
+/// tool come from the plug-in; while <see cref="ImportWindowDetector"/> sees
+/// Lightroom's Import window in front, the module is "import" instead.
 /// </summary>
 /// <remarks>
 /// Windows removes a low-level hook without notice when its callback is too
@@ -36,6 +38,7 @@ internal sealed unsafe class InputHook : IDisposable
     private readonly HookSilenceWatch silenceWatch = new(SilentHookMilliseconds);
     private string module = "develop";
     private string tool = "";
+    private bool isImportWindowOpen;
     private POINT? pointerAnchor;
     private POINT lastPoint;
     private bool menuMaskSent;
@@ -317,8 +320,7 @@ internal sealed unsafe class InputHook : IDisposable
             // No physical key, or Win held: Windows' own shortcuts (Win+D, Win+Tab…).
             if (scanCode == 0 || (modifiers.IsWinDown && !isUp)) return false;
 
-            var (isInFront, lightroomThread) = LightroomWindow.Foreground();
-            var context = new EngineContext(isInFront, module, tool);
+            var context = Context(out var lightroomThread);
             var item = InputEvent.Key((int)info.vkCode, scanCode, isUp, modifiers.HeldMask);
             var wasEngaged = engine.IsEngaged;
             KeyGestureEngine<InputEvent>.Outcome outcome;
@@ -385,7 +387,36 @@ internal sealed unsafe class InputHook : IDisposable
     }
 
     /// <summary>Call with the lock held.</summary>
-    private EngineContext Context() => new(LightroomWindow.Foreground().IsInFront, module, tool);
+    private EngineContext Context() => Context(out _);
+
+    /// <summary>
+    /// Lightroom's context for this event; call with the lock held. With
+    /// another app in front the Import window state stands until Lightroom is
+    /// back (the engine lets every event through meanwhile).
+    /// </summary>
+    private EngineContext Context(out uint lightroomThread)
+    {
+        var (isInFront, thread, window) = LightroomWindow.ForegroundWindow();
+        lightroomThread = thread;
+        if (isInFront) FollowImportWindow(ImportWindowDetector.IsImportWindow(window), thread);
+        return new EngineContext(isInFront, isImportWindowOpen ? EngineContext.ImportModule : module, tool);
+    }
+
+    /// <summary>
+    /// Lightroom's Import window came to the front or went away. Its
+    /// shortcuts are taken again at each opening, for the keyboard layout of
+    /// Lightroom's window then. One log line per change, no more.
+    /// </summary>
+    private void FollowImportWindow(bool open, uint lightroomThread)
+    {
+        if (open == isImportWindowOpen) return;
+        isImportWindowOpen = open;
+        if (open)
+        {
+            engine.UpdateImportShortcuts(KeyboardLayout.ImportShortcutsFor(GetKeyboardLayout(lightroomThread)));
+        }
+        LogSafely(open ? "Import window opened" : "Import window closed");
+    }
 
     private static (MouseButton? Button, bool IsDown) Button(uint message, uint mouseData) => message switch
     {

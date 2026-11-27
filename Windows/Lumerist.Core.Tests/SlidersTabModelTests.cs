@@ -69,6 +69,44 @@ public sealed class SlidersTabModelTests
     }
 }
 
+public sealed class KeyTypeHelpTests
+{
+    [Fact]
+    public void TheTextsAreTheMacsWithShiftAndWindows()
+    {
+        Assert.Equal("Hold it and turn the mouse wheel or swipe on the trackpad (or drag, or press ← →): the slider follows until you let go. A quick tap still reaches Lightroom, unless the same key is also a Command Key.",
+            KeyTypeHelp.For(SlotRole.Dial, ParameterScope.Develop));
+        Assert.Equal("Each press moves the slider one step down; hold the key to repeat. Add Shift for the other step.",
+            KeyTypeHelp.For(SlotRole.NudgeDown, ParameterScope.Develop));
+        Assert.Equal("Each press moves every selected photo one step up; hold the key to repeat. Add Shift for the other step.",
+            KeyTypeHelp.For(SlotRole.NudgeUp, ParameterScope.Library));
+        Assert.StartsWith("How much is added to every selected photo for one Nudge press, and for each click of the mouse wheel",
+            KeyTypeHelp.Step(ParameterScope.Library));
+        Assert.EndsWith("The Shift value is the step when you add Shift. Click a step to change it.", KeyTypeHelp.Step(ParameterScope.Develop));
+        Assert.Contains("Lightroom or Windows also uses", KeyTypeHelp.Conflict);
+        Assert.Equal(1000, KeyTypeHelp.InitialShowDelayMilliseconds);
+        foreach (var scope in ParameterScopes.All)
+        {
+            foreach (var text in new[] { KeyTypeHelp.Dial(scope), KeyTypeHelp.NudgeDown(scope), KeyTypeHelp.NudgeUp(scope),
+                         KeyTypeHelp.NudgeKeys(scope), KeyTypeHelp.Step(scope) })
+            {
+                Assert.DoesNotContain("⇧", text);
+                Assert.Equal(scope == ParameterScope.Library, text.Contains("every selected photo"));
+                Assert.Equal(scope == ParameterScope.Develop, text.Contains("slider"));
+            }
+        }
+    }
+
+    [Fact]
+    public void TheCombosTextNamesTheComboKey()
+    {
+        Assert.Equal("A combo is a key of its own: hold Tab, then press another key (Tab + K). Plain keys work alone.",
+            KeyTypeHelp.Combos(KeyChord.Tab));
+        Assert.Equal("A combo is a key of its own: hold the Combo Key, then press another key. Set a Combo Key in General → System Keys.",
+            KeyTypeHelp.Combos(null));
+    }
+}
+
 public sealed class ChordRecordingTests
 {
     [Fact]

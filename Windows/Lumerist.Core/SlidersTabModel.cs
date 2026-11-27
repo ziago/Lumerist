@@ -115,3 +115,63 @@ public static class SlidersTabText
     /// <summary>Sections open by default: Basic in Develop, Quick Develop in Library.</summary>
     public static IReadOnlySet<string> DefaultExpanded { get; } = new HashSet<string>(StringComparer.Ordinal) { "Basic", "Quick Develop" };
 }
+
+/// <summary>
+/// Tooltips for the names of key kinds wherever they label something: the
+/// Sliders and Quick Develop column headers and the Keyboard tab (the Mac's
+/// KeyKindHelp.swift). The same texts as the Mac's, with "Shift" for ⇧ and
+/// Windows for macOS. Library's Quick Develop has no sliders: a step there is
+/// added to every selected photo, so the Library texts say so.
+/// </summary>
+public static class KeyTypeHelp
+{
+    /// <summary>How long the pointer rests before a tooltip shows, in milliseconds: every tooltip of the app.</summary>
+    public const int InitialShowDelayMilliseconds = 1000;
+
+    public static string Dial(ParameterScope scope) => scope == ParameterScope.Develop
+        ? "Hold it and turn the mouse wheel or swipe on the trackpad (or drag, or press ← →): the slider follows until you let go. A quick tap still reaches Lightroom, unless the same key is also a Command Key."
+        : "Hold it and turn the mouse wheel or swipe on the trackpad (or drag, or press ← →): each step is added to every selected photo, as with Lightroom's Quick Develop buttons, until you let go. A quick tap still reaches Lightroom, unless the same key is also a Command Key.";
+
+    public static string NudgeDown(ParameterScope scope) => scope == ParameterScope.Develop
+        ? "Each press moves the slider one step down; hold the key to repeat. Add Shift for the other step."
+        : "Each press moves every selected photo one step down; hold the key to repeat. Add Shift for the other step.";
+
+    public static string NudgeUp(ParameterScope scope) => scope == ParameterScope.Develop
+        ? "Each press moves the slider one step up; hold the key to repeat. Add Shift for the other step."
+        : "Each press moves every selected photo one step up; hold the key to repeat. Add Shift for the other step.";
+
+    /// <summary>The Keyboard tab's legend names both Nudge Keys at once ("Nudge − / +").</summary>
+    public static string NudgeKeys(ParameterScope scope) => scope == ParameterScope.Develop
+        ? "Each press moves the slider one step down (Nudge −) or up (Nudge +); hold the key to repeat. Add Shift for the other step."
+        : "Each press moves every selected photo one step down (Nudge −) or up (Nudge +); hold the key to repeat. Add Shift for the other step.";
+
+    /// <summary>The same step serves the Nudge Keys and each step of a Dial Key.</summary>
+    public static string Step(ParameterScope scope) => scope == ParameterScope.Develop
+        ? "How far the slider moves for one Nudge press, and for each click of the mouse wheel, stretch of trackpad swipe or ← → press with the Dial Key held. The Shift value is the step when you add Shift. Click a step to change it."
+        : "How much is added to every selected photo for one Nudge press, and for each click of the mouse wheel, stretch of trackpad swipe or ← → press with the Dial Key held. The Shift value is the step when you add Shift. Click a step to change it.";
+
+    public const string CommandKey = "A tap runs a Lightroom command, a preset, a Lightroom shortcut or a macro.";
+
+    public const string SystemKey =
+        "Works in every module: the Combo Key, the Palette Key, the Key Reference toggle and the pause toggle. Change them in General → System Keys.";
+
+    public const string Conflict =
+        "A key that clashes with another of your keys, or that Lightroom or Windows also uses. Point at the key to read why.";
+
+    /// <summary>The Keyboard tab's Plain keys / Combos picker, with the current Combo Key.</summary>
+    public static string Combos(KeyChord? comboKey)
+    {
+        if (comboKey is not { } combo)
+            return "A combo is a key of its own: hold the Combo Key, then press another key. Set a Combo Key in General → System Keys.";
+        var example = new KeyChord(0x25, KeyModifiers.Combo).DisplayTextWith(combo); // "Tab + K" (the Mac's key code 40)
+        return $"A combo is a key of its own: hold {combo.DisplayText}, then press another key ({example}). Plain keys work alone.";
+    }
+
+    /// <summary>The help of a slot's key kind, as its column header reads it.</summary>
+    public static string For(SlotRole role, ParameterScope scope) => role switch
+    {
+        SlotRole.Dial => Dial(scope),
+        SlotRole.NudgeDown => NudgeDown(scope),
+        _ => NudgeUp(scope),
+    };
+}

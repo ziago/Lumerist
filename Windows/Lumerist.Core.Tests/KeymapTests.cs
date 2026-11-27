@@ -34,6 +34,7 @@ internal static class KeymapTestSupport
             actual.Library.OrderBy(pair => pair.Key, StringComparer.Ordinal));
         Assert.Equal(expected.CommandKeys, actual.CommandKeys);
         Assert.Equal(expected.SystemKeys, actual.SystemKeys);
+        Assert.Equal(expected.ImportKeys, actual.ImportKeys);
         Assert.Equal(expected.Palette.KeepVisible, actual.Palette.KeepVisible);
         Assert.Equal(expected.Palette.Favourites, actual.Palette.Favourites);
         Assert.Equal(expected.Input, actual.Input);
@@ -109,6 +110,54 @@ public class KeymapPersistenceTests
         Assert.Empty(keymap.Library);
         Assert.Empty(keymap.CommandKeys);
         Assert.Empty(keymap.Palette.Favourites);
+    }
+
+    [Fact]
+    public void ImportKeysAreUnassignedUntilPickedAndRoundTrip()
+    {
+        // Keymaps saved before Import keys existed: none assigned, like the standard layout.
+        var old = KeymapStore.Decode("""{"format":1}""");
+        Assert.Equal(new ImportKeys(), old.ImportKeys);
+        Assert.True(old.ImportKeys.IsDefault);
+        Assert.Null(old.ImportKeys.Include);
+        Assert.Null(old.ImportKeys.Exclude);
+        Assert.Null(old.ImportKeys.Toggle);
+        Assert.False(old.ImportKeys.Advance);
+        Assert.True(Keymap.StandardLayout().ImportKeys.IsDefault);
+
+        var keymap = Keymap.StandardLayout();
+        keymap.ImportKeys = new ImportKeys { Include = Key(0x2C), Exclude = Key(ScanCodes.X, KeyModifiers.Shift), Advance = true };
+        var json = KeymapStore.Encode(keymap);
+        using (var document = JsonDocument.Parse(json))
+        {
+            var importKeys = document.RootElement.GetProperty("importKeys");
+            Assert.Equal("0x2C", importKeys.GetProperty("include").GetProperty("scanCode").GetString());
+            Assert.Equal(["Shift"], importKeys.GetProperty("exclude").GetProperty("modifiers").EnumerateArray().Select(item => item.GetString()));
+            Assert.Equal(JsonValueKind.Null, importKeys.GetProperty("toggle").ValueKind); // written, a cleared key as null
+            Assert.True(importKeys.GetProperty("advance").GetBoolean());
+        }
+        AssertSame(keymap, KeymapStore.Decode(json));
+        Assert.Equal(json, KeymapStore.Encode(KeymapStore.Decode(json)));
+
+        // Untouched Import keys are left out, so older builds (strict decoding) still read the file.
+        Assert.DoesNotContain("importKeys", KeymapStore.Encode(Keymap.StandardLayout()));
+        Assert.True(KeymapStore.Decode(KeymapStore.Encode(Keymap.StandardLayout())).ImportKeys.IsDefault);
+        // "Move to the next photo" alone is a change, so it is written.
+        var advanceOnly = Keymap.StandardLayout();
+        advanceOnly.ImportKeys.Advance = true;
+        Assert.True(KeymapStore.Decode(KeymapStore.Encode(advanceOnly)).ImportKeys.Advance);
+
+        // Missing fields take the defaults; unknown ones are refused.
+        var partial = KeymapStore.Decode("""{"format":1,"importKeys":{"include":{"scanCode":"0x2C"}}}""");
+        Assert.Equal(new ImportKeys { Include = Key(0x2C) }, partial.ImportKeys);
+        var error = Throws(KeymapErrorKind.UnknownFields, () => KeymapStore.Decode("""{"format":1,"importKeys":{"next":null}}"""));
+        Assert.Equal(["next"], error.Fields);
+        Throws(KeymapErrorKind.UnknownFields,
+            () => KeymapStore.Decode("""{"format":1,"importKeys":{"include":{"scanCode":"0x2C","keyCode":6}}}"""));
+        Assert.Throws<JsonException>(() => KeymapStore.Decode("""{"format":1,"importKeys":{"advance":"yes"}}"""));
+        // Decoding validates: a combo is no Import key.
+        Throws(KeymapErrorKind.InvalidCombo,
+            () => KeymapStore.Decode("""{"format":1,"importKeys":{"toggle":{"scanCode":"0x2E","modifiers":["Combo"]}}}"""));
     }
 
     [Fact]
@@ -348,11 +397,14 @@ public class KeymapConflictMessageTests
             "Space is also used for typing or by Lightroom and Windows.",
         ], warnings);
         // Tab is not a typing key: once it is no longer the Combo Key, a Nudge Key may take it.
+        // Its only note is the warning about Lightroom's own Tab (Show/hide side panels).
         keymap.SystemKeys.ComboKey = new KeyChord(ScanCodes.Backspace);
         keymap.CommandKeys.Clear();
         keymap.SystemKeys.KeyReferenceToggle = null;
         keymap.UpdateSlot(Dev("Dehaze"), slot => slot with { NudgeUp = new KeyChord(ScanCodes.Tab) });
-        Assert.DoesNotContain(keymap.Conflicts(), conflict => conflict.Chord == new KeyChord(ScanCodes.Tab));
+        var tab = Assert.Single(keymap.Conflicts(), conflict => conflict.Chord == new KeyChord(ScanCodes.Tab));
+        Assert.Equal(ConflictSeverity.Warning, tab.Severity);
+        Assert.Equal("Show/hide side panels", tab.LightroomAction);
     }
 
     [Fact]

@@ -24,6 +24,7 @@ namespace Lumerist.Core;
 ///   ],
 ///   "systemKeys": { "comboKey": { "scanCode": "0x0F" }, "paletteKey": { "scanCode": "0x29" },
 ///                   "keyReferenceToggle": { "scanCode": "0x23", "modifiers": ["Combo"] }, "pauseToggle": null },
+///   "importKeys": { "include": { "scanCode": "0x2C" }, "exclude": { "scanCode": "0x2D" }, "toggle": null, "advance": true },
 ///   "palette": { "keepVisible": false, "favourites": [ { "kind": "tool", "id": "createMask", "argument": "aiSelection/sky", "title": "Sky" } ] },
 ///   "input": { "invertWheel": false, "swapNormalAndCoarse": false, "trackpadPointsPerStep": 12, … }
 /// }
@@ -37,6 +38,9 @@ namespace Lumerist.Core;
 /// <item>An action is one of <c>{"command": name, "argument"?: text}</c>, <c>{"preset": uuid, "name": text}</c>,
 /// <c>{"shortcut": chord}</c> or <c>{"macro": [{"action": action, "delay": seconds}]}</c>.</item>
 /// <item>System Keys: null means cleared (that key is off); a missing key takes its default.</item>
+/// <item>Import keys: written only once they differ from the default (no key, "Move to the next photo"
+/// off), so an untouched keymap keeps the exact shape older builds read, since their decoding is
+/// strict. A missing section or field takes the default; null is a key not assigned.</item>
 /// </list>
 /// Decoding is strict on purpose: an unknown format, an unknown field at any
 /// level, or content of the wrong shape throws instead of silently loading
@@ -47,12 +51,14 @@ public static class KeymapStore
     /// <summary>The Windows file format, independent of the Mac's.</summary>
     public const int CurrentFormat = 1;
 
-    private static readonly string[] TopFields = ["format", "develop", "library", "commandKeys", "systemKeys", "palette", "input"];
+    private static readonly string[] TopFields =
+        ["format", "develop", "library", "commandKeys", "systemKeys", "importKeys", "palette", "input"];
     private static readonly string[] SlotFields = ["dial", "nudgeDown", "nudgeUp", "normalStep", "coarseStep"];
     private static readonly string[] ChordFields = ["scanCode", "modifiers"];
     private static readonly string[] CommandKeyFields = ["id", "scope", "chord", "group", "title", "action"];
     private static readonly string[] ActionFields = ["command", "argument", "preset", "name", "shortcut", "macro"];
     private static readonly string[] MacroStepFields = ["action", "delay"];
+    private static readonly string[] ImportKeyFields = ["include", "exclude", "toggle", "advance"];
     private static readonly string[] PaletteFields = ["keepVisible", "favourites"];
     private static readonly string[] PaletteEntryFields = ["kind", "id", "argument", "title"];
     private static readonly string[] InputFields =
@@ -110,6 +116,19 @@ public static class KeymapStore
                 else writer.WriteNullValue();
             }
             writer.WriteEndObject();
+
+            if (!keymap.ImportKeys.IsDefault)
+            {
+                writer.WriteStartObject("importKeys");
+                foreach (var role in ImportKeyRoles.All)
+                {
+                    writer.WritePropertyName(role.WireName());
+                    if (keymap.ImportKeys.ChordFor(role) is { } chord) WriteChord(writer, chord);
+                    else writer.WriteNullValue();
+                }
+                writer.WriteBoolean("advance", keymap.ImportKeys.Advance);
+                writer.WriteEndObject();
+            }
 
             writer.WriteStartObject("palette");
             writer.WriteBoolean("keepVisible", keymap.Palette.KeepVisible);
@@ -306,6 +325,11 @@ public static class KeymapStore
             Unknown(systemKeys, SystemKeyRoles.All.Select(role => role.WireName()).ToArray(), unknown);
             foreach (var chord in Objects(systemKeys)) CheckChord(chord, unknown);
         }
+        if (Child(root, "importKeys") is { ValueKind: JsonValueKind.Object } importKeys)
+        {
+            Unknown(importKeys, ImportKeyFields, unknown);
+            foreach (var chord in Objects(importKeys)) CheckChord(chord, unknown);
+        }
         if (Child(root, "palette") is { ValueKind: JsonValueKind.Object } palette)
         {
             Unknown(palette, PaletteFields, unknown);
@@ -389,6 +413,8 @@ public static class KeymapStore
             keymap.CommandKeys = list.EnumerateArray().Select((item, index) => ReadCommandKey(item, $"commandKeys[{index}]")).ToList();
         }
         if (!IsAbsent(fields, "systemKeys")) keymap.SystemKeys = ReadSystemKeys(fields["systemKeys"]);
+        // Keymaps saved before Import keys existed get the default: none assigned.
+        if (!IsAbsent(fields, "importKeys")) keymap.ImportKeys = ReadImportKeys(fields["importKeys"]);
         if (!IsAbsent(fields, "palette")) keymap.Palette = ReadPalette(fields["palette"]);
         if (!IsAbsent(fields, "input")) keymap.Input = ReadInput(fields["input"]);
         return keymap;
@@ -514,6 +540,19 @@ public static class KeymapStore
         keys.PaletteKey = Read(SystemKeyRole.PaletteKey, keys.PaletteKey);
         keys.KeyReferenceToggle = Read(SystemKeyRole.KeyReferenceToggle, keys.KeyReferenceToggle);
         keys.PauseToggle = Read(SystemKeyRole.PauseToggle, keys.PauseToggle);
+        return keys;
+    }
+
+    private static ImportKeys ReadImportKeys(JsonElement element)
+    {
+        var fields = Fields(element, "importKeys");
+        var keys = new ImportKeys();
+        foreach (var role in ImportKeyRoles.All)
+        {
+            var name = role.WireName();
+            if (!IsAbsent(fields, name)) keys.Set(role, ReadChord(fields[name], $"importKeys.{name}"));
+        }
+        if (!IsAbsent(fields, "advance")) keys.Advance = Flag(fields["advance"], "importKeys.advance");
         return keys;
     }
 

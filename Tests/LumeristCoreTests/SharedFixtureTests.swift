@@ -76,8 +76,12 @@ private enum MacKeys {
         "Q": 12, "W": 13, "E": 14, "R": 15, "Y": 16, "T": 17, "O": 31, "U": 32, "I": 34, "P": 35,
         "L": 37, "J": 38, "K": 40, "N": 45, "M": 46,
         "1": 18, "2": 19, "3": 20, "4": 21, "5": 23, "6": 22, "7": 26, "8": 28, "9": 25, "0": 29,
-        "[": 33, "]": 30, "Return": 36, "Tab": 48, "Space": 49, "LeftOf1": 50, "Backspace": 51, "Esc": 53,
-        "ArrowLeft": 123, "ArrowRight": 124,
+        "[": 33, "]": 30, "=": 24, "-": 27, "'": 39, ";": 41, "\\": 42, ",": 43, "/": 44, ".": 47,
+        "Return": 36, "Tab": 48, "Space": 49, "LeftOf1": 50, "Backspace": 51, "Esc": 53,
+        "ForwardDelete": 117, "Home": 115, "End": 119, "PageUp": 116, "PageDown": 121,
+        "ArrowLeft": 123, "ArrowRight": 124, "ArrowDown": 125, "ArrowUp": 126,
+        "F1": 122, "F2": 120, "F3": 99, "F4": 118, "F5": 96, "F6": 97,
+        "F7": 98, "F8": 100, "F9": 101, "F10": 109, "F11": 103, "F12": 111,
     ]
     static let modifiers: [String: KeyModifiers] = [
         "Shift": .shift, "Alt": .option, "Primary": .command, "Control": .control, "Combo": .combo,
@@ -191,7 +195,7 @@ private enum KeymapChanges {
             if any == nil { return keymap }
             throw FixtureError("keymap changes must be an object")
         }
-        let known: Set<String> = ["input", "palette", "systemKeys", "slots", "commandKeys", "replaceCommandKeys"]
+        let known: Set<String> = ["input", "palette", "systemKeys", "importKeys", "slots", "commandKeys", "replaceCommandKeys"]
         if let unknown = changes.keys.first(where: { !known.contains($0) }) { throw FixtureError("unknown keymap change \(unknown)") }
 
         for (name, value) in changes["input"] as? [String: Any] ?? [:] {
@@ -224,6 +228,14 @@ private enum KeymapChanges {
             case "pauseToggle": keymap.systemKeys.pauseToggle = chord
             default: throw FixtureError("unknown system key \(name)")
             }
+        }
+        for (name, value) in changes["importKeys"] as? [String: Any] ?? [:] {
+            if name == "advance" {
+                keymap.importKeys.advance = try Values.flag(value, name)
+                continue
+            }
+            guard let role = ImportKeys.Role(rawValue: name) else { throw FixtureError("unknown Import key \(name)") }
+            keymap.importKeys[role] = try Values.chordOrNil(value)
         }
         for (name, value) in changes["slots"] as? [String: Any] ?? [:] {
             let key = try Values.parameter(name)
@@ -281,6 +293,7 @@ private enum GestureRunner {
         "library": EngineContext(module: "library"),
         "map": EngineContext(module: "map"),
         "away": EngineContext(isLightroomFrontmost: false),
+        "import": EngineContext(module: EngineContext.importModule),
     ]
     static let actions: Set<String> = ["down", "up", "wheel", "swipe", "click", "release", "move", "paletteDidClose", "setKeymap"]
     static let options: Set<String> = ["repeat", "at", "in", "textFocused", "modifiers", "momentum", "count"]
@@ -436,6 +449,7 @@ private enum RuleRunner {
             case "chord": if conflict.chord != (try MacKeys.chord(value as? String ?? "")) { return false }
             case "scope": if conflict.scope?.rawValue != value as? String { return false }
             case "message": if conflict.message != value as? String { return false }
+            case "lightroomAction": if conflict.lightroomAction != value as? String { return false }
             case "usesSystem":
                 guard let role = SystemKeys.Role(rawValue: value as? String ?? "") else { throw FixtureError("unknown role \(value)") }
                 if !conflict.usages.contains(.system(role)) { return false }
@@ -464,6 +478,9 @@ private enum RuleRunner {
                 same = name == "invalidCombo" && object["misuse"] as? String == "lightroomShortcut"
             case .systemKey(let role):
                 same = name == "invalidCombo" && object["misuse"] as? String == "systemKey"
+                    && role.rawValue == object["role"] as? String
+            case .importKey(let role):
+                same = name == "invalidCombo" && object["misuse"] as? String == "importKey"
                     && role.rawValue == object["role"] as? String
             }
         case .conflicts: same = name == "conflicts"
@@ -628,6 +645,15 @@ private enum LayoutRunner {
         for role in SystemKeys.Role.allCases where keymap.systemKeys.chord(for: role) != (try Values.chordOrNil(system[role.rawValue])) {
             failures.append("system key \(role.rawValue) differs")
         }
+
+        let importKeys = fixture["importKeys"] as? [String: Any] ?? [:]
+        if Set(importKeys.keys) != Set(ImportKeys.CodingKeys.allCases.map(\.stringValue)) {
+            failures.append("Import key fields differ: \(importKeys.keys.sorted())")
+        }
+        for role in ImportKeys.Role.allCases where keymap.importKeys[role] != (try Values.chordOrNil(importKeys[role.rawValue])) {
+            failures.append("Import key \(role.rawValue) differs")
+        }
+        if keymap.importKeys.advance != importKeys["advance"] as? Bool { failures.append("Import advance differs") }
 
         let input = fixture["input"] as? [String: Any] ?? [:]
         let options = keymap.input

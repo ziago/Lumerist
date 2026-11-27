@@ -1,11 +1,24 @@
 namespace Lumerist.Core;
 
 /// <summary>What the engine needs to know about Lightroom at the time of an event.</summary>
-/// <param name="Module"><c>LrApplicationView.getCurrentModuleName()</c>: "develop", "library", …</param>
+/// <param name="Module">
+/// <c>LrApplicationView.getCurrentModuleName()</c>: "develop", "library", …,
+/// or <see cref="ImportModule"/>.
+/// </param>
 /// <param name="Tool"><c>LrDevelopController.getSelectedTool()</c>: "masking", "crop", "" …</param>
 public sealed record EngineContext(bool IsLightroomFrontmost = true, string Module = "develop", string Tool = "")
 {
-    /// <summary>The keymap scope for this module; other modules only get System Keys.</summary>
+    /// <summary>
+    /// The module while Lightroom's Import window is in front. Lightroom never
+    /// reports it (its module stays "library"): the app sets it when it
+    /// recognises the window (<see cref="ImportWindowRule"/>).
+    /// </summary>
+    public const string ImportModule = "import";
+
+    /// <summary>
+    /// The keymap scope for this module; other modules only get System Keys,
+    /// and the Import window only the Import keys and the pause toggle.
+    /// </summary>
     public ParameterScope? Scope => Module switch
     {
         "develop" => ParameterScope.Develop,
@@ -14,6 +27,9 @@ public sealed record EngineContext(bool IsLightroomFrontmost = true, string Modu
     };
 
     public bool IsMasking => Tool == "masking";
+
+    /// <summary>Lightroom's Import window is in front.</summary>
+    public bool IsImportWindow => Module == ImportModule;
 }
 
 public enum MouseButtonKind
@@ -83,6 +99,11 @@ public readonly record struct MouseButton
 /// <item><b>System Keys</b>: Palette (hold), Key Reference and pause toggles.</item>
 /// <item><b>Mouse</b>: double / middle click resets the held slider, back / forward
 /// buttons change photo.</item>
+/// <item><b>Import keys</b>: in Lightroom's Import window (module "import") only
+/// they and the pause toggle act. Each press sends Lightroom's own Import
+/// shortcut (P, X, `), then → with "Move to the next photo".
+/// Every other key, the wheel, the trackpad and the mouse reach Lightroom
+/// untouched.</item>
 /// </list>
 /// Typing stays safe: held keys are replayed in order when another key
 /// arrives, nothing is captured in text fields, and Ctrl/Alt chords belong to
@@ -192,6 +213,12 @@ public sealed class KeyGestureEngine<TEvent>
     /// <summary>A copy of the keymap in use (changing it does not change the engine).</summary>
     public Keymap Keymap => keymap.Clone();
 
+    /// <summary>The keys the Import keys press in Lightroom's Import window.</summary>
+    public ImportShortcuts ImportShortcuts { get; private set; } = ImportShortcuts.Standard;
+
+    /// <summary>The app passes Lightroom's Import shortcuts for the active keyboard layout.</summary>
+    public void UpdateImportShortcuts(ImportShortcuts shortcuts) => ImportShortcuts = shortcuts;
+
     public bool IsPaused { get; private set; }
 
     // Queries for the input hook -------------------------------------------------
@@ -284,6 +311,7 @@ public sealed class KeyGestureEngine<TEvent>
             return new Outcome(released.Decision is Decision.Pass ? ConsumeDecision : released.Decision, pauseIntents);
         }
         if (IsPaused) return Pass();
+        if (context.IsImportWindow) return ImportKeyDown(pressed, @event, isAutoRepeat, TextFocused);
 
         switch (phase)
         {
@@ -422,6 +450,7 @@ public sealed class KeyGestureEngine<TEvent>
 
     public Outcome KeyUp(int scanCode, TEvent @event, double timestamp, EngineContext context)
     {
+        if (context.IsImportWindow && context.IsLightroomFrontmost && IsInterrupted) return ReleaseEverything([@event]);
         if (consumedKeyUps.Remove(scanCode)) return Consume();
 
         switch (phase)
@@ -480,6 +509,13 @@ public sealed class KeyGestureEngine<TEvent>
     {
         // Scrolling another app never changes a gesture; key events settle it.
         if (!context.IsLightroomFrontmost || IsPaused) return Pass();
+        if (context.IsImportWindow)
+        {
+            // Lightroom scrolls the Import window as usual. A wheel event is not
+            // replayed, so a key still held back is delivered alone.
+            suppressesMomentum = false;
+            return IsInterrupted ? ReleaseEverything([]) : Pass();
+        }
 
         var intents = FollowContext(context);
         switch (phase)
@@ -525,6 +561,7 @@ public sealed class KeyGestureEngine<TEvent>
     {
         if (button == MouseButton.Left) leftButtonDown = true;
         if (!context.IsLightroomFrontmost || IsPaused) return Pass();
+        if (context.IsImportWindow) return IsInterrupted ? ReleaseEverything([@event]) : Pass();
 
         if ((button == MouseButton.Back || button == MouseButton.Forward) &&
             keymap.Input.MouseBackForward && context.Scope is not null)
@@ -567,6 +604,7 @@ public sealed class KeyGestureEngine<TEvent>
     public Outcome MouseMoved(double dx, double dy, KeyModifiers modifiers, TEvent @event, EngineContext context)
     {
         if (!context.IsLightroomFrontmost || IsPaused || !NeedsMouseMoves) return Pass();
+        if (context.IsImportWindow) return ReleaseEverything([@event]);
         var dragging = leftButtonDown;
         if (!dragging && keymap.Input.RequireMouseDown) return Pass();
         if (!double.IsFinite(dx)) return dragging ? Consume() : Pass();
@@ -584,6 +622,48 @@ public sealed class KeyGestureEngine<TEvent>
             intents.AddRange(Adjust(steps, IsCoarse(HasShift(modifiers))));
         }
         return new Outcome(dragging ? ConsumeDecision : PassDecision, intents);
+    }
+
+    // Import window -----------------------------------------------------------------
+
+    /// <summary>A gesture, a held key or an open Palette is left over from before the Import window came to the front.</summary>
+    private bool IsInterrupted => IsEngaged || IsPaletteOpen;
+
+    /// <summary>
+    /// In Lightroom's Import window only the Import keys act. Anything left
+    /// over from Develop or Library ends first, as when Lightroom loses focus:
+    /// held keys reach Lightroom, a gesture ends, the Palette closes. The
+    /// Develop and Library keys mean nothing there, so a held Dial Key does not
+    /// keep its slider (Quick Develop would change the catalog's photos behind
+    /// the window).
+    /// </summary>
+    private Outcome ImportKeyDown(KeyChord chord, TEvent @event, bool isAutoRepeat, Func<bool> textFocused)
+    {
+        var released = IsInterrupted ? ReleaseEverything([]) : Pass();
+        var own = ImportKey(chord, isAutoRepeat, textFocused);
+        var intents = new List<KeyIntent>(released.Intents);
+        intents.AddRange(own.Intents);
+        if (released.Decision is not Decision.Replace(var held)) return new Outcome(own.Decision, intents);
+        return new Outcome(new Decision.Replace(own.Decision is Decision.Consume ? held : [.. held, @event]), intents);
+    }
+
+    /// <summary>
+    /// An Import key presses Lightroom's own shortcut, plus → after Include or
+    /// Exclude with "Move to the next photo". Auto-repeats are swallowed when
+    /// the first press was taken, and pass when it went to a text field. A
+    /// Toggle the layout has no key for is taken and sends nothing.
+    /// </summary>
+    private Outcome ImportKey(KeyChord chord, bool isAutoRepeat, Func<bool> textFocused)
+    {
+        if (keymap.ImportKeys.RoleFor(chord) is not { } role) return Pass();
+        if (isAutoRepeat) return consumedKeyUps.Contains(chord.ScanCode) ? Consume() : Pass();
+        if (textFocused()) return Pass();
+        consumedKeyUps.Add(chord.ScanCode);
+        if (ImportShortcuts.ChordFor(role) is not { } lightroomKey) return Consume();
+        var intents = new List<KeyIntent> { new KeyIntent.RunAction(new CommandAction.Shortcut(lightroomKey)) };
+        if (keymap.ImportKeys.Advance && role != ImportKeyRole.Toggle)
+            intents.Add(new KeyIntent.RunAction(new CommandAction.Shortcut(ImportShortcuts.NextPhoto)));
+        return Consume(intents);
     }
 
     // Helpers --------------------------------------------------------------------

@@ -144,6 +144,19 @@ internal static partial class Theme
         resources["Synth.Radius.Row"] = new CornerRadius(IsFlat ? 0 : 3);
         resources["Synth.Radius.Container"] = new CornerRadius(IsFlat ? 0 : 6);
         resources["Synth.IsFlat"] = IsFlat;
+        // Tooltips (Styles.xaml): Galerist paper and hairline, Miami's raised panel with a neon edge.
+        resources["Synth.ToolTip.Background"] = Frozen(ColorOf(IsFlat ? nameof(ThemePalette.Panel) : nameof(ThemePalette.PanelRaised)));
+        resources["Synth.ToolTip.Border"] = Frozen(ColorOf(IsFlat ? nameof(ThemePalette.Outline) : nameof(ThemePalette.Teal)));
+        resources["Synth.ToolTip.Glow"] = IsFlat ? null : ToolTipGlow(ColorOf(nameof(ThemePalette.Teal)));
+        // Room around the frame for the glow, which a tooltip's window would otherwise cut.
+        resources["Synth.ToolTip.Margin"] = new Thickness(IsFlat ? 0 : 8);
+    }
+
+    private static System.Windows.Media.Effects.DropShadowEffect ToolTipGlow(Color color)
+    {
+        var glow = new System.Windows.Media.Effects.DropShadowEffect { Color = color, BlurRadius = 10, ShadowDepth = 0, Opacity = 0.45 };
+        glow.Freeze();
+        return glow;
     }
 
     /// <summary>A dark or light title bar to match the theme. Call once the window has a handle (SourceInitialized).</summary>

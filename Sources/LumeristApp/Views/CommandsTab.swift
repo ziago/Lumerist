@@ -110,17 +110,23 @@ struct CommandsTab: View {
         let key = store.keymap.keymap.displayText(for: action.chord)
         return HStack(spacing: Synth.Space.m) {
             KeyCap(text: key, state: conflict == nil ? .assigned : .conflict, minWidth: 44)
-                .help(conflict ?? key)
+                .themedTooltip(conflict ?? key)
                 .frame(width: 96, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
                 Text(action.title).synthBody(Synth.isFlat ? 14 : 13, weight: .semibold, color: Synth.ice)
                 Text(action.action.summary).synthBody(Synth.isFlat ? 12.5 : 12, color: Synth.steel).lineLimit(1)
+                // Only warnings get here: a keymap with errors is never saved.
+                if let conflict {
+                    Label(conflict, systemImage: "exclamationmark.triangle.fill")
+                        .synthBody(12, color: Synth.amber)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer(minLength: Synth.Space.s)
             if action.scope == .any { Text("All modules").synthLabel(9) }
             Button("Run") { store.perform(action.action) }
                 .buttonStyle(.neonQuiet)
-                .help("Run it now in Lightroom")
+                .themedTooltip("Run it now in Lightroom")
             Button("Edit") { isNew = false; editing = action }
                 .buttonStyle(.neonSecondary)
             MoreButton(accessibilityLabel: "More for \(action.title)", entries: [
@@ -130,6 +136,7 @@ struct CommandsTab: View {
             ])
         }
         .padding(.horizontal, Synth.rowInset)
+        .padding(.vertical, conflict == nil ? 0 : 8)
         .frame(minHeight: Synth.isFlat ? 52 : 48)
         .overlay(alignment: .bottom) { Rectangle().fill(Synth.rowDivider).frame(height: 1) }
     }
@@ -268,6 +275,12 @@ struct ActionEditor: View {
                     }
                 }
             }
+            // Shown as soon as the key is recorded; saving is never blocked.
+            ForEach(lightroomWarnings, id: \.self) { warning in
+                Label(warning, systemImage: "exclamationmark.triangle.fill")
+                    .synthBody(12, color: Synth.amber)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             Text("What it does").synthTitle(15)
             ActionDraftEditor(store: store, draft: $draft, allowsMacro: true, slotID: "command-editor")
@@ -276,6 +289,21 @@ struct ActionEditor: View {
                 Label(error, systemImage: "exclamationmark.triangle.fill").synthBody(12, color: Synth.error)
             }
         }
+    }
+
+    /// Lightroom's own keys this Command Key would take over, in each module it works in.
+    private var lightroomWarnings: [String] {
+        guard let chord else { return [] }
+        var updated = original
+        updated.chord = chord
+        updated.scope = scope
+        var proposed = store.keymap.keymap
+        upsert(updated, into: &proposed)
+        return proposed.conflicts().filter { conflict in
+            conflict.lightroomAction != nil && conflict.usages.contains { usage in
+                if case .action(let id, _) = usage { id == original.id } else { false }
+            }
+        }.map(\.message)
     }
 
     private var keyDetail: String {
@@ -520,7 +548,7 @@ struct PresetPicker: View {
                 SynthSearchField(prompt: "Search presets", text: $search)
                 Button("Refresh") { store.refreshPresets() }
                     .buttonStyle(.neonSecondary)
-                    .help("Ask Lightroom for the current preset list")
+                    .themedTooltip("Ask Lightroom for the current preset list")
             }
             if let name = draft.presetID.map({ _ in draft.presetName }) {
                 Label("Selected: \(name)", systemImage: "checkmark").synthBody(12, color: Synth.teal)
@@ -589,7 +617,7 @@ private struct MacroEditor: View {
                             Button { move(index, by: 1) } label: { Image(systemName: "arrow.down") }
                                 .buttonStyle(.neonQuiet).disabled(index == steps.count - 1).accessibilityLabel("Move step down")
                             Button { steps.remove(at: index) } label: { Image(systemName: "xmark") }
-                                .buttonStyle(.neonQuiet).accessibilityLabel("Remove step \(index + 1)")
+                                .buttonStyle(.neonRemove).accessibilityLabel("Remove step \(index + 1)")
                         }
                         ActionDraftEditor(store: store, draft: Binding(
                             get: { steps[index].action },

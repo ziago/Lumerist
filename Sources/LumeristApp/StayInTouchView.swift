@@ -473,8 +473,9 @@ private struct SnapshotRenderingKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// True only in `OnboardingSnapshots`: AppKit-backed controls (text field,
-    /// spinner) are drawn as look-alikes because ImageRenderer can't draw them.
+    /// True only in `OnboardingSnapshots` and `HUDSnapshots`: AppKit-backed
+    /// controls (text field, spinner) are drawn as look-alikes, and tooltip
+    /// anchors are left out, because ImageRenderer can't draw them.
     var isSnapshotRendering: Bool {
         get { self[SnapshotRenderingKey.self] }
         set { self[SnapshotRenderingKey.self] = newValue }

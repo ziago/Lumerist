@@ -196,6 +196,34 @@
       ] }
     },
     {
+      "id": "keymap-rules/import-keys-cannot-be-combos",
+      "keymap": { "importKeys": { "include": "Combo+Z" } },
+      "validate": { "error": "invalidCombo", "misuse": "importKey", "role": "include" }
+    },
+    {
+      "id": "keymap-rules/two-import-keys-cannot-share-a-key",
+      "keymap": { "importKeys": { "include": "Z", "exclude": "Z" } },
+      "validate": { "error": "conflicts" },
+      "conflicts": { "errors": 1, "warnings": 0, "matches": [
+        { "severity": "error", "chord": "Z", "scope": null, "message": "Z is used by more than one Import key." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/an-import-key-cannot-be-the-pause-key",
+      "keymap": { "importKeys": { "toggle": "Control+Esc" } },
+      "validate": { "error": "conflicts" },
+      "conflicts": { "errors": 1, "matches": [
+        { "severity": "error", "chord": "Control+Esc", "scope": null, "usesSystem": "pauseToggle" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/import-keys-may-reuse-develop-library-and-other-system-keys",
+      "about": "In the Import window the Develop and Library keys, the Combo Key and the Palette Key pause, so only the pause toggle is off limits.",
+      "keymap": { "importKeys": { "include": "Q", "exclude": "X", "toggle": "LeftOf1", "advance": true } },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 0 }
+    },
+    {
       "id": "keymap-rules/typing-keys-and-reserved-modifiers-are-warnings",
       "keymap": { "slots": {
         "develop/GrainAmount": { "dial": "Space" },

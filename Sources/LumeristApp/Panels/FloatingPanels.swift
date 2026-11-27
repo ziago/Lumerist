@@ -310,7 +310,7 @@ struct PanelChrome<Content: View>: View {
             }
             .padding(.horizontal, 12)
             .frame(height: 34)
-            .background(WindowDragArea().help("Drag to move"))
+            .background(WindowDragArea().themedTooltip("Drag to move"))
             .overlay(alignment: .bottom) { Rectangle().fill(Synth.gridLine).frame(height: 1) }
             content
         }
@@ -338,7 +338,7 @@ struct PanelChrome<Content: View>: View {
             .padding(.leading, 14)
             .padding(.trailing, 8)
             .frame(height: 40)
-            .background(WindowDragArea().help("Drag to move"))
+            .background(WindowDragArea().themedTooltip("Drag to move"))
             .overlay(alignment: .bottom) { Rectangle().fill(Synth.gridLine).frame(height: 1) }
             content
         }

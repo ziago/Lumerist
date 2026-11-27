@@ -22,6 +22,7 @@ public class GestureFixtureTests
         ["library"] = new EngineContext(Module: "library"),
         ["map"] = new EngineContext(Module: "map"),
         ["away"] = new EngineContext(IsLightroomFrontmost: false),
+        ["import"] = new EngineContext(Module: EngineContext.ImportModule),
     };
 
     private static readonly HashSet<string> Actions =

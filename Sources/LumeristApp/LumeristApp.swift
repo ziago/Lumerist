@@ -141,6 +141,8 @@ final class CommandStore {
         didSet { overlaySettings.save(to: .standard) }
     }
     private var monitor: KeyEngineMonitor?
+    /// Watches for Lightroom's Import window while the shortcuts are on.
+    @ObservationIgnored private var importWindow: ImportWindowDetector?
     private var permissionWait: Task<Void, Never>?
 
     /// The user's own opt-in, remembered so shortcuts come back after a relaunch
@@ -231,6 +233,8 @@ final class CommandStore {
         if let monitor {
             monitor.stop()
             self.monitor = nil
+            importWindow?.stop()
+            importWindow = nil
             shortcutsWanted = false
             return
         }
@@ -275,7 +279,18 @@ final class CommandStore {
             self.monitor = monitor
         } catch {
             recordError(error.localizedDescription)
+            return
         }
+        let detector = ImportWindowDetector { [weak self] open in self?.importWindowDidChange(open) }
+        importWindow = detector
+        detector.start()
+    }
+
+    /// The Import keys work, and the Develop and Library keys pause, while
+    /// Lightroom's Import window is in front.
+    private func importWindowDidChange(_ open: Bool) {
+        monitor?.update(isImportWindowOpen: open, shortcuts: .forCurrentLayout)
+        if open && isPaletteOpen { closePalette() }
     }
 
     /// Applies a keymap change and hands it to the running monitor.

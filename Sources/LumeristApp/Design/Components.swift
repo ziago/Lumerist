@@ -346,13 +346,17 @@ struct KeyCap: View {
 // MARK: - Buttons
 
 /// Primary (magenta fill), secondary (teal outline), destructive (error outline),
-/// and quiet (borderless steel text).
+/// quiet (borderless steel text), and remove: quiet, for the × that deletes
+/// an entry, which turns the theme's error red under the pointer.
 struct NeonButtonStyle: ButtonStyle {
     enum Kind {
         case primary
         case secondary
         case destructive
         case quiet
+        case remove
+
+        var isQuiet: Bool { self == .quiet || self == .remove }
     }
 
     var kind: Kind = .secondary
@@ -360,18 +364,39 @@ struct NeonButtonStyle: ButtonStyle {
 
     @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
-        if Synth.isFlat {
-            flatBody(configuration: configuration)
+        if kind == .remove {
+            RemoveBody(style: self, configuration: configuration)
         } else {
-            neonBody(configuration: configuration)
+            body(configuration: configuration, hovering: false)
+        }
+    }
+
+    @ViewBuilder
+    fileprivate func body(configuration: Configuration, hovering: Bool) -> some View {
+        if Synth.isFlat {
+            flatBody(configuration: configuration, hovering: hovering)
+        } else {
+            neonBody(configuration: configuration, hovering: hovering)
+        }
+    }
+
+    /// Only a remove button follows the pointer.
+    private struct RemoveBody: View {
+        let style: NeonButtonStyle
+        let configuration: Configuration
+        @State private var isHovering = false
+
+        var body: some View {
+            style.body(configuration: configuration, hovering: isHovering)
+                .onHover { isHovering = $0 }
         }
     }
 
     /// Galerist: square, mono small caps. Primary is ink filled; secondary
-    /// and destructive are hairline boxes (the REC red never goes on a
+    /// and destructive are hairline boxes (red never fills or outlines a
     /// button, the confirmation dialog marks what is destructive); quiet is
-    /// text only.
-    private func flatBody(configuration: Configuration) -> some View {
+    /// text only, and a remove × turns the error red only under the pointer.
+    private func flatBody(configuration: Configuration, hovering: Bool) -> some View {
         let pressed = configuration.isPressed
         let foreground: Color = {
             guard isEnabled else { return Synth.disabled }
@@ -379,20 +404,21 @@ struct NeonButtonStyle: ButtonStyle {
             case .primary: return Synth.onMagenta
             case .secondary, .destructive: return Synth.ice
             case .quiet: return pressed ? Synth.steel : Synth.body
+            case .remove: return hovering ? Synth.error : pressed ? Synth.steel : Synth.body
             }
         }()
         let fill: Color = {
             switch kind {
             case .primary: return isEnabled ? Synth.magenta.opacity(pressed ? 0.82 : 1) : .clear
             case .secondary, .destructive: return pressed && isEnabled ? Synth.gridLine : Synth.panel
-            case .quiet: return .clear
+            case .quiet, .remove: return .clear
             }
         }()
         let border: Color = {
             switch kind {
             case .primary: return isEnabled ? .clear : Synth.gridLine
             case .secondary, .destructive: return isEnabled ? Synth.outline : Synth.gridLine
-            case .quiet: return .clear
+            case .quiet, .remove: return .clear
             }
         }()
         return configuration.label
@@ -400,14 +426,14 @@ struct NeonButtonStyle: ButtonStyle {
             .tracking(1.6)
             .textCase(.uppercase)
             .foregroundStyle(foreground)
-            .padding(.horizontal, kind == .quiet ? 4 : 14)
-            .frame(minHeight: kind == .quiet ? 26 : 30)
+            .padding(.horizontal, kind.isQuiet ? 4 : 14)
+            .frame(minHeight: kind.isQuiet ? 26 : 30)
             .background(Rectangle().fill(fill))
             .overlay(Rectangle().strokeBorder(border, lineWidth: 1))
             .contentShape(Rectangle())
     }
 
-    private func neonBody(configuration: Configuration) -> some View {
+    private func neonBody(configuration: Configuration, hovering: Bool) -> some View {
         let pressed = configuration.isPressed
         let foreground: Color = {
             guard isEnabled else { return Synth.disabled }
@@ -416,6 +442,7 @@ struct NeonButtonStyle: ButtonStyle {
             case .secondary: return pressed ? Synth.tealLight : Synth.teal
             case .destructive: return Synth.error
             case .quiet: return pressed ? Synth.ice : Synth.steel
+            case .remove: return hovering ? Synth.error : pressed ? Synth.ice : Synth.steel
             }
         }()
         let border: Color = {
@@ -424,7 +451,7 @@ struct NeonButtonStyle: ButtonStyle {
             case .primary: return .clear
             case .secondary: return pressed ? Synth.tealLight : Synth.teal
             case .destructive: return Synth.error
-            case .quiet: return .clear
+            case .quiet, .remove: return .clear
             }
         }()
         return configuration.label
@@ -432,8 +459,8 @@ struct NeonButtonStyle: ButtonStyle {
             .tracking(1)
             .textCase(.uppercase)
             .foregroundStyle(foreground)
-            .padding(.horizontal, kind == .quiet ? 6 : 14)
-            .frame(minHeight: kind == .quiet ? 26 : 32)
+            .padding(.horizontal, kind.isQuiet ? 6 : 14)
+            .frame(minHeight: kind.isQuiet ? 26 : 32)
             .background(
                 RoundedRectangle(cornerRadius: Synth.Radius.control)
                     .fill(kind == .primary && isEnabled
@@ -454,6 +481,7 @@ extension ButtonStyle where Self == NeonButtonStyle {
     static var neonSecondary: NeonButtonStyle { NeonButtonStyle(kind: .secondary) }
     static var neonDestructive: NeonButtonStyle { NeonButtonStyle(kind: .destructive) }
     static var neonQuiet: NeonButtonStyle { NeonButtonStyle(kind: .quiet) }
+    static var neonRemove: NeonButtonStyle { NeonButtonStyle(kind: .remove) }
 }
 
 // MARK: - Toggle

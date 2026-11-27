@@ -89,6 +89,7 @@ struct ContentView: View {
         switch section {
         case .develop: ModulePage(store: store, scope: .develop)
         case .library: ModulePage(store: store, scope: .library)
+        case .importWindow: ImportScreen(store: store)
         case .mouseTrackpad: MouseTrackpadScreen(store: store)
         case .floatingPanels: FloatingPanelsScreen(store: store)
         case .general: GeneralScreen(store: store)
@@ -226,7 +227,7 @@ private struct ShortcutSwitch: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(on ? "Turn keyboard + scroll shortcuts off" : "Turn keyboard + scroll shortcuts on")
+        .themedTooltip(on ? "Turn keyboard + scroll shortcuts off" : "Turn keyboard + scroll shortcuts on")
         .accessibilityLabel("Shortcuts")
         .accessibilityValue(on ? "On" : waiting ? "Waiting for permission" : "Off")
         .accessibilityAddTraits(.isToggle)
@@ -263,7 +264,7 @@ private struct ShortcutSwitch: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(on ? "Turn keyboard + scroll shortcuts off" : "Turn keyboard + scroll shortcuts on")
+        .themedTooltip(on ? "Turn keyboard + scroll shortcuts off" : "Turn keyboard + scroll shortcuts on")
         .accessibilityLabel("Shortcuts")
         .accessibilityValue(on ? "On" : waiting ? "Waiting for permission" : "Off")
         .accessibilityAddTraits(.isToggle)
@@ -420,6 +421,7 @@ struct MainWindowSnapshot: View {
                 switch section {
                 case .develop: ModulePage(store: store, scope: .develop, defaults: defaults)
                 case .library: ModulePage(store: store, scope: .library, defaults: defaults)
+                case .importWindow: ImportScreen(store: store)
                 case .mouseTrackpad: MouseTrackpadScreen(store: store)
                 case .floatingPanels: FloatingPanelsScreen(store: store)
                 case .general: GeneralScreen(store: store)

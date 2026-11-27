@@ -180,6 +180,34 @@ struct KeymapPersistenceTests {
         }
     }
 
+    @Test func importKeysAreUnassignedUntilPickedAndRoundTrip() throws {
+        // Keymaps saved before Import keys existed: none assigned, like the standard layout.
+        let old = try Keymap.decodeStored(Data(#"{"format":3}"#.utf8))
+        #expect(old.importKeys == ImportKeys())
+        #expect(old.importKeys.include == nil && old.importKeys.exclude == nil && old.importKeys.toggle == nil)
+        #expect(!old.importKeys.advance)
+        #expect(Keymap.standardLayout.importKeys == ImportKeys())
+
+        var keymap = Keymap.standardLayout
+        keymap.importKeys = ImportKeys(include: KeyChord(6), exclude: KeyChord(7, .shift), toggle: nil, advance: true)
+        let data = try keymap.encoded()
+        let json = String(decoding: data, as: UTF8.self)
+        #expect(json.contains("\"toggle\":null")) // always written, a cleared key as null
+        #expect(json.contains("\"advance\":true"))
+        #expect(try Keymap.decodeStored(data) == keymap)
+        #expect(try Keymap.decodeStored(try Keymap.standardLayout.encoded()).importKeys == ImportKeys())
+        // Untouched Import keys are left out, so older strict builds still read the file.
+        let untouched = try #require(String(data: try Keymap.standardLayout.encoded(), encoding: .utf8))
+        #expect(!untouched.contains("importKeys"))
+
+        // Missing fields take the defaults.
+        let partial = try Keymap.decodeStored(Data(#"{"format":3,"importKeys":{"include":{"keyCode":6,"modifiers":0}}}"#.utf8))
+        #expect(partial.importKeys == ImportKeys(include: KeyChord(6)))
+        #expect(throws: KeymapError.unknownFields(["next"])) {
+            _ = try Keymap.decodeStored(Data(#"{"format":3,"importKeys":{"next":null}}"#.utf8))
+        }
+    }
+
     @Test func dataWithoutAFormatIsRejected() {
         let profile = #"{"bindings":[{"action":"contrast","keyCode":13}]}"#
         #expect(throws: KeymapError.unsupportedFormat(0)) {

@@ -1,8 +1,9 @@
 namespace Lumerist.Core;
 
 // The rules behind key editing in the main window (Views/KeymapEditing.swift):
-// slot roles, how a key's use is named, the System Key texts, and the decision
-// to commit an edit, refuse it, or ask to move a key that is already in use.
+// slot roles, how a key's use is named, the System Key and Import key texts,
+// and the decision to commit an edit, refuse it, or ask to move a key that is
+// already in use.
 
 /// <summary>Which key of a parameter slot is being edited.</summary>
 public enum SlotRole
@@ -55,7 +56,7 @@ public static class SlotRoles
     };
 }
 
-/// <summary>Names for where a key is used, and the System Keys' texts.</summary>
+/// <summary>Names for where a key is used, and the System Keys' and Import keys' texts.</summary>
 public static class KeyUsageText
 {
     /// <summary>The Mac's key code 40 (K): the example combo in the Combo Key's text.</summary>
@@ -69,6 +70,7 @@ public static class KeyUsageText
         KeyUsage.NudgeUp up => $"the Nudge + key of {ParameterLabel(up.Parameter)}",
         KeyUsage.Action action => $"the Command Key “{action.Title}”",
         KeyUsage.SystemKey system => $"the {system.Role.Title()}",
+        KeyUsage.ImportKey import => $"the {import.Role.Title()} key of the Import window",
         _ => "",
     };
 
@@ -101,6 +103,21 @@ public static class KeyUsageText
                 return "Hands every key back to Lightroom until you press it again. Handy when you need to type.";
         }
     }
+
+    /// <summary>"Include", "Exclude", "Toggle".</summary>
+    public static string Title(this ImportKeyRole role) => role switch
+    {
+        ImportKeyRole.Include => "Include",
+        ImportKeyRole.Exclude => "Exclude",
+        _ => "Toggle",
+    };
+
+    public static string Detail(this ImportKeyRole role) => role switch
+    {
+        ImportKeyRole.Include => "Ticks the photo, so Lightroom imports it.",
+        ImportKeyRole.Exclude => "Unticks the photo, so Lightroom leaves it out.",
+        _ => "Ticks or unticks the photo.",
+    };
 }
 
 /// <summary>Usage → conflict message for one scope (and the System Keys), computed once per drawing.</summary>
@@ -167,7 +184,45 @@ public static class KeymapEditing
             && !(keeping is KeyUsage.Action action && action.Id == commandKey.Id));
     }
 
-    /// <summary>Error conflicts that involve <paramref name="chord"/> in <paramref name="scope"/> (null: among System Keys).</summary>
+    /// <summary>The warning about one of Lightroom's own keys that <paramref name="usage"/> takes over, if any.</summary>
+    public static string? LightroomWarning(this Keymap keymap, KeyUsage usage) =>
+        keymap.Conflicts().FirstOrDefault(conflict => conflict.LightroomAction is not null && conflict.Usages.Contains(usage))?.Message;
+
+    /// <summary>
+    /// The Command Key editor's warnings, shown as soon as the key is
+    /// recorded: Lightroom's own keys that <paramref name="edited"/> would take
+    /// over, in each module it works in. <paramref name="current"/> is not changed.
+    /// </summary>
+    public static IReadOnlyList<string> LightroomWarnings(Keymap current, CommandKey edited)
+    {
+        var proposed = current.Clone();
+        proposed.Upsert(edited);
+        return proposed.Conflicts()
+            .Where(conflict => conflict.LightroomAction is not null
+                && conflict.Usages.Any(usage => usage is KeyUsage.Action action && action.Id == edited.Id))
+            .Select(conflict => conflict.Message)
+            .ToList();
+    }
+
+    /// <summary>The module of a slot's key (Dial, Nudge −, Nudge +); null for any other usage.</summary>
+    public static ParameterScope? SlotScope(this KeyUsage usage) => usage switch
+    {
+        KeyUsage.Dial dial => dial.Parameter.Scope,
+        KeyUsage.NudgeDown down => down.Parameter.Scope,
+        KeyUsage.NudgeUp up => up.Parameter.Scope,
+        _ => null,
+    };
+
+    /// <summary>Clears <paramref name="chord"/> from every Import key except the usage being assigned.</summary>
+    public static void RemoveImportChord(this Keymap keymap, KeyChord chord, KeyUsage? keeping)
+    {
+        foreach (var role in ImportKeyRoles.All)
+        {
+            if (keymap.ImportKeys.ChordFor(role) == chord && keeping != new KeyUsage.ImportKey(role)) keymap.ImportKeys.Set(role, null);
+        }
+    }
+
+    /// <summary>Error conflicts that involve <paramref name="chord"/> in <paramref name="scope"/> (null: among System Keys or Import keys).</summary>
     private static IReadOnlyList<KeyConflict> BlockingConflicts(this Keymap keymap, KeyChord chord, ParameterScope? scope) =>
         keymap.Conflicts()
             .Where(conflict => conflict.Severity == ConflictSeverity.Error && conflict.Chord == chord
@@ -200,13 +255,15 @@ public static class KeymapEditing
             var message = system
                 ? $"{text} is {names}. Change that system key first (General → System Keys)."
                 : $"{text} is {names}. Move it here?";
-            var canMove = !system && scope is not null;
+            // Keys of a module move within it; Import keys move among themselves.
+            var canMove = !system && (scope is not null || others.All(other => other is KeyUsage.ImportKey));
             Keymap? moved = null;
             string? moveError = null;
             if (canMove)
             {
                 moved = current.Clone();
-                moved.RemoveChord(key, scope!.Value, usage);
+                if (scope is { } moduleScope) moved.RemoveChord(key, moduleScope, usage);
+                else moved.RemoveImportChord(key, usage);
                 change(moved);
                 try
                 {
@@ -240,14 +297,23 @@ public static class KeymapEditing
         });
 
     /// <summary>
+    /// An Import key: <paramref name="chord"/> null clears it. A combo is
+    /// refused with its reason; a key used by another Import key can move.
+    /// </summary>
+    public static KeymapEdit PlanImportKey(Keymap current, ImportKeyRole role, KeyChord? chord) =>
+        Plan(current, chord, null, new KeyUsage.ImportKey(role), keymap => keymap.ImportKeys.Set(role, chord));
+
+    /// <summary>
     /// The standard layout with the user's options kept (General → Restore):
-    /// mouse, trackpad and Lightroom options and the Palette stay.
+    /// the Import keys are cleared; mouse, trackpad, Import ("Move to the next
+    /// photo") and Lightroom options and the Palette stay.
     /// </summary>
     public static Keymap StandardLayoutKeeping(Keymap current)
     {
         var restored = Keymap.StandardLayout();
         restored.Input = current.Input with { };
         restored.Palette = current.Palette with { Favourites = [.. current.Palette.Favourites] };
+        restored.ImportKeys.Advance = current.ImportKeys.Advance;
         return restored;
     }
 }

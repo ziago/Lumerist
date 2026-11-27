@@ -62,7 +62,15 @@ allow.
   Nudge Keys (tap −/+) and custom step sizes. Plus Command Keys (Lightroom
   command, Develop preset, Lightroom shortcut, macro), System Keys (Combo Key,
   Palette Key, Key Reference toggle, pause toggle), Palette options and input
-  options. `Keymap.standardLayout` is the default.
+  options, and the Import keys for Lightroom's Import window (none assigned
+  in the standard layout). `Keymap.standardLayout` is the default.
+- **Lightroom's own keys.** `Shared/lightroom-shortcuts.json` lists
+  Lightroom Classic's default shortcuts for Library, Develop and the Import
+  window, taken from Adobe's public help (the Import window's from community
+  reports). `python3 Scripts/generate-lightroom-shortcuts.py` checks it and
+  writes the Mac's `LightroomShortcutData.swift`; the Windows core reads the
+  JSON. A tap key on one of them gets a warning in the conflict report
+  (`LightroomShortcuts`), which never blocks saving.
 - **Combos.** A combo is a `KeyChord` with the pseudo-modifier
   `KeyModifiers.combo` (not a real modifier; key events never carry it). It
   works only while the Combo Key is held and reads "Tab + K"
@@ -113,6 +121,11 @@ allow.
   engine. Replayed taps are inserted with `tapPostEvent`, so typing order is
   kept. Wheel direction follows the physical movement, whatever macOS
   natural scrolling does.
+- `ImportWindowDetector`: while Lightroom is frontmost, every 0.25 s, reads
+  the role, subrole, size and "has a title" of Lightroom's windows through
+  Accessibility (never their text) and tells `KeyEngineMonitor` when the
+  Import window is in front (`ImportWindowRule` in the core decides). The
+  engine then sees the module `import`, where only the Import keys act.
 - `IntentDispatcher`: turns intents into requests at the chosen update rate
   (adjustments to the same slider are summed), runs macros, sends Lightroom's
   own shortcuts, and falls back to a shortcut when the SDK refuses a command.
@@ -145,6 +158,10 @@ The same pieces as on the Mac, with Windows means:
 - `Input/InputHook` uses low-level keyboard and mouse hooks to feed the same
   engine; `Input/InputSender` replays held keys with `SendInput`, marked so
   the hook lets them through.
+- `Input/ImportWindowDetector`: the input hook asks it on each event. It
+  reads the style and size of Lightroom's foreground window and the class and
+  size of its owner (never their text), and `ImportWindowRule` in the core
+  decides whether the Import window is in front.
 - `TrayIcon` is the notification-area icon (the Mac's menu bar item).
 - `Services/PluginInstaller` installs the plug-in into
   `%APPDATA%\Adobe\Lightroom\Modules`.

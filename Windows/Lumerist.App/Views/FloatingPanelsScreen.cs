@@ -423,7 +423,7 @@ internal sealed class FloatingPanelsScreen(ScreenContext context) : Screen(conte
         up.IsEnabled = index > 0;
         var down = SynthControls.IconButton(Icons.ArrowDown, SynthControls.Kind.Quiet, () => Move(index, 1), $"Move {entry.Title} down");
         down.IsEnabled = index < count - 1;
-        var remove = SynthControls.IconButton(Icons.Cancel, SynthControls.Kind.Quiet,
+        var remove = SynthControls.RemoveButton(
             () => KeymapEditor.Edit(Controller, keymap => keymap.Palette.Favourites.RemoveAt(index)), $"Remove {entry.Title}");
         var row = Layout.Bar(Theme.Space.M,
             [
