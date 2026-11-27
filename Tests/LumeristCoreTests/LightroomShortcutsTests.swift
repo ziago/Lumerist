@@ -63,3 +63,61 @@ struct LightroomShortcutsTests {
         #expect(LightroomShortcuts.match(KeyChord(6), in: .importWindow, layout: nil) == nil)
     }
 }
+
+/// Lightroom's keys follow its interface language.
+struct LightroomLanguageTests {
+    private func id(_ code: String?) -> String { LightroomShortcuts.Language.forCode(code).id }
+
+    @Test func codesPickTheirLanguageThenTheBaseLanguageThenEnglish() {
+        #expect(id("it") == "it" && id("ja") == "ja" && id("zh_cn") == "zh_cn" && id("zh_tw") == "zh_tw")
+        #expect(id("pt") == "pt" && id("pt_br") == "pt")
+        #expect(id("nb") == "no" && id("nn") == "no")
+        #expect(id("de_ch") == "de" && id("sv_se") == "sv")
+        // zh regions are languages of their own; unknown codes and nil are English.
+        #expect(id("zh") == "en" && id("zh_hk") == "en")
+        #expect(id("xx") == "en" && id(nil) == "en")
+        #expect(LightroomShortcuts.Language.matching("xx") == nil)
+        #expect(LightroomShortcuts.Language.matching("de_at")?.name == "Deutsch")
+    }
+
+    @Test func everyLanguageLightroomShipsIsListedWithItsToggle() {
+        let languages = LightroomShortcuts.languages
+        #expect(languages.map(\.id) == ["en", "de", "es", "fr", "it", "ja", "ko", "nl", "pt", "sv", "zh_cn", "zh_tw", "ru", "pl", "no", "th"])
+        #expect(languages.filter { $0.importToggle == "<" }.map(\.id) == ["it", "sv"])
+        #expect(languages.allSatisfy { !$0.name.isEmpty && ["`", "<"].contains($0.importToggle) })
+        #expect(LightroomShortcuts.Language.english.overrides.isEmpty)
+    }
+
+    @Test func nothingIsPressedDifferentlyToday() {
+        // Every press stays English: no override is marked safe to press.
+        for language in LightroomShortcuts.languages {
+            #expect(language.overrides.allSatisfy { !$0.press }, "\(language.id)")
+            for command in LightroomCommandName.allCases {
+                #expect(FallbackShortcuts.press(for: command, lightroomLanguage: language.id) == FallbackShortcuts.press(for: command))
+            }
+            #expect(AppCommand.pasteSettingsFromPrevious.press(lightroomLanguage: language.id)
+                    == .character(AppCommand.pasteSettingsFromPrevious.shortcut))
+        }
+        #expect(LightroomShortcuts.table.compactMap(\.fallbackFor).sorted() == [
+            "autoTone", "flagPick", "flagReject", "flagRemove", "pasteSettingsFromPrevious", "redo", "showClipping", "undo",
+        ])
+    }
+
+    @Test func sharedChordsBecomeKeysToPress() {
+        #expect(LightroomKeyPress(logicalChord: "Alt+Primary+V") == .character(CharacterShortcut("v", [.option, .command], usKeyCode: 9)))
+        #expect(LightroomKeyPress(logicalChord: "Primary+I") == .character(CharacterShortcut("i", .command, usKeyCode: 34)))
+        #expect(LightroomKeyPress(logicalChord: "ArrowRight") == .key(KeyChord(124)))
+        #expect(LightroomKeyPress(logicalChord: "Shift+1") == .character(CharacterShortcut("1", .shift, usKeyCode: 18)))
+        #expect(LightroomKeyPress(logicalChord: "Hyper+V") == nil)
+    }
+
+    @Test func warningsFollowTheLanguage() {
+        let shiftH = KeyChord(4, .shift)
+        #expect(LightroomShortcuts.match(shiftH, in: .develop, layout: nil, language: nil)?.name == "Toggle HDR view")
+        #expect(LightroomShortcuts.match(shiftH, in: .develop, layout: nil, language: "it")?.name == "Display current module shortcuts")
+        // French Lightroom lists the same keys as English here.
+        #expect(LightroomShortcuts.match(shiftH, in: .develop, layout: nil, language: "fr")?.name == "Toggle HDR view")
+        #expect(LightroomShortcuts.match(KeyChord(8), in: .library, layout: nil, language: "es") == nil)          // C
+        #expect(LightroomShortcuts.match(KeyChord(4), in: .library, layout: nil, language: "es")?.name == "Enter Library Compare view")
+    }
+}

@@ -49,8 +49,9 @@ struct KeyboardTab: View {
                 )
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel(layer == .plain ? "Keyboard, plain keys" : "Keyboard, combos")
-                // Key names follow the input source: draw again when it changes.
-                .id(store.keyboardLayoutRevision)
+                // Key names follow the input source, warnings Lightroom's
+                // language: draw again when either changes.
+                .id(store.lightroomKeysRevision)
             )
 
             if layer == .combos && comboKey == nil {

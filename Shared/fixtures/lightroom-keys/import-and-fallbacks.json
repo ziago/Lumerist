@@ -1,0 +1,95 @@
+{
+  "group": "lightroom-keys",
+  "about": "The keys Lumerist presses in Lightroom, for a keyboard layout and Lightroom's interface language: the Import keys (Include P, Exclude X, Toggle by the language's character, else a plain `, else a plain <, else none) and the shortcuts behind commands the SDK can't run. Layouts start from the US one; IsoLeftOfZ is the ISO key between the left Shift and Z.",
+  "cases": [
+    {
+      "id": "lightroom-keys/english-lightroom-on-a-us-keyboard",
+      "lightroomLanguage": "en",
+      "importKeys": { "include": "P", "exclude": "X", "toggle": "LeftOf1" },
+      "fallbacks": {
+        "autoTone": "Primary+U", "undo": "Primary+Z", "redo": "Shift+Primary+Z", "flagPick": "P", "flagReject": "X",
+        "flagRemove": "U", "showClipping": "J", "pasteSettingsFromPrevious": "Alt+Primary+V"
+      }
+    },
+    {
+      "id": "lightroom-keys/italian-lightroom-on-an-italian-keyboard-toggles-with-less-than",
+      "about": "What Lumerist's own test showed (27 Nov 2026): the < key left of Z, never the key left of 1, which types \\.",
+      "lightroomLanguage": "it",
+      "keyboard": "iso",
+      "layout": { "LeftOf1": "\\", "IsoLeftOfZ": "<", "\\": "ù" },
+      "importKeys": { "include": "P", "exclude": "X", "toggle": "IsoLeftOfZ" }
+    },
+    {
+      "id": "lightroom-keys/english-lightroom-on-an-italian-keyboard-falls-back-to-less-than",
+      "about": "No key types a plain `: the < key, as before Lumerist knew Lightroom's language.",
+      "lightroomLanguage": "en",
+      "keyboard": "iso",
+      "layout": { "LeftOf1": "\\", "IsoLeftOfZ": "<", "\\": "ù" },
+      "importKeys": { "toggle": "IsoLeftOfZ" }
+    },
+    {
+      "id": "lightroom-keys/italian-lightroom-on-a-us-keyboard-falls-back-to-back-quote",
+      "about": "No key types a plain <: the ` key, as before.",
+      "lightroomLanguage": "it",
+      "importKeys": { "toggle": "LeftOf1" }
+    },
+    {
+      "id": "lightroom-keys/the-language-picks-the-toggle-key-where-both-are-typed",
+      "about": "A layout with both a plain ` and a plain < (Lithuanian ĄŽERTY on an ISO keyboard): Swedish Lightroom gets <.",
+      "lightroomLanguage": "sv",
+      "keyboard": "iso",
+      "layout": { "LeftOf1": "`", "IsoLeftOfZ": "<" },
+      "importKeys": { "toggle": "IsoLeftOfZ" }
+    },
+    {
+      "id": "lightroom-keys/english-lightroom-where-both-are-typed-toggles-with-back-quote",
+      "lightroomLanguage": "en",
+      "keyboard": "iso",
+      "layout": { "LeftOf1": "`", "IsoLeftOfZ": "<" },
+      "importKeys": { "toggle": "LeftOf1" }
+    },
+    {
+      "id": "lightroom-keys/regional-codes-use-their-language",
+      "lightroomLanguage": "sv_se",
+      "keyboard": "iso",
+      "layout": { "LeftOf1": "`", "IsoLeftOfZ": "<" },
+      "importKeys": { "toggle": "IsoLeftOfZ" }
+    },
+    {
+      "id": "lightroom-keys/an-unknown-language-uses-english",
+      "lightroomLanguage": "xx",
+      "keyboard": "iso",
+      "layout": { "LeftOf1": "`", "IsoLeftOfZ": "<" },
+      "importKeys": { "toggle": "LeftOf1" }
+    },
+    {
+      "id": "lightroom-keys/a-language-not-known-yet-uses-english",
+      "lightroomLanguage": null,
+      "keyboard": "iso",
+      "layout": { "LeftOf1": "`", "IsoLeftOfZ": "<" },
+      "importKeys": { "toggle": "LeftOf1" }
+    },
+    {
+      "id": "lightroom-keys/no-toggle-without-either-character",
+      "about": "Neither key types ` or < alone (as on Russian or Czech layouts): no Toggle.",
+      "lightroomLanguage": "it",
+      "keyboard": "iso",
+      "layout": { "LeftOf1": "§", "IsoLeftOfZ": "°" },
+      "importKeys": { "include": "P", "exclude": "X", "toggle": null }
+    },
+    {
+      "id": "lightroom-keys/a-dead-back-quote-is-no-toggle",
+      "about": "U.S. International – PC: ` is a dead key, and < needs Shift.",
+      "lightroomLanguage": "en",
+      "deadKeys": ["LeftOf1"],
+      "importKeys": { "toggle": null }
+    },
+    {
+      "id": "lightroom-keys/german-lightroom-keeps-command-u-for-auto-tone",
+      "about": "Adobe's German page lists Primary+I for Auto tone and for Show/hide info overlay alike, so Lumerist keeps the English key. Letters follow the layout: on QWERTZ z is the key at Y.",
+      "lightroomLanguage": "de",
+      "layout": { "Y": "z", "Z": "y" },
+      "fallbacks": { "autoTone": "Primary+U", "undo": "Primary+Y", "redo": "Shift+Primary+Y", "pasteSettingsFromPrevious": "Alt+Primary+V" }
+    }
+  ]
+}

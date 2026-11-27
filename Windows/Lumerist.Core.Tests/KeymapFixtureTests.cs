@@ -45,7 +45,8 @@ internal static class RuleRunner
         }
         if (testCase["conflicts"] is JsonObject expectedConflicts)
         {
-            var conflicts = keymap.Conflicts();
+            // "lightroomLanguage": Lightroom's interface language; null or absent is English.
+            var conflicts = keymap.Conflicts(FixtureValues.OptionalText(testCase["lightroomLanguage"]));
             var errors = conflicts.Where(conflict => conflict.Severity == ConflictSeverity.Error).ToList();
             var warnings = conflicts.Where(conflict => conflict.Severity == ConflictSeverity.Warning).ToList();
             if (Count(expectedConflicts["errors"]) is { } errorCount && errorCount != errors.Count)

@@ -143,9 +143,10 @@ final class CommandStore {
     private var monitor: KeyEngineMonitor?
     /// Watches for Lightroom's Import window while the shortcuts are on.
     @ObservationIgnored private var importWindow: ImportWindowDetector?
-    /// Bumped when the input source changes, so screens that name keys or
-    /// show the Import keys' Lightroom keys draw them again.
-    private(set) var keyboardLayoutRevision = 0
+    /// Bumped when the input source or Lightroom's language changes, so
+    /// screens that name keys, show the keys Lumerist presses or warn about
+    /// Lightroom's keys draw them again.
+    private(set) var lightroomKeysRevision = 0
     @ObservationIgnored private var layoutObserver: NSObjectProtocol?
     private var permissionWait: Task<Void, Never>?
 
@@ -171,7 +172,7 @@ final class CommandStore {
         layoutObserver = NotificationCenter.default.addObserver(forName: KeyboardLayout.didChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
-                self.keyboardLayoutRevision += 1
+                self.lightroomKeysRevision += 1
                 self.monitor?.update(importShortcuts: .forCurrentLayout)
             }
         }
@@ -428,7 +429,15 @@ final class CommandStore {
 
     private func apply(_ newContext: LightroomContext) {
         guard newContext != context else { return }
+        let languageChanged = newContext.language != context.language
         context = newContext
+        // Lightroom's shortcuts follow its interface language: the warnings
+        // and the keys Lumerist presses follow it too (English when unknown).
+        if languageChanged {
+            LightroomShortcuts.activeLanguage = newContext.language
+            lightroomKeysRevision += 1
+            monitor?.update(importShortcuts: .forCurrentLayout)
+        }
         monitor?.update(module: newContext.module, tool: newContext.tool)
         DebugLog.write("Lightroom context: \(newContext.module) \(newContext.tool) (language \(newContext.language ?? "unknown"))")
         if !newContext.isMasking && isPaletteOpen { closePalette() }

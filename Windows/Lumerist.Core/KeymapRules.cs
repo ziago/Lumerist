@@ -248,7 +248,10 @@ public sealed partial class Keymap
     /// key but the pause toggle pauses, so they clash only with each other and
     /// with the pause toggle.
     /// </summary>
-    public IReadOnlyList<KeyConflict> Conflicts()
+    public IReadOnlyList<KeyConflict> Conflicts() => Conflicts(LightroomShortcuts.Language);
+
+    /// <summary>Every problem, with the warnings about Lightroom's keys in <paramref name="lightroomLanguage"/> (null: English).</summary>
+    public IReadOnlyList<KeyConflict> Conflicts(string? lightroomLanguage)
     {
         var result = new List<KeyConflict>();
         string Name(KeyChord chord) => DisplayText(chord);
@@ -280,8 +283,8 @@ public sealed partial class Keymap
                     $"{Name(toggle)} can't work: a combo can't use the Combo Key itself."));
             }
         }
-        result.AddRange(SystemKeyLightroomWarnings(Name));
-        result.AddRange(ImportKeyConflicts(Name));
+        result.AddRange(SystemKeyLightroomWarnings(Name, lightroomLanguage));
+        result.AddRange(ImportKeyConflicts(Name, lightroomLanguage));
 
         foreach (var scope in ParameterScopes.All)
         {
@@ -321,7 +324,7 @@ public sealed partial class Keymap
                 }
                 // A tap key on one of Lightroom's own keys: the specific warning
                 // replaces the general one below.
-                var lightroom = LightroomWarning(chord, scope, usages);
+                var lightroom = LightroomWarning(chord, scope, usages, lightroomLanguage);
                 if (lightroom is not null) result.Add(lightroom);
                 if (chord.IsCombo)
                 {
@@ -342,17 +345,17 @@ public sealed partial class Keymap
     /// (never a Dial Key: its tap still reaches Lightroom). A plain Nudge Key
     /// also takes its Shift chord, for the larger step.
     /// </summary>
-    private KeyConflict? LightroomWarning(KeyChord chord, ParameterScope scope, List<KeyUsage> usages)
+    private KeyConflict? LightroomWarning(KeyChord chord, ParameterScope scope, List<KeyUsage> usages, string? language)
     {
         var taps = usages.Where(usage => usage.IsAction || usage.IsNudge).ToList();
         if (taps.Count == 0 || chord.IsCombo) return null;
         var context = LightroomShortcuts.ContextOf(scope);
         var taken = chord;
-        var match = LightroomShortcuts.For(chord, context);
+        var match = LightroomShortcuts.For(chord, context, language);
         if (match is null && chord.Modifiers == KeyModifiers.None && taps.Any(usage => usage.IsNudge))
         {
             taken = new KeyChord(chord.ScanCode, KeyModifiers.Shift);
-            match = LightroomShortcuts.For(taken, context);
+            match = LightroomShortcuts.For(taken, context, language);
         }
         if (match is null) return null;
         return LightroomWarning(match, taken, DisplayText(taken), scope,
@@ -371,7 +374,7 @@ public sealed partial class Keymap
     /// pause toggle in Library and Develop. Never the Combo Key, whose tap
     /// still reaches Lightroom, nor a combo.
     /// </summary>
-    private List<KeyConflict> SystemKeyLightroomWarnings(Func<KeyChord, string> name)
+    private List<KeyConflict> SystemKeyLightroomWarnings(Func<KeyChord, string> name, string? language)
     {
         var result = new List<KeyConflict>();
         foreach (var role in SystemKeyRoles.All)
@@ -385,7 +388,7 @@ public sealed partial class Keymap
             };
             foreach (var scope in places)
             {
-                if (LightroomShortcuts.For(chord, LightroomShortcuts.ContextOf(scope)) is { } match)
+                if (LightroomShortcuts.For(chord, LightroomShortcuts.ContextOf(scope), language) is { } match)
                     result.Add(LightroomWarning(match, chord, name(chord), scope, [new KeyUsage.SystemKey(role)]));
             }
         }
@@ -397,7 +400,7 @@ public sealed partial class Keymap
     /// the warning for an Import key on another of Lightroom's keys in the
     /// Import window (never for the key that Import key sends itself).
     /// </summary>
-    private List<KeyConflict> ImportKeyConflicts(Func<KeyChord, string> name)
+    private List<KeyConflict> ImportKeyConflicts(Func<KeyChord, string> name, string? language)
     {
         var result = new List<KeyConflict>();
         var byChord = new Dictionary<KeyChord, List<KeyUsage>>();
@@ -416,7 +419,7 @@ public sealed partial class Keymap
                 result.Add(new(ConflictSeverity.Error, chord, null, [.. usages, new KeyUsage.SystemKey(SystemKeyRole.PauseToggle)],
                     $"{name(chord)} is the pause toggle, so it can't be an Import key."));
             }
-            if (LightroomShortcuts.For(chord, LightroomShortcuts.Context.ImportWindow) is { } match)
+            if (LightroomShortcuts.For(chord, LightroomShortcuts.Context.ImportWindow, language) is { } match)
             {
                 var taking = usages.Where(usage => usage is KeyUsage.ImportKey import && import.Role != match.ImportRole).ToList();
                 if (taking.Count > 0) result.Add(LightroomWarning(match, chord, name(chord), null, taking));

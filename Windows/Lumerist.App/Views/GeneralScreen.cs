@@ -219,6 +219,9 @@ internal sealed class GeneralScreen(ScreenContext context) : Screen(context)
 
         return Surfaces.SettingsSection("Lightroom", Icons.Link, "Lumerist and the plug-in talk only through 127.0.0.1, inside this PC.",
             Surfaces.SettingRow("Link", linkDetail, link),
+            // Lightroom's keys follow its interface language, which the plug-in reports.
+            Surfaces.SettingRow(LightroomLanguage.DisplayLine(Controller.Context.Language),
+                "Lumerist presses Lightroom's own keys as this language defines them.", null),
             Surfaces.SettingRow("Try the link",
                 "Check connection waits for the plug-in to answer. The test exposure adds +0.1 EV to the selected photo in Develop.",
                 Layout.HStack(Theme.Space.S, check, exposure)),

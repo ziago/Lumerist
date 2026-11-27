@@ -38,6 +38,8 @@ internal sealed unsafe class InputHook : IDisposable
     private readonly HookSilenceWatch silenceWatch = new(SilentHookMilliseconds);
     private string module = "develop";
     private string tool = "";
+    /// <summary>Lightroom's interface language (null: not known, English): it names the Import keys.</summary>
+    private string? language;
     private bool isImportWindowOpen;
     /// <summary>The layout the Import shortcuts were taken for, while the Import window is open.</summary>
     private nint importLayout;
@@ -106,12 +108,16 @@ internal sealed unsafe class InputHook : IDisposable
         lock (gate) engine.Update(keymap);
     }
 
-    public void UpdateContext(string newModule, string newTool)
+    public void UpdateContext(string newModule, string newTool, string? newLanguage = null)
     {
         lock (gate)
         {
             module = newModule;
             tool = newTool;
+            if (newLanguage == language) return;
+            language = newLanguage;
+            // The Import keys follow the language: taken again at once if the Import window is open.
+            if (isImportWindowOpen) engine.UpdateImportShortcuts(KeyboardLayout.ImportShortcutsFor(importLayout, language));
         }
     }
 
@@ -406,8 +412,9 @@ internal sealed unsafe class InputHook : IDisposable
 
     /// <summary>
     /// Lightroom's Import window came to the front or went away. While it is
-    /// open, its shortcuts follow the keyboard layout of Lightroom's window:
-    /// taken at the opening and again whenever the layout changes (the table
+    /// open, its shortcuts follow the keyboard layout of Lightroom's window and
+    /// Lightroom's language: taken at the opening and again whenever the layout
+    /// (or, in <see cref="UpdateContext"/>, the language) changes (the table
     /// is read once per layout, so the check costs one call). One log line per change, no more.
     /// </summary>
     private void FollowImportWindow(bool open, uint lightroomThread)
@@ -418,7 +425,7 @@ internal sealed unsafe class InputHook : IDisposable
             if (!isImportWindowOpen || layout != importLayout)
             {
                 importLayout = layout;
-                engine.UpdateImportShortcuts(KeyboardLayout.ImportShortcutsFor(layout));
+                engine.UpdateImportShortcuts(KeyboardLayout.ImportShortcutsFor(layout, language));
             }
         }
         if (open == isImportWindowOpen) return;

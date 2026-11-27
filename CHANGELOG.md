@@ -30,6 +30,10 @@ All notable changes to Lumerist are documented here. The format follows
   on your keyboard layout, ⌘ and Ctrl shortcuts included. They stay right on
   Dvorak, AZERTY, QWERTZ and other layouts, and a key is never pressed just
   because of where it sits.
+- Lumerist follows Lightroom's own language, which decides Lightroom's
+  keys: the Import window's Toggle is < in Italian and Swedish Lightroom and
+  ` in the other languages, and the Lightroom key warnings use the keys of
+  Lightroom's language. General shows the language Lightroom reports.
 - Tab + Q is now the command "Paste settings from previous", listed under
   Edit. A Tab + Q left as it came from an earlier version becomes the
   command by itself.

@@ -112,11 +112,22 @@ public sealed record ImportShortcuts(KeyChord Include, KeyChord Exclude, KeyChor
         new KeyChord(ScanCodes.RightArrow));
 
     /// <param name="layout">Lightroom's keyboard layout. Null: the US keys.</param>
-    public static ImportShortcuts ForLayout(KeyboardLayoutTable? layout) => layout is null ? Standard : Standard with
+    /// <param name="language">
+    /// Lightroom's interface language (null: English). It names Toggle's
+    /// character (<see cref="LightroomLanguage.ImportToggleCharacter"/>: &lt; in
+    /// Italian and Swedish, ` otherwise), pressed with the key that types it
+    /// alone; where none does, the key that types ` alone, else &lt;, else none,
+    /// so a language never leaves a layout worse off than English.
+    /// </param>
+    public static ImportShortcuts ForLayout(KeyboardLayoutTable? layout, string? language = null) =>
+        ForLayout(layout, language, LightroomLanguage.ImportToggleCharacter(language));
+
+    /// <param name="toggle">The language's Toggle character (<see cref="LightroomLanguage.ImportToggleCharacter"/>).</param>
+    internal static ImportShortcuts ForLayout(KeyboardLayoutTable? layout, string? language, char toggle) => layout is null ? Standard : Standard with
     {
-        Include = FallbackShortcuts.For(LightroomCommandName.FlagPick, layout) ?? Standard.Include,
-        Exclude = FallbackShortcuts.For(LightroomCommandName.FlagReject, layout) ?? Standard.Exclude,
-        Toggle = (layout.PlainKeyFor('`') ?? layout.PlainKeyFor('<')) is { } scanCode ? new KeyChord(scanCode) : null,
+        Include = FallbackShortcuts.For(LightroomCommandName.FlagPick, layout, language) ?? Standard.Include,
+        Exclude = FallbackShortcuts.For(LightroomCommandName.FlagReject, layout, language) ?? Standard.Exclude,
+        Toggle = (layout.PlainKeyFor(toggle) ?? layout.PlainKeyFor('`') ?? layout.PlainKeyFor('<')) is { } scanCode ? new KeyChord(scanCode) : null,
     };
 
     /// <summary>The key a role presses; null for Toggle when the layout has none.</summary>

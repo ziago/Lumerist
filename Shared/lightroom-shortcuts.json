@@ -1,6 +1,7 @@
 {
   "about": "Lightroom Classic's own default keyboard shortcuts where Lumerist can take a key over: Library, Develop and the Import window. Both apps warn, without blocking, when a Command Key, a Nudge Key or an Import key is one of these in its own place. Taken only from Adobe's public help pages (and, for the Import window, from community reports, marked as such), never from Lightroom itself.",
-  "format": "Keys use the logical names of fixtures/README.md; Primary is ⌘ on the Mac and Ctrl on Windows. 'mac' and 'windows' list each system's chords as Adobe writes them, for US keyboards; an empty list means the system has no such shortcut. A section's 'contexts' apply to every shortcut unless one gives its own: 'library', 'develop' or 'import' (the Import window). 'name' is the short name a warning shows (default: 'action', Adobe's wording). 'importRole' marks the key an Import key itself sends, which never warns for that key.",
+  "format": "Keys use the logical names of fixtures/README.md; Primary is ⌘ on the Mac and Ctrl on Windows. 'mac' and 'windows' list each system's chords as Adobe writes them, for US keyboards; an empty list means the system has no such shortcut. A section's 'contexts' apply to every shortcut unless one gives its own: 'library', 'develop' or 'import' (the Import window). 'name' is the short name a warning shows (default: 'action', Adobe's wording). 'importRole' marks the key an Import key itself sends, which never warns for that key. 'fallbackFor' names the Lumerist command that presses the entry (a fallback for a command the SDK can't run, or Paste settings from previous).",
+  "languagesFormat": "Lightroom picks its shortcuts from its interface language, and Adobe's localized help pages list some keys differently. 'languages' has one entry per language Lightroom Classic ships (Adobe's system requirements page, read on 2026-11-27 from https://web.archive.org/web/20260519052306/https://helpx.adobe.com/lightroom-classic/system-requirements.html). 'codes' are the LrLocalization.currentLanguage() codes that select it: an exact code first, then the part before '_' (never for zh), else en. 'name' is how General names it. 'importToggle' is the character Lightroom's Import window toggles with in that language. An override names one English entry by section id and action and replaces its mac and windows chords in that language; it always applies to warnings, and to the keys Lumerist presses only when press is true and the entry has fallbackFor (the Lumerist command it backs). Overrides are taken only where the page clearly differs for that exact action, both systems agree and the key clashes with no other action in the same place; 'evidence' says why. Punctuation is not recorded, since it never warns.",
   "matching": "Letters and digits match by the character the user's key types on the active layout; arrows, F-keys, Tab, Space, Return, Esc, Backspace, ForwardDelete, Home, End, PageUp and PageDown match by key. Punctuation (LeftOf1 ` and the keys ' , . / ; [ ] \\ = -) never warns: Lumerist can't tell reliably which key types it on every layout, and a missing warning is better than a wrong one.",
   "notUsed": "Mouse actions (click, drag) are left out, and so are the Book, Slideshow, Print, Map and Web sections, where Lumerist takes no key; so is the panel row for Slideshow, Print and Web. An entry naming one module applies there only; '(from any module)' and the like apply to Library and Develop.",
   "sections": [
@@ -21,9 +22,9 @@
         { "action": "Show/hide right panels", "mac": ["F8"], "windows": ["F8"] },
         { "action": "Open/close left panels, top to bottom", "mac": ["Control+Primary+0", "Control+Primary+1", "Control+Primary+2", "Control+Primary+3", "Control+Primary+4", "Control+Primary+5"], "windows": ["Shift+Primary+0", "Shift+Primary+1", "Shift+Primary+2", "Shift+Primary+3", "Shift+Primary+4", "Shift+Primary+5"] },
         { "action": "Open/close right panels, Library and Develop modules, top to bottom", "mac": ["Primary+0", "Primary+1", "Primary+2", "Primary+3", "Primary+4", "Primary+5", "Primary+6", "Primary+7", "Primary+8", "Primary+9"], "windows": ["Primary+0", "Primary+1", "Primary+2", "Primary+3", "Primary+4", "Primary+5", "Primary+6", "Primary+7", "Primary+8", "Primary+9"] },
-        { "action": "Redo", "mac": ["Shift+Primary+Z"], "windows": ["Shift+Primary+Z"] },
+        { "action": "Redo", "fallbackFor": "redo", "mac": ["Shift+Primary+Z"], "windows": ["Shift+Primary+Z"] },
         { "action": "Redo (Windows only)", "name": "Redo", "mac": [], "windows": ["Primary+Y"] },
-        { "action": "Undo", "mac": ["Primary+Z"], "windows": ["Primary+Z"] }
+        { "action": "Undo", "fallbackFor": "undo", "mac": ["Primary+Z"], "windows": ["Primary+Z"] }
       ]
     },
     {
@@ -199,11 +200,11 @@
         { "action": "Assign a green label", "mac": ["8"], "windows": ["8"] },
         { "action": "Assign a blue label", "mac": ["9"], "windows": ["9"] },
         { "action": "Assign a color label and go to next photo", "mac": ["Shift+6", "Shift+7", "Shift+8", "Shift+9"], "windows": ["Shift+6", "Shift+7", "Shift+8", "Shift+9"] },
-        { "action": "Flag photo as a pick", "mac": ["P"], "windows": ["P"] },
+        { "action": "Flag photo as a pick", "fallbackFor": "flagPick", "mac": ["P"], "windows": ["P"] },
         { "action": "Flag photo as a pick and go to next photo", "mac": ["Shift+P"], "windows": ["Shift+P"] },
-        { "action": "Flag photo as a reject", "mac": ["X"], "windows": ["X"] },
+        { "action": "Flag photo as a reject", "fallbackFor": "flagReject", "mac": ["X"], "windows": ["X"] },
         { "action": "Flag photo as a reject and go to next photo", "mac": ["Shift+X"], "windows": ["Shift+X"] },
-        { "action": "Unflag photo", "mac": ["U"], "windows": ["U"] },
+        { "action": "Unflag photo", "fallbackFor": "flagRemove", "mac": ["U"], "windows": ["U"] },
         { "action": "Unflag photo and go to next photo", "mac": ["Shift+U"], "windows": ["Shift+U"] },
         { "action": "Increase/decrease flag status", "mac": ["Primary+ArrowUp", "Primary+ArrowDown"], "windows": ["Primary+ArrowUp", "Primary+ArrowDown"] },
         { "action": "Cycle flag settings", "mac": ["LeftOf1"], "windows": ["LeftOf1"] },
@@ -266,11 +267,11 @@
         { "action": "Toggle Detect Aware", "mac": ["Alt+Shift+O"], "windows": ["Alt+Shift+O"] },
         { "action": "Cycle through variations of Generative Remove", "mac": ["Alt+ArrowLeft", "Alt+ArrowRight"], "windows": ["Alt+ArrowLeft", "Alt+ArrowRight"] },
         { "action": "Convert to grayscale", "mac": ["V"], "windows": ["V"] },
-        { "action": "Auto tone", "mac": ["Primary+U"], "windows": ["Primary+U"] },
+        { "action": "Auto tone", "fallbackFor": "autoTone", "mac": ["Primary+U"], "windows": ["Primary+U"] },
         { "action": "Auto white balance", "mac": ["Shift+Primary+U"], "windows": ["Shift+Primary+U"] },
         { "action": "Edit in Photoshop", "mac": ["Primary+E"], "windows": ["Primary+E"] },
         { "action": "Copy/paste Develop settings", "mac": ["Shift+Primary+C", "Shift+Primary+V"], "windows": ["Shift+Primary+C", "Shift+Primary+V"] },
-        { "action": "Paste settings from previous photo", "mac": ["Alt+Primary+V"], "windows": ["Alt+Primary+V"] },
+        { "action": "Paste settings from previous photo", "fallbackFor": "pasteSettingsFromPrevious", "mac": ["Alt+Primary+V"], "windows": ["Alt+Primary+V"] },
         { "action": "Copy After settings to Before", "mac": ["Alt+Shift+Primary+ArrowLeft"], "windows": ["Alt+Shift+Primary+ArrowLeft"] },
         { "action": "Copy Before settings to After", "mac": ["Alt+Shift+Primary+ArrowRight"], "windows": ["Alt+Shift+Primary+ArrowRight"] },
         { "action": "Swap Before and After settings", "mac": ["Alt+Shift+Primary+ArrowUp"], "windows": ["Alt+Shift+Primary+ArrowUp"] },
@@ -308,7 +309,7 @@
         { "action": "Select Targeted Adjustment tool to apply a Luminance adjustment", "mac": ["Alt+Shift+Primary+L"], "windows": ["Alt+Shift+Primary+L"] },
         { "action": "Select Targeted Adjustment tool to apply a Grayscale Mix adjustment", "mac": ["Alt+Shift+Primary+G"], "windows": ["Alt+Shift+Primary+G"] },
         { "action": "Deselect Targeted Adjustment tool", "mac": ["Alt+Shift+Primary+N"], "windows": ["Alt+Shift+Primary+N"] },
-        { "action": "Show clipping", "mac": ["J"], "windows": ["J"] },
+        { "action": "Show clipping", "fallbackFor": "showClipping", "mac": ["J"], "windows": ["J"] },
         { "action": "Rotate photo right (clockwise)", "mac": ["Primary+]"], "windows": ["Primary+]"] },
         { "action": "Rotate photo left (counterclockwise)", "mac": ["Primary+["], "windows": ["Primary+["] },
         { "action": "Toggle between Loupe and 1:1 Zoom preview", "mac": ["Space", "Z"], "windows": ["Space", "Z"] },
@@ -366,6 +367,74 @@
         { "action": "Include or leave out the photo", "name": "Toggle", "importRole": "toggle", "mac": ["LeftOf1"], "windows": ["LeftOf1"] },
         { "action": "Move between photos", "mac": ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"], "windows": ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"] }
       ]
+    }
+  ],
+  "languages": [
+    { "id": "en", "name": "English", "codes": ["en"], "importToggle": "`", "source": "https://helpx.adobe.com/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260415093948/https://helpx.adobe.com/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": []
+    },
+    { "id": "de", "name": "Deutsch", "codes": ["de"], "importToggle": "`", "source": "https://helpx.adobe.com/de/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20251105004135/https://helpx.adobe.com/de/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": [
+        { "section": "develop", "action": "Toggle 'Use Generative AI'", "mac": ["Alt+Primary+Y"], "windows": ["Alt+Primary+Y"], "press": false, "evidence": "Adobe's page lists “Befehl + Wahl + Y” on macOS and “Strg + Alt + Y” on Windows. The same on the Norwegian page." }
+      ]
+    },
+    { "id": "es", "name": "Español", "codes": ["es"], "importToggle": "`", "source": "https://helpx.adobe.com/es/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260413191001/https://helpx.adobe.com/es/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": [
+        { "section": "views", "action": "Toggle HDR view", "mac": ["Alt+Shift+Primary+J"], "windows": ["Alt+Shift+Primary+J"], "press": false, "evidence": "Adobe's page lists “Comando + Opción + Mayús + J” on macOS and “Ctrl + Alt + Mayús + J” on Windows. The same in Spanish, Italian, Portuguese and Swedish; Shift+H, the English key, is free there." },
+        { "section": "views", "action": "Enter Library Compare view", "mac": ["H"], "windows": ["H"], "press": false, "evidence": "Adobe's page lists “H” on macOS and “H” on Windows. Both tables of the page agree (Switch to Compare view is H too)." },
+        { "section": "library-compare", "action": "Switch to Compare view", "mac": ["H"], "windows": ["H"], "press": false, "evidence": "Adobe's page lists “H” on macOS and “H” on Windows. Both tables of the page agree (Enter Library Compare view is H too)." }
+      ]
+    },
+    { "id": "fr", "name": "Français", "codes": ["fr"], "importToggle": "`", "source": "https://helpx.adobe.com/fr/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260421110542/https://helpx.adobe.com/fr/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": []
+    },
+    { "id": "it", "name": "Italiano", "codes": ["it"], "importToggle": "<", "source": "https://helpx.adobe.com/it/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260218194507/https://helpx.adobe.com/it/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": [
+        { "section": "views", "action": "Toggle HDR view", "mac": ["Alt+Shift+Primary+J"], "windows": ["Alt+Shift+Primary+J"], "press": false, "evidence": "Adobe's page lists “Comando + Opzione + Maiusc + J” on macOS and “Ctrl+ Alt + Maiusc + J” on Windows. The same in Spanish, Italian, Portuguese and Swedish; Shift+H, the English key, is free there." },
+        { "section": "help", "action": "Display current module shortcuts", "mac": ["Shift+H"], "windows": ["Shift+H"], "press": false, "evidence": "Adobe's page lists “Maiusc + H” on macOS and “Maiusc + H” on Windows. Shift+H is free: HDR view moved to ⌥⇧⌘J. The same on the Swedish page." }
+      ]
+    },
+    { "id": "ja", "name": "日本語", "codes": ["ja"], "importToggle": "`", "source": "https://helpx.adobe.com/jp/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20251118090331/https://helpx.adobe.com/jp/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": [
+        { "section": "photos-and-catalogs", "action": "Create virtual copy (Library and Develop module only)", "mac": ["Shift+Primary+Y"], "windows": ["Shift+Primary+Y"], "press": false, "evidence": "Adobe's page lists “Command + Shift + Y” on macOS and “Ctrl + Shift + Y” on Windows. Lower confidence: this page has clear errors elsewhere (Flag as pick A but Shift+P with the next photo; Spot Removal P on macOS but Q on Windows), which are left out." }
+      ]
+    },
+    { "id": "ko", "name": "한국어", "codes": ["ko"], "importToggle": "`", "source": "https://helpx.adobe.com/kr/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260510130623/https://helpx.adobe.com/kr/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": []
+    },
+    { "id": "nl", "name": "Nederlands", "codes": ["nl"], "importToggle": "`", "source": "https://helpx.adobe.com/nl/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260101141332/https://helpx.adobe.com/nl/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": []
+    },
+    { "id": "pt", "name": "Português (Brasil)", "codes": ["pt", "pt_br"], "importToggle": "`", "source": "https://helpx.adobe.com/br/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20251112205644/https://helpx.adobe.com/br/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": [
+        { "section": "views", "action": "Toggle HDR view", "mac": ["Alt+Shift+Primary+J"], "windows": ["Alt+Shift+Primary+J"], "press": false, "evidence": "Adobe's page lists “Command + Option + Shift + J” on macOS and “Ctrl + Alt + Shift + J” on Windows. The same in Spanish, Italian, Portuguese and Swedish; Shift+H, the English key, is free there." }
+      ]
+    },
+    { "id": "sv", "name": "Svenska", "codes": ["sv"], "importToggle": "<", "source": "https://helpx.adobe.com/se/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260510221509/https://helpx.adobe.com/se/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": [
+        { "section": "views", "action": "Toggle HDR view", "mac": ["Alt+Shift+Primary+J"], "windows": ["Alt+Shift+Primary+J"], "press": false, "evidence": "Adobe's page lists “Kommando + Alt + Skift + J” on macOS and “Ctrl + Alt + Skift + J” on Windows. The same in Spanish, Italian, Portuguese and Swedish; Shift+H, the English key, is free there." },
+        { "section": "help", "action": "Display current module shortcuts", "mac": ["Shift+H"], "windows": ["Shift+H"], "press": false, "evidence": "Adobe's page lists “Skift + H” on macOS and “Skift + H” on Windows. Shift+H is free: HDR view moved to ⌥⇧⌘J. The same on the Italian page." }
+      ]
+    },
+    { "id": "zh_cn", "name": "简体中文", "codes": ["zh_cn"], "importToggle": "`", "source": "https://helpx.adobe.com/cn/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260510185712/https://helpx.adobe.com/cn/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": []
+    },
+    { "id": "zh_tw", "name": "繁體中文", "codes": ["zh_tw"], "importToggle": "`", "source": "https://helpx.adobe.com/tw/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260311075628/https://helpx.adobe.com/tw/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": []
+    },
+    { "id": "ru", "name": "Русский", "codes": ["ru"], "importToggle": "`", "source": "https://helpx.adobe.com/ru/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20251011203832/https://helpx.adobe.com/ru/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": []
+    },
+    { "id": "pl", "name": "Polski", "codes": ["pl"], "importToggle": "`", "source": "https://helpx.adobe.com/pl/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20260203055625/https://helpx.adobe.com/pl/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": []
+    },
+    { "id": "no", "name": "Norsk", "codes": ["no", "nb", "nn"], "importToggle": "`", "source": "https://helpx.adobe.com/no/lightroom-classic/help/keyboard-shortcuts.html", "readFrom": "https://web.archive.org/web/20250913181537/https://helpx.adobe.com/no/lightroom-classic/help/keyboard-shortcuts.html", "retrieved": "2026-11-27",
+      "overrides": [
+        { "section": "develop", "action": "Toggle 'Use Generative AI'", "mac": ["Alt+Primary+Y"], "windows": ["Alt+Primary+Y"], "press": false, "evidence": "Adobe's page lists “Kommando + Tilvalg + Y” on macOS and “Ctrl + Alt + Y” on Windows. The same on the German page." }
+      ]
+    },
+    { "id": "th", "name": "ไทย", "codes": ["th"], "importToggle": "`", "source": null, "readFrom": null, "retrieved": "2026-11-27", "sourceNote": "Adobe's help has no Thai keyboard-shortcut page (none archived on web.archive.org, checked 2026-11-27), so Lightroom's English keys are used.",
+      "overrides": []
     }
   ]
 }

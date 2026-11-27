@@ -866,6 +866,12 @@ extension Keymap {
     /// key but the pause toggle pauses, so they clash only with each other
     /// and with the pause toggle.
     public func conflicts() -> [KeyConflict] {
+        conflicts(lightroomLanguage: LightroomShortcuts.activeLanguage)
+    }
+
+    /// `conflicts()` with the warnings about Lightroom's own keys in a given
+    /// Lightroom language (nil: English). Errors never depend on it.
+    public func conflicts(lightroomLanguage language: String?) -> [KeyConflict] {
         var result: [KeyConflict] = []
         let reservedTypingKeys: Set<Int64> = [36, 49, 51, 53] // Return, Space, Delete, Esc
         func name(_ chord: KeyChord) -> String { displayText(for: chord) }
@@ -889,8 +895,8 @@ extension Keymap {
                                           message: "\(name(toggle)) can't work: a combo can't use the Combo Key itself."))
             }
         }
-        result += importKeyConflicts(name: name)
-        result += systemKeyLightroomWarnings(name: name)
+        result += importKeyConflicts(name: name, language: language)
+        result += systemKeyLightroomWarnings(name: name, language: language)
 
         for scope in ParameterScope.allCases {
             var byChord: [KeyChord: [KeyUsage]] = [:]
@@ -923,7 +929,7 @@ extension Keymap {
                 }
                 // A tap key on one of Lightroom's own keys: the specific
                 // warning replaces the general one below.
-                let lightroom = lightroomWarning(chord, scope: scope, usages: usages)
+                let lightroom = lightroomWarning(chord, scope: scope, usages: usages, language: language)
                 result += lightroom.map { [$0] } ?? []
                 if chord.isCombo {
                     result += comboProblems(chord, text: text, scope: scope, usages: usages)
@@ -939,15 +945,16 @@ extension Keymap {
     /// A Command Key or Nudge Key on a key Lightroom uses in this module
     /// (never a Dial Key: its tap still reaches Lightroom). A plain Nudge
     /// Key also takes its ⇧ chord, for the larger step.
-    private func lightroomWarning(_ chord: KeyChord, scope: ParameterScope, usages: [KeyUsage]) -> KeyConflict? {
+    private func lightroomWarning(_ chord: KeyChord, scope: ParameterScope, usages: [KeyUsage],
+                                  language: String?) -> KeyConflict? {
         let taps = usages.filter { $0.isAction || $0.isNudge }
         guard !taps.isEmpty, !chord.isCombo else { return nil }
         let context = LightroomShortcuts.Context(scope)
         var taken = chord
-        var match = LightroomShortcuts.match(chord, in: context)
+        var match = LightroomShortcuts.match(chord, in: context, language: language)
         if match == nil, chord.modifiers.isEmpty, taps.contains(where: \.isNudge) {
             taken = KeyChord(chord.keyCode, .shift)
-            match = LightroomShortcuts.match(taken, in: context)
+            match = LightroomShortcuts.match(taken, in: context, language: language)
         }
         guard let match else { return nil }
         return Self.lightroomWarning(match, chord: taken, text: displayText(for: taken), scope: scope,
@@ -966,7 +973,7 @@ extension Keymap {
     /// Reference toggle and the pause toggle in Library and Develop. Never the
     /// Combo Key (tapped alone it still reaches Lightroom, like a Dial Key) or
     /// a combo. One warning per module, with that module's scope.
-    private func systemKeyLightroomWarnings(name: (KeyChord) -> String) -> [KeyConflict] {
+    private func systemKeyLightroomWarnings(name: (KeyChord) -> String, language: String?) -> [KeyConflict] {
         let places: [(SystemKeys.Role, [ParameterScope])] = [
             (.paletteKey, [.develop]),
             (.keyReferenceToggle, [.library, .develop]),
@@ -976,7 +983,7 @@ extension Keymap {
         for (role, scopes) in places {
             guard let chord = systemKeys.chord(for: role), !chord.isCombo else { continue }
             for scope in scopes {
-                guard let match = LightroomShortcuts.match(chord, in: LightroomShortcuts.Context(scope)) else { continue }
+                guard let match = LightroomShortcuts.match(chord, in: LightroomShortcuts.Context(scope), language: language) else { continue }
                 result.append(Self.lightroomWarning(match, chord: chord, text: name(chord), scope: scope, usages: [.system(role)]))
             }
         }
@@ -986,7 +993,7 @@ extension Keymap {
     /// Two Import keys on one chord, or an Import key on the pause toggle,
     /// and the warning for an Import key on another of Lightroom's keys in
     /// the Import window (never for the key that Import key sends itself).
-    private func importKeyConflicts(name: (KeyChord) -> String) -> [KeyConflict] {
+    private func importKeyConflicts(name: (KeyChord) -> String, language: String?) -> [KeyConflict] {
         var result: [KeyConflict] = []
         var byChord: [KeyChord: [KeyUsage]] = [:]
         for role in ImportKeys.Role.allCases {
@@ -1001,7 +1008,7 @@ extension Keymap {
                 result.append(KeyConflict(severity: .error, chord: chord, scope: nil, usages: usages + [.system(.pauseToggle)],
                                           message: "\(name(chord)) is the pause toggle, so it can't be an Import key."))
             }
-            if let match = LightroomShortcuts.match(chord, in: .importWindow) {
+            if let match = LightroomShortcuts.match(chord, in: .importWindow, language: language) {
                 let taking = usages.filter { if case .importKey(let role) = $0 { role != match.importRole } else { false } }
                 if !taking.isEmpty {
                     result.append(Self.lightroomWarning(match, chord: chord, text: name(chord), scope: nil, usages: taking))

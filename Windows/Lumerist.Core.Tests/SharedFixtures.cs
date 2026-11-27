@@ -90,7 +90,7 @@ public static class WinKeys
         ["8"] = 0x09, ["9"] = 0x0A, ["0"] = 0x0B,
         ["["] = 0x1A, ["]"] = 0x1B, ["="] = 0x0D, ["-"] = 0x0C, ["'"] = 0x28, [";"] = 0x27, ["\\"] = 0x2B,
         [","] = 0x33, ["."] = 0x34, ["/"] = 0x35,
-        ["Return"] = 0x1C, ["Tab"] = 0x0F, ["Space"] = 0x39, ["LeftOf1"] = 0x29,
+        ["Return"] = 0x1C, ["Tab"] = 0x0F, ["Space"] = 0x39, ["LeftOf1"] = 0x29, ["IsoLeftOfZ"] = 0x56,
         ["Backspace"] = 0x0E, ["Esc"] = 0x01, ["ForwardDelete"] = 0xE053, ["Home"] = 0xE047, ["End"] = 0xE04F,
         ["PageUp"] = 0xE049, ["PageDown"] = 0xE051,
         ["ArrowLeft"] = 0xE04B, ["ArrowRight"] = 0xE04D, ["ArrowUp"] = 0xE048, ["ArrowDown"] = 0xE050,

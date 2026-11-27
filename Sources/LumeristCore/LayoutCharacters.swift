@@ -83,6 +83,19 @@ public enum LightroomKeyPress: Sendable, Hashable {
     case key(KeyChord)
     case character(CharacterShortcut)
 
+    /// A chord of Shared/lightroom-shortcuts.json ("Alt+Primary+V"): a key
+    /// that types a character by that character, a named key by its code.
+    init?(logicalChord text: String) {
+        guard let chord = LightroomShortcuts.logicalChord(text) else { return nil }
+        if let code = LightroomShortcuts.fixedKeys.first(where: { $0.value == chord.key })?.key {
+            self = .key(KeyChord(code, chord.modifiers))
+        } else if chord.key.count == 1, let code = KeyNames.usKeyCode(for: chord.key) {
+            self = .character(CharacterShortcut(chord.key.lowercased(), chord.modifiers, usKeyCode: code))
+        } else {
+            return nil
+        }
+    }
+
     public func chord(layout: LayoutCharacters?, asciiCapable: LayoutCharacters?) -> KeyChord {
         switch self {
         case .key(let chord): chord
@@ -97,6 +110,17 @@ public enum LightroomKeyPress: Sendable, Hashable {
 public enum FallbackShortcuts {
     public static let flagPick = CharacterShortcut("p", usKeyCode: 35)                 // P
     public static let flagReject = CharacterShortcut("x", usKeyCode: 7)                // X
+
+    /// The key for a command in Lightroom's language (nil: English): the
+    /// English key unless that language's help gives another one marked as
+    /// safe to press (none is, today; Shared/lightroom-shortcuts.json).
+    public static func press(for command: LightroomCommandName, lightroomLanguage: String?) -> LightroomKeyPress? {
+        if let chord = LightroomShortcuts.pressedChord(for: command.rawValue, language: lightroomLanguage),
+           let press = LightroomKeyPress(logicalChord: chord) {
+            return press
+        }
+        return press(for: command)
+    }
 
     public static func press(for command: LightroomCommandName) -> LightroomKeyPress? {
         switch command {
@@ -129,6 +153,16 @@ public enum AppCommand: String, Sendable, Hashable, CaseIterable {
         switch self {
         case .pasteSettingsFromPrevious: CharacterShortcut("v", [.option, .command], usKeyCode: 9)
         }
+    }
+
+    /// The key it presses in Lightroom's language (nil: English), like
+    /// `FallbackShortcuts.press(for:lightroomLanguage:)`.
+    public func press(lightroomLanguage: String?) -> LightroomKeyPress {
+        if let chord = LightroomShortcuts.pressedChord(for: rawValue, language: lightroomLanguage),
+           let press = LightroomKeyPress(logicalChord: chord) {
+            return press
+        }
+        return .character(shortcut)
     }
 
     /// The Command Key that is one of these, if any.

@@ -10,6 +10,7 @@ every case.
 | --- | --- | --- | --- |
 | `gestures/*.json` | `KeyGestureEngine`: what every key, wheel and mouse event does | `Tests/LumeristCoreTests/SharedFixtureTests.swift` | `Windows/Lumerist.Core.Tests/GestureFixtureTests.cs` |
 | `keymap-rules/*.json` | keymap validation and conflict reports | same | `Windows/Lumerist.Core.Tests/KeymapFixtureTests.cs` |
+| `lightroom-keys/*.json` | the keys Lumerist presses in Lightroom for a keyboard layout and Lightroom's language: the Import keys and the fallback shortcuts | same | the C# runner of the same name |
 | `protocol/*.json` | bridge protocol 4: request lines (with the bridge token), plug-in messages | same | `Windows/Lumerist.Core.Tests/ProtocolFixtureTests.cs` |
 | `standard-layout.json` | the standard layout and default options | same | `Windows/Lumerist.Core.Tests/KeymapFixtureTests.cs` |
 | `bug-report/*.json` | "Report a problem": the prefilled GitHub bug form | same | `Windows/Lumerist.Core.Tests/BugReportTests.cs` |
@@ -34,6 +35,7 @@ scan codes in C#. The tables live in the test code only.
 | `ForwardDelete`, `Home`, `End`, `PageUp`, `PageDown` | as printed (`ForwardDelete` is Delete on Windows, ⌦ on the Mac) |
 | `[`, `]` | the two keys right of P |
 | `=`, `-`, `'`, `;`, `\`, `,`, `.`, `/` | the other punctuation keys, at their US positions |
+| `IsoLeftOfZ` | the ISO key between the left Shift and Z (lightroom-keys cases with `"keyboard": "iso"` only): Windows scan code 0x56, macOS key code 50, while `LeftOf1` is then 10 on the Mac |
 | `ArrowLeft`, `ArrowRight`, `ArrowUp`, `ArrowDown` | arrow keys |
 | `F1` … `F12` | function keys |
 
@@ -136,10 +138,41 @@ In the Import window an Import key sends Lightroom's own key as
 `ArrowRight` after Include or Exclude when `advance` is on. Those are the
 keys of the US layout. The apps find them by the character they type,
 never by position: the keys that type p and x, and for Toggle the key that
-types a plain ` (no modifier, not a dead key), else a plain <: `LeftOf1` on
-US keyboards, the key left of Z on Italian, German or French ones. With
-neither (Russian, Czech, U.S. International – PC…) there is no Toggle: its
-key is taken and sends nothing (`lightroomImportKeys`).
+types, alone (no modifier, not a dead key), the character of Lightroom's
+language (< in Italian and Swedish, ` otherwise), else a plain `, else a
+plain <: `LeftOf1` on US keyboards, the key left of Z on Italian, German or
+French ones. With none (Russian, Czech, U.S. International – PC…) there is
+no Toggle: its key is taken and sends nothing (`lightroomImportKeys`). The
+`lightroom-keys` cases pin that choice down.
+
+## Lightroom keys cases
+
+Which keys Lumerist presses in Lightroom, without the engine:
+
+```json
+{ "id": "lightroom-keys/italian-lightroom-on-an-italian-keyboard-toggles-with-less-than",
+  "lightroomLanguage": "it",
+  "keyboard": "iso",
+  "layout": { "LeftOf1": "\\", "IsoLeftOfZ": "<", "\\": "ù" },
+  "deadKeys": [],
+  "importKeys": { "include": "P", "exclude": "X", "toggle": "IsoLeftOfZ" },
+  "fallbacks": { "autoTone": "Primary+U", "pasteSettingsFromPrevious": "Alt+Primary+V" } }
+```
+
+- `lightroomLanguage`: Lightroom's interface language as the apps write it
+  ("it", "pt_br"), or `null` (not known yet, which means English).
+- `keyboard`: `"ansi"` (default) or `"iso"`.
+- `layout`: what keys type alone, as changes to the US layout (letters,
+  digits, `LeftOf1` types `, the punctuation keys type their US characters);
+  `null` types nothing. `IsoLeftOfZ` types nothing unless given. No two
+  keys may type the same character: the apps search keys in different
+  orders. The ⌘ (Ctrl) table is the same as the plain one.
+- `deadKeys`: keys that are dead keys, which type nothing alone.
+- `importKeys`: the keys `include`, `exclude` and `toggle` press (a chord,
+  or `null` for no Toggle).
+- `fallbacks`: the chord pressed for `autoTone`, `undo`, `redo`, `flagPick`,
+  `flagReject`, `flagRemove`, `showClipping` and
+  `pasteSettingsFromPrevious`.
 
 ## Keymap rule cases
 
@@ -148,6 +181,9 @@ key is taken and sends nothing (`lightroomImportKeys`).
 `{"error": "invalidCommandKey", "reason": text}`, `{"error": "invalidCombo",
 "misuse": "dialKey" | "lightroomShortcut" | "systemKey" | "importKey", ...}`
 (`systemKey` and `importKey` name the `role`) or `{"error": "conflicts"}`.
+
+`lightroomLanguage` (optional, a code or `null`) is Lightroom's interface
+language for the warnings about its keys; absent or `null` is English.
 
 `conflicts` gives the number of `errors` and `warnings` and a list of
 `matches`: each must match at least one reported conflict by `severity`,
@@ -182,6 +218,15 @@ in its own place gets a warning, which never blocks saving:
   over there." (`in Develop`, `in the Import window`), and its
   `lightroomAction` is that name. It replaces the general warning about
   typing keys and modifiers for the same chord.
+- Lightroom takes its keys from its interface language. `languages` has one
+  entry per language Lightroom Classic ships, with its name, its
+  `LrLocalization` codes, its Import Toggle character and the keys its
+  help page lists differently (`overrides`, each with its evidence). A
+  code picks a language exactly, then by the part before `_` (never for zh),
+  else English. Overrides replace an entry's keys in that language for the
+  warnings; for the keys Lumerist presses only when `press` is true and the
+  entry has `fallbackFor` (none today). `Scripts/generate-lightroom-shortcuts.py`
+  refuses an override that lands on another action's key in the same place.
 
 ## Protocol cases
 

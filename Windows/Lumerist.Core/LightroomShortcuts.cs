@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace Lumerist.Core;
@@ -17,6 +18,13 @@ namespace Lumerist.Core;
 /// key. Punctuation never matches: which key types "[" or "`" differs from
 /// layout to layout, and a missing warning is better than a wrong one.
 /// </para>
+/// <para>
+/// Lightroom's keys belong to its interface language: the file's <c>languages</c>
+/// (<see cref="LanguageEntry"/>, picked by <see cref="LightroomLanguage"/>) give
+/// each language's Import Toggle character and the entries it changes
+/// (<c>overrides</c>). Overrides always change the warnings; they change a key
+/// Lumerist presses only when marked <c>press</c> on an entry with <c>fallbackFor</c>.
+/// </para>
 /// </summary>
 public static class LightroomShortcuts
 {
@@ -34,8 +42,82 @@ public static class LightroomShortcuts
     public sealed record Match(string Name, Context Context, bool IsCommunityReported, ImportKeyRole? ImportRole);
 
     /// <summary>One shortcut of the shared file, with its Windows chords as written there ("Primary+Shift+Z").</summary>
+    /// <param name="Section">The id of its section ("develop").</param>
+    /// <param name="Action">Adobe's English text, which a language's override names it by.</param>
+    /// <param name="FallbackFor">The command Lumerist presses it for ("autoTone"), if any.</param>
     internal sealed record Entry(string Name, IReadOnlyList<string> Windows, IReadOnlyList<Context> Contexts,
-        bool IsCommunityReported, ImportKeyRole? ImportRole);
+        bool IsCommunityReported, ImportKeyRole? ImportRole, string Section = "", string Action = "", string? FallbackFor = null);
+
+    /// <summary>A language's own chords for one English entry, named by section and action.</summary>
+    /// <param name="Press">Lumerist presses the language's chord (only on an entry with <c>fallbackFor</c>).</param>
+    internal sealed record Override(string Section, string Action, IReadOnlyList<string> Windows, bool Press);
+
+    /// <summary>One language Lightroom Classic ships ("it", "Italiano"), and the LrLocalization codes that select it.</summary>
+    /// <param name="ImportToggle">The character the Import window toggles with: &lt; in Italian and Swedish, ` otherwise.</param>
+    public sealed record LanguageEntry(string Id, string Name, IReadOnlyList<string> Codes, char ImportToggle)
+    {
+        internal IReadOnlyList<Override> Overrides { get; init; } = [];
+
+        /// <summary>English, Adobe's help: the keys Lumerist uses while the language is not known.</summary>
+        public static LanguageEntry English { get; } = new(LightroomLanguage.English, "English", [LightroomLanguage.English], '`');
+    }
+
+    /// <summary>The shared file read: its shortcuts (all of them, with or without Windows chords) and languages.</summary>
+    internal sealed record Data(IReadOnlyList<Entry> Entries, IReadOnlyList<LanguageEntry> Languages)
+    {
+        private readonly ConcurrentDictionary<string, Dictionary<Context, Dictionary<LogicalChord, Match>>> indexes = new(StringComparer.Ordinal);
+
+        /// <summary>The English entry, or a built-in English when the file lists no languages.</summary>
+        public LanguageEntry English => Languages.FirstOrDefault(language => language.Id == LightroomLanguage.English) ?? LanguageEntry.English;
+
+        /// <summary>
+        /// The language a code selects: an exact match among the codes, else the
+        /// part before "_" (never for "zh", whose scripts differ), else null.
+        /// </summary>
+        public LanguageEntry? Find(string? code)
+        {
+            if (code is null) return null;
+            if (Languages.FirstOrDefault(language => language.Codes.Contains(code)) is { } exact) return exact;
+            var underscore = code.IndexOf('_');
+            if (underscore <= 0) return null;
+            var baseCode = code[..underscore];
+            return baseCode == "zh" ? null : Languages.FirstOrDefault(language => language.Codes.Contains(baseCode));
+        }
+
+        /// <summary>The language a code selects, English when it selects none.</summary>
+        public LanguageEntry Resolve(string? code) => Find(code) ?? English;
+
+        /// <summary>The Windows chords of an entry in a language: its override's, else the English ones.</summary>
+        public IReadOnlyList<string> WindowsChords(Entry entry, LanguageEntry language) =>
+            language.Overrides.FirstOrDefault(item => item.Section == entry.Section && item.Action == entry.Action)?.Windows ?? entry.Windows;
+
+        /// <summary>The chord a language presses for a command, when its override says so; null: the English one.</summary>
+        public LogicalChord? PressedChord(string command, LanguageEntry language)
+        {
+            if (Entries.FirstOrDefault(entry => entry.FallbackFor == command) is not { } entry) return null;
+            var item = language.Overrides.FirstOrDefault(item => item.Section == entry.Section && item.Action == entry.Action);
+            return item is { Press: true, Windows.Count: > 0 } ? ParseChord(item.Windows[0]) : null;
+        }
+
+        /// <summary>The first entry for a chord wins, in the order of Adobe's help, with the language's overrides.</summary>
+        public Dictionary<Context, Dictionary<LogicalChord, Match>> Index(LanguageEntry language) => indexes.GetOrAdd(language.Id, _ =>
+        {
+            var index = new Dictionary<Context, Dictionary<LogicalChord, Match>>();
+            foreach (var entry in Entries)
+            {
+                foreach (var text in WindowsChords(entry, language))
+                {
+                    if (ParseChord(text) is not { } chord) continue;
+                    foreach (var context in entry.Contexts)
+                    {
+                        if (!index.TryGetValue(context, out var chords)) index[context] = chords = [];
+                        chords.TryAdd(chord, new Match(entry.Name, context, entry.IsCommunityReported, entry.ImportRole));
+                    }
+                }
+            }
+            return index;
+        });
+    }
 
     /// <summary>A chord by logical key name ("Z", "F2", "ArrowRight") and modifiers.</summary>
     internal readonly record struct LogicalChord(string Key, KeyModifiers Modifiers);
@@ -60,14 +142,27 @@ public static class LightroomShortcuts
         _ => "the Import window",
     };
 
+    /// <summary>
+    /// Lightroom's interface language (<see cref="LightroomContext.Language"/>), whose
+    /// table the warnings use; null: English. Set by the app when the plug-in reports it.
+    /// </summary>
+    public static string? Language { get; set; }
+
     /// <summary>Lightroom's default use of <paramref name="chord"/> in <paramref name="context"/>, if Lumerist can tell. Combos never match.</summary>
-    public static Match? For(KeyChord chord, Context context) => For(chord, context, KeyNames.LayoutName);
+    public static Match? For(KeyChord chord, Context context) => For(chord, context, KeyNames.LayoutName, Language);
+
+    /// <summary>The same in an explicit language (null: English).</summary>
+    public static Match? For(KeyChord chord, Context context, string? language) => For(chord, context, KeyNames.LayoutName, language);
 
     /// <param name="layout">The active layout's key names, as <see cref="KeyNames.LayoutName"/>.</param>
-    internal static Match? For(KeyChord chord, Context context, Func<int, string?>? layout)
+    /// <param name="language">Lightroom's interface language; null: English.</param>
+    internal static Match? For(KeyChord chord, Context context, Func<int, string?>? layout, string? language = null) =>
+        For(chord, context, layout, language, Shared);
+
+    internal static Match? For(KeyChord chord, Context context, Func<int, string?>? layout, string? language, Data data)
     {
         if (chord.IsCombo || MatchableKey(chord.ScanCode, layout) is not { } key) return null;
-        return Index.Value.TryGetValue(context, out var chords)
+        return data.Index(data.Resolve(language)).TryGetValue(context, out var chords)
             && chords.TryGetValue(new LogicalChord(key, chord.Modifiers), out var match)
             ? match
             : null;
@@ -75,29 +170,15 @@ public static class LightroomShortcuts
 
     // Table --------------------------------------------------------------------------
 
-    /// <summary>Every shortcut of the shared file that exists on Windows, in file order.</summary>
+    /// <summary>The shared file built into this assembly.</summary>
+    internal static Data Shared => LazyData.Value;
+
+    private static readonly Lazy<Data> LazyData = new(() => ReadData(LoadResource()));
+
+    /// <summary>Every shortcut of the shared file that exists on Windows (in English), in file order.</summary>
     internal static IReadOnlyList<Entry> Table => LazyTable.Value;
 
-    private static readonly Lazy<IReadOnlyList<Entry>> LazyTable = new(() => Read(LoadResource()));
-
-    /// <summary>The first entry for a chord wins, in the order of Adobe's help.</summary>
-    private static readonly Lazy<Dictionary<Context, Dictionary<LogicalChord, Match>>> Index = new(() =>
-    {
-        var index = new Dictionary<Context, Dictionary<LogicalChord, Match>>();
-        foreach (var entry in Table)
-        {
-            foreach (var text in entry.Windows)
-            {
-                if (ParseChord(text) is not { } chord) continue;
-                foreach (var context in entry.Contexts)
-                {
-                    if (!index.TryGetValue(context, out var chords)) index[context] = chords = [];
-                    chords.TryAdd(chord, new Match(entry.Name, context, entry.IsCommunityReported, entry.ImportRole));
-                }
-            }
-        }
-        return index;
-    });
+    private static readonly Lazy<IReadOnlyList<Entry>> LazyTable = new(() => [.. Shared.Entries.Where(entry => entry.Windows.Count > 0)]);
 
     private static string LoadResource()
     {
@@ -108,26 +189,62 @@ public static class LightroomShortcuts
     }
 
     /// <summary>The shortcuts with Windows chords. Shared/lightroom-shortcuts.json is checked by Scripts/generate-lightroom-shortcuts.py.</summary>
-    internal static IReadOnlyList<Entry> Read(string json)
+    internal static IReadOnlyList<Entry> Read(string json) => [.. ReadData(json).Entries.Where(entry => entry.Windows.Count > 0)];
+
+    /// <summary>
+    /// Every shortcut, with or without Windows chords (a language may give it
+    /// some), and the languages with their overrides. An override naming no
+    /// entry is refused, as Scripts/generate-lightroom-shortcuts.py refuses it.
+    /// </summary>
+    internal static Data ReadData(string json)
     {
         using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
         var entries = new List<Entry>();
-        foreach (var section in document.RootElement.GetProperty("sections").EnumerateArray())
+        foreach (var section in root.GetProperty("sections").EnumerateArray())
         {
+            var sectionId = section.TryGetProperty("id", out var id) ? id.GetString()! : "";
             var sectionContexts = Contexts(section.GetProperty("contexts"));
             var community = section.TryGetProperty("communityReported", out var flag) && flag.ValueKind == JsonValueKind.True;
             foreach (var shortcut in section.GetProperty("shortcuts").EnumerateArray())
             {
-                var windows = shortcut.GetProperty("windows").EnumerateArray().Select(chord => chord.GetString()!).ToList();
-                if (windows.Count == 0) continue;
-                var name = shortcut.TryGetProperty("name", out var shortName) ? shortName.GetString()! : shortcut.GetProperty("action").GetString()!;
+                var windows = Chords(shortcut, "windows");
+                var action = shortcut.GetProperty("action").GetString()!;
+                var name = shortcut.TryGetProperty("name", out var shortName) ? shortName.GetString()! : action;
                 var contexts = shortcut.TryGetProperty("contexts", out var own) ? Contexts(own) : sectionContexts;
                 var role = shortcut.TryGetProperty("importRole", out var roleName) ? ImportKeyRoles.FromWireName(roleName.GetString()) : null;
-                entries.Add(new Entry(name, windows, contexts, community, role));
+                var fallbackFor = shortcut.TryGetProperty("fallbackFor", out var command) ? command.GetString() : null;
+                entries.Add(new Entry(name, windows, contexts, community, role, sectionId, action, fallbackFor));
             }
         }
-        return entries;
+        var languages = new List<LanguageEntry>();
+        if (root.TryGetProperty("languages", out var list))
+        {
+            foreach (var language in list.EnumerateArray())
+            {
+                var toggle = language.GetProperty("importToggle").GetString()!;
+                if (toggle.Length != 1) throw new InvalidDataException($"importToggle of {language.GetProperty("id").GetString()} must be one character");
+                var overrides = new List<Override>();
+                if (language.TryGetProperty("overrides", out var items))
+                {
+                    foreach (var item in items.EnumerateArray())
+                    {
+                        var entry = new Override(item.GetProperty("section").GetString()!, item.GetProperty("action").GetString()!,
+                            Chords(item, "windows"), item.TryGetProperty("press", out var press) && press.ValueKind == JsonValueKind.True);
+                        if (!entries.Any(known => known.Section == entry.Section && known.Action == entry.Action))
+                            throw new InvalidDataException($"override of an unknown entry: {entry.Section} / {entry.Action}");
+                        overrides.Add(entry);
+                    }
+                }
+                languages.Add(new LanguageEntry(language.GetProperty("id").GetString()!, language.GetProperty("name").GetString()!,
+                    [.. language.GetProperty("codes").EnumerateArray().Select(code => code.GetString()!)], toggle[0]) { Overrides = overrides });
+            }
+        }
+        return new Data(entries, languages);
     }
+
+    private static List<string> Chords(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var chords) ? [.. chords.EnumerateArray().Select(chord => chord.GetString()!)] : [];
 
     private static List<Context> Contexts(JsonElement list) =>
         [.. list.EnumerateArray().Select(item => Enum.GetValues<Context>().First(context => context.WireName() == item.GetString()))];

@@ -92,13 +92,14 @@ public struct ImportKeys: Codable, Sendable, Hashable {
 ///
 /// Lightroom finds these keys by the character they type, so Lumerist
 /// presses them by character too (`forLayout`): P and X are the keys that
-/// type p and x, and Toggle is the key that types a plain ` (no modifier, not
-/// a dead key), else the key that types a plain <. With neither there is no
-/// Toggle (nil) and the Toggle key sends nothing. Never the key left of 1 by
-/// position: on an Italian keyboard that types \, one of Lightroom's own
-/// shortcuts, which hung the Import window on Windows. The < key worked in
-/// Lumerist's test with Lightroom in Italian (27 Nov 2026); which character
-/// Lightroom expects may depend on its own language.
+/// type p and x, and Toggle is the key that types, alone (no modifier, not a
+/// dead key), the character of Lightroom's language (< in Italian and
+/// Swedish, ` otherwise: `LightroomShortcuts.Language.importToggle`), else a
+/// plain `, else a plain <. With none of them there is no Toggle (nil) and
+/// the Toggle key sends nothing. Never the key left of 1 by position: on an
+/// Italian keyboard that types \, one of Lightroom's own shortcuts, which
+/// hung the Import window on Windows. The < key worked in Lumerist's test
+/// with Lightroom in Italian (27 Nov 2026).
 ///
 /// `standard` holds the keys of a US keyboard (` is key code 50), which the
 /// shared test cases expect.
@@ -123,13 +124,15 @@ public struct ImportShortcuts: Sendable, Hashable {
         nextPhoto: KeyChord(KeyChord.rightArrow)    // →
     )
 
-    /// The keys for a keyboard layout. `layout` is the active one;
-    /// `asciiCapable` the layout macOS keeps for shortcuts, used for P and X
-    /// when no key types them and in place of a layout without key data.
-    /// With no layout at all, the US keys.
-    public static func forLayout(_ layout: LayoutCharacters?, asciiCapable: LayoutCharacters? = nil) -> ImportShortcuts {
+    /// The keys for a keyboard layout and Lightroom's language (nil:
+    /// English). `layout` is the active one; `asciiCapable` the layout macOS
+    /// keeps for shortcuts, used for P and X when no key types them and in
+    /// place of a layout without key data. With no layout at all, the US keys.
+    public static func forLayout(_ layout: LayoutCharacters?, asciiCapable: LayoutCharacters? = nil,
+                                 lightroomLanguage: String? = nil) -> ImportShortcuts {
         guard let typing = layout ?? asciiCapable else { return .standard }
-        let toggle = typing.keyCode(typing: "`") ?? typing.keyCode(typing: "<")
+        let wanted = LightroomShortcuts.Language.forCode(lightroomLanguage).importToggle
+        let toggle = [wanted, "`", "<"].lazy.compactMap { typing.keyCode(typing: $0) }.first
         return ImportShortcuts(
             include: FallbackShortcuts.flagPick.chord(layout: typing, asciiCapable: asciiCapable),
             exclude: FallbackShortcuts.flagReject.chord(layout: typing, asciiCapable: asciiCapable),

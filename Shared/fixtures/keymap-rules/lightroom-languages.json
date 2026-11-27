@@ -1,0 +1,83 @@
+{
+  "group": "keymap-rules",
+  "about": "The warnings about Lightroom's own keys follow Lightroom's interface language (\"lightroomLanguage\"): English plus the keys that language's help lists differently (Shared/lightroom-shortcuts.json, languages). Unknown or null: English.",
+  "cases": [
+    {
+      "id": "keymap-rules/italian-lightroom-uses-shift-h-for-its-shortcut-list",
+      "about": "In Italian Lightroom Shift+H shows the module's shortcuts; HDR view is Alt+Shift+Primary+J.",
+      "lightroomLanguage": "it",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Shift+H", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "develop", "chord": "Alt+Shift+Primary+J", "title": "Redo", "action": { "command": "redo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 2, "matches": [
+        { "severity": "warning", "chord": "Shift+H", "scope": "develop", "lightroomAction": "Display current module shortcuts" },
+        { "severity": "warning", "chord": "Alt+Shift+Primary+J", "scope": "develop", "lightroomAction": "Toggle HDR view" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/english-lightroom-uses-shift-h-for-hdr-view",
+      "about": "The same keys with Lightroom in English: Alt+Shift+Primary+J is no Lightroom key, so only the general warning about modifier keys remains.",
+      "lightroomLanguage": "en",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Shift+H", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "develop", "chord": "Alt+Shift+Primary+J", "title": "Redo", "action": { "command": "redo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 2, "matches": [
+        { "severity": "warning", "chord": "Shift+H", "scope": "develop", "lightroomAction": "Toggle HDR view" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/spanish-lightroom-compares-with-h",
+      "lightroomLanguage": "es",
+      "keymap": { "commandKeys": [
+        { "scope": "library", "chord": "H", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "library", "chord": "C", "title": "Redo", "action": { "command": "redo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 1, "matches": [
+        { "severity": "warning", "chord": "H", "scope": "library", "lightroomAction": "Enter Library Compare view",
+          "message": "Lightroom uses H for “Enter Library Compare view” in Library. Lumerist takes it over there." }
+      ] }
+    },
+    {
+      "id": "keymap-rules/a-language-not-known-yet-warns-in-english",
+      "lightroomLanguage": null,
+      "keymap": { "commandKeys": [
+        { "scope": "library", "chord": "H", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "library", "chord": "C", "title": "Redo", "action": { "command": "redo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 1, "matches": [
+        { "severity": "warning", "chord": "C", "scope": "library", "lightroomAction": "Enter Library Compare view" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/german-lightroom-moves-use-generative-ai",
+      "about": "German Lightroom toggles “Use Generative AI” with Alt+Primary+Y; Alt+Shift+G keeps only the general warning about modifier keys.",
+      "lightroomLanguage": "de",
+      "keymap": { "commandKeys": [
+        { "scope": "develop", "chord": "Alt+Primary+Y", "title": "Undo", "action": { "command": "undo" } },
+        { "scope": "develop", "chord": "Alt+Shift+G", "title": "Redo", "action": { "command": "redo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 2, "matches": [
+        { "severity": "warning", "chord": "Alt+Primary+Y", "scope": "develop", "lightroomAction": "Toggle 'Use Generative AI'" }
+      ] }
+    },
+    {
+      "id": "keymap-rules/a-regional-code-warns-in-its-language",
+      "about": "pt_br is Brazilian Portuguese, where HDR view is Alt+Shift+Primary+J.",
+      "lightroomLanguage": "pt_br",
+      "keymap": { "commandKeys": [
+        { "scope": "library", "chord": "Alt+Shift+Primary+J", "title": "Undo", "action": { "command": "undo" } }
+      ] },
+      "validate": "ok",
+      "conflicts": { "errors": 0, "warnings": 1, "matches": [
+        { "severity": "warning", "chord": "Alt+Shift+Primary+J", "scope": "library", "lightroomAction": "Toggle HDR view" }
+      ] }
+    }
+  ]
+}

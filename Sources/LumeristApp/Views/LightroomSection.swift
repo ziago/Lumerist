@@ -5,6 +5,22 @@ import LumeristCore
 /// updates Lightroom, and the options that change what Lightroom does.
 struct LightroomSection: View {
     let store: CommandStore
+
+    /// "Italiano (it)", the code alone for a language Lightroom does not ship
+    /// as far as Lumerist knows, or "not known yet".
+    static func languageLine(_ code: String?) -> String {
+        guard let code else { return "not known yet" }
+        guard let language = LightroomShortcuts.Language.matching(code) else { return code }
+        return "\(language.name) (\(code))"
+    }
+
+    static func languageDetail(_ code: String?) -> String {
+        guard let code else { return "The plug-in tells Lumerist once Lightroom is linked. Until then Lumerist uses Lightroom's English keys." }
+        guard LightroomShortcuts.Language.matching(code) != nil else {
+            return "Lumerist has no list of Lightroom's keys in this language, so it uses the English ones."
+        }
+        return "Lightroom's keyboard shortcuts follow its language: the warnings about Lightroom's keys and the keys Lumerist presses follow it too."
+    }
     @State private var confirmsTestExposure = false
     @State private var checkedCatalog = false
 
@@ -21,6 +37,9 @@ struct LightroomSection: View {
                     }
                     Button("Reconnect") { store.reconnect() }.buttonStyle(.neonSecondary)
                 }
+            }
+            SettingRow(title: "Lightroom's language", detail: Self.languageDetail(store.context.language)) {
+                Text(Self.languageLine(store.context.language)).synthBody(12, color: Synth.steel)
             }
             SettingRow(title: "Try the link",
                        detail: "Check connection waits for the plug-in to answer. The test exposure adds +0.1 EV to the selected photo in Develop.") {

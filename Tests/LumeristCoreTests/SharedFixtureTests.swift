@@ -442,7 +442,9 @@ private enum RuleRunner {
             }
         }
         if let expected = testCase["conflicts"] as? [String: Any] {
-            let conflicts = keymap.conflicts()
+            // Lightroom's language, for its own keys: absent or null is English.
+            let language = testCase["lightroomLanguage"] as? String
+            let conflicts = keymap.conflicts(lightroomLanguage: language)
             let errors = conflicts.filter { $0.severity == .error }
             let warnings = conflicts.filter { $0.severity == .warning }
             if let count = expected["errors"] as? Int, count != errors.count {
@@ -636,6 +638,82 @@ private enum ProtocolRunner {
     }
 }
 
+// MARK: - The keys Lumerist presses
+
+private enum LightroomKeysRunner {
+    /// The US layout, by logical key: what each key types alone.
+    static let usLayout: [String: String] = {
+        var layout: [String: String] = ["LeftOf1": "`"]
+        for name in MacKeys.codes.keys where name.count == 1 { layout[name] = name.lowercased() }
+        return layout
+    }()
+
+    /// Logical key → macOS key code on this keyboard: on ISO keyboards the
+    /// key left of 1 is 10 and IsoLeftOfZ is 50.
+    static func keyCode(_ name: String, iso: Bool) throws -> Int64 {
+        switch (name, iso) {
+        case ("LeftOf1", true): return 10
+        case ("IsoLeftOfZ", true): return 50
+        case ("IsoLeftOfZ", false): throw FixtureError("IsoLeftOfZ needs \"keyboard\": \"iso\"")
+        default: return try MacKeys.keyCode(name)
+        }
+    }
+
+    static func chord(_ text: String, iso: Bool) throws -> KeyChord {
+        let parts = text.components(separatedBy: "+")
+        guard let key = parts.last, !key.isEmpty else { throw FixtureError("bad chord \(text)") }
+        return KeyChord(try keyCode(key, iso: iso), try MacKeys.modifiers(Array(parts.dropLast())))
+    }
+
+    static func run(_ testCase: [String: Any]) throws -> [String] {
+        let known: Set<String> = ["id", "about", "lightroomLanguage", "keyboard", "layout", "deadKeys", "importKeys", "fallbacks"]
+        if let unknown = testCase.keys.first(where: { !known.contains($0) }) { throw FixtureError("unknown field \(unknown)") }
+        let iso: Bool
+        switch testCase["keyboard"] as? String ?? "ansi" {
+        case "ansi": iso = false
+        case "iso": iso = true
+        case let other: throw FixtureError("unknown keyboard \(other)")
+        }
+        let language = testCase["lightroomLanguage"] as? String
+        var typed = usLayout
+        for (name, value) in testCase["layout"] as? [String: Any] ?? [:] {
+            typed[name] = value as? String // null: the key types nothing
+            if !(value is String || value is NSNull) { throw FixtureError("layout values are characters or null") }
+        }
+        let dead = Set(testCase["deadKeys"] as? [String] ?? [])
+        var plain: [Int64: String] = [:]
+        var display: [Int64: String] = [:]
+        for (name, text) in typed {
+            let code = try keyCode(name, iso: iso)
+            display[code] = text
+            if !dead.contains(name) { plain[code] = text }
+        }
+        if Set(plain.values).count != plain.count { throw FixtureError("two keys type the same character") }
+        let layout = LayoutCharacters(plain: plain, command: plain, display: display)
+
+        var failures: [String] = []
+        let sends = ImportShortcuts.forLayout(layout, lightroomLanguage: language)
+        for (name, value) in testCase["importKeys"] as? [String: Any] ?? [:] {
+            guard let role = ImportKeys.Role(rawValue: name) else { throw FixtureError("unknown Import key \(name)") }
+            let expected = value is NSNull ? nil : try chord(value as? String ?? "", iso: iso)
+            if sends.chord(for: role) != expected { failures.append("\(name): \(String(describing: sends.chord(for: role)))") }
+        }
+        for (name, value) in testCase["fallbacks"] as? [String: Any] ?? [:] {
+            let expected = try chord(value as? String ?? "", iso: iso)
+            let actual: KeyChord?
+            if let command = AppCommand(rawValue: name) {
+                actual = command.press(lightroomLanguage: language).chord(layout: layout, asciiCapable: nil)
+            } else if let command = LightroomCommandName(rawValue: name) {
+                actual = FallbackShortcuts.press(for: command, lightroomLanguage: language)?.chord(layout: layout, asciiCapable: nil)
+            } else {
+                throw FixtureError("unknown command \(name)")
+            }
+            if actual != expected { failures.append("\(name): \(String(describing: actual))") }
+        }
+        return failures
+    }
+}
+
 // MARK: - Standard layout
 
 private enum LayoutRunner {
@@ -706,6 +784,10 @@ private enum LayoutRunner {
 struct SharedFixtureTests {
     @Test func gestures() throws {
         try Fixtures.run("gestures", try Fixtures.cases(in: "gestures")) { testCase, _ in try GestureRunner.run(testCase) }
+    }
+
+    @Test func lightroomKeys() throws {
+        try Fixtures.run("lightroom-keys", try Fixtures.cases(in: "lightroom-keys")) { testCase, _ in try LightroomKeysRunner.run(testCase) }
     }
 
     @Test func keymapRules() throws {

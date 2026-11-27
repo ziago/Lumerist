@@ -80,7 +80,14 @@ allow.
   none). `AppCommand` is a command Lumerist runs itself by pressing a
   shortcut, with no request to the plug-in (`pasteSettingsFromPrevious`,
   ⌥⌘V). A letter no key types comes from the ASCII-capable layout, then the
-  US position.
+  US position. Lightroom takes its shortcuts from its interface language,
+  which the plug-in reports (protocol 4): `LightroomShortcuts.Language`
+  holds each language Lightroom ships, from `Shared/lightroom-shortcuts.json`
+  (`languages`): its name, its Import Toggle character (< in Italian and
+  Swedish) and the keys its help lists differently, which the warnings use.
+  The keys Lumerist presses change only for an override marked `press`
+  (none today). The app installs the language in
+  `LightroomShortcuts.activeLanguage`; unknown means English.
 - **Combos.** A combo is a `KeyChord` with the pseudo-modifier
   `KeyModifiers.combo` (not a real modifier; key events never carry it). It
   works only while the Combo Key is held and reads "Tab + K"

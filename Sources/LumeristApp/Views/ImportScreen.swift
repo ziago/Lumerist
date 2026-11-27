@@ -9,8 +9,9 @@ struct ImportScreen: View {
 
     var body: some View {
         let keymap = store.keymap.keymap
-        // Drawn again when the input source changes: the keys follow the layout.
-        let _ = store.keyboardLayoutRevision
+        // Drawn again when the input source or Lightroom's language changes:
+        // the keys follow both.
+        let _ = store.lightroomKeysRevision
         let sends = ImportShortcuts.forCurrentLayout
         let warnings = Self.warnings(in: keymap)
         VStack(alignment: .leading, spacing: Synth.Space.xl) {

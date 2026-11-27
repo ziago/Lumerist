@@ -18,9 +18,9 @@ internal sealed class ImportScreen(ScreenContext context) : Screen(context)
     protected override FrameworkElement Build()
     {
         var keymap = Controller.Keymap;
-        // The keys Lumerist presses, named as Lightroom's layout prints them.
+        // The keys Lumerist presses in Lightroom's language, named as Lightroom's layout prints them.
         var layout = Context.IsSnapshot ? (nint?)null : KeyboardLayout.OfLightroom();
-        var sends = layout is { } active ? KeyboardLayout.ImportShortcutsFor(active) : ImportShortcuts.Standard;
+        var sends = layout is { } active ? KeyboardLayout.ImportShortcutsFor(active, Controller.Context.Language) : ImportShortcuts.Standard;
         var warnings = Warnings(keymap);
 
         var description = SynthText.Body(

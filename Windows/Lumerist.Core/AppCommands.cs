@@ -36,9 +36,11 @@ public static class AppCommands
     /// The shortcut an app command presses: Ctrl+Alt+V with the key that types
     /// v in <paramref name="layout"/> (Lightroom's; null: the US key). Null for an unknown name.
     /// </summary>
-    public static KeyChord? Shortcut(string name, KeyboardLayoutTable? layout = null) => name switch
+    /// <param name="language">Lightroom's interface language: Ctrl+Alt+V in every one, unless the shared file has a language's own pressed.</param>
+    public static KeyChord? Shortcut(string name, KeyboardLayoutTable? layout = null, string? language = null) => name switch
     {
-        PasteSettingsFromPrevious => FallbackShortcuts.Letter('v', KeyModifiers.Control | KeyModifiers.Alt, ScanCodes.V, layout),
+        PasteSettingsFromPrevious => FallbackShortcuts.Pressed(name, language, layout)
+            ?? FallbackShortcuts.Letter('v', KeyModifiers.Control | KeyModifiers.Alt, ScanCodes.V, layout),
         _ => null,
     };
 

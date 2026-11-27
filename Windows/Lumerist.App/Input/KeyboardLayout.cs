@@ -70,8 +70,11 @@ internal static unsafe class KeyboardLayout
     public static string? Typed(int chordScanCode, nint layout) =>
         HookScanCodes.IsExtended(chordScanCode) ? null : Table(layout).Typed(chordScanCode);
 
-    /// <summary>Lightroom's Import keys in this layout (Toggle: the key typing ` alone, else &lt;, else none).</summary>
-    public static ImportShortcuts ImportShortcutsFor(nint layout) => ImportShortcuts.ForLayout(Table(layout));
+    /// <summary>
+    /// Lightroom's Import keys in this layout and Lightroom's language (null: English). Toggle: the key typing the
+    /// language's character alone (&lt; in Italian and Swedish, ` otherwise), else `, else &lt;, else none.
+    /// </summary>
+    public static ImportShortcuts ImportShortcutsFor(nint layout, string? language) => ImportShortcuts.ForLayout(Table(layout), language);
 
     /// <summary>Right Alt is AltGr in this layout (some key types a character with it).</summary>
     public static bool HasAltGr(nint layout) => Table(layout).HasAltGr;

@@ -22,8 +22,8 @@ final class IntentDispatcher {
     /// types its character on the active layout (`FallbackShortcuts`: ⌘Z is
     /// another key on AZERTY, QWERTZ and "Dvorak – QWERTY ⌘" keyboards).
     static func fallbackShortcut(for command: LightroomCommandName) -> KeyChord? {
-        FallbackShortcuts.press(for: command)?.chord(layout: KeyboardLayout.characters,
-                                                      asciiCapable: KeyboardLayout.asciiCapableCharacters)
+        FallbackShortcuts.press(for: command, lightroomLanguage: LightroomShortcuts.activeLanguage)?
+            .chord(layout: KeyboardLayout.characters, asciiCapable: KeyboardLayout.asciiCapableCharacters)
     }
 
     private let hooks: Hooks
@@ -121,8 +121,8 @@ final class IntentDispatcher {
         case .command(let name, let argument):
             // Lumerist's own commands press Lightroom's shortcut and send no request.
             if let command = AppCommand(action) {
-                let chord = command.shortcut.chord(layout: KeyboardLayout.characters,
-                                                   asciiCapable: KeyboardLayout.asciiCapableCharacters)
+                let chord = command.press(lightroomLanguage: LightroomShortcuts.activeLanguage)
+                    .chord(layout: KeyboardLayout.characters, asciiCapable: KeyboardLayout.asciiCapableCharacters)
                 if !KeyEngineMonitor.postToLightroom(chord) {
                     hooks.log("\(name) (\(chord.displayText)) skipped: Lightroom is not in front")
                 }
@@ -165,9 +165,11 @@ final class IntentDispatcher {
 }
 
 extension ImportShortcuts {
-    /// Lightroom's Import keys for the active keyboard layout: the keys that
-    /// type p and x, the key that types a plain ` or < (or no Toggle), and →.
+    /// Lightroom's Import keys for the active keyboard layout and Lightroom's
+    /// language: the keys that type p and x, the key that types the
+    /// language's Toggle character (else a plain ` or <, or no Toggle), and →.
     static var forCurrentLayout: ImportShortcuts {
-        .forLayout(KeyboardLayout.characters, asciiCapable: KeyboardLayout.asciiCapableCharacters)
+        .forLayout(KeyboardLayout.characters, asciiCapable: KeyboardLayout.asciiCapableCharacters,
+                   lightroomLanguage: LightroomShortcuts.activeLanguage)
     }
 }

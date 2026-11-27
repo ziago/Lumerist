@@ -43,8 +43,8 @@ internal sealed class AppController : IDisposable
             Send = Send,
             PostShortcut = PostShortcut,
             Schedule = Schedule,
-            FallbackShortcut = command => FallbackShortcuts.For(command, KeyboardLayout.Table(KeyboardLayout.OfLightroom())),
-            AppCommandShortcut = name => AppCommands.Shortcut(name, KeyboardLayout.Table(KeyboardLayout.OfLightroom())),
+            FallbackShortcut = command => FallbackShortcuts.For(command, KeyboardLayout.Table(KeyboardLayout.OfLightroom()), context.Language),
+            AppCommandShortcut = name => AppCommands.Shortcut(name, KeyboardLayout.Table(KeyboardLayout.OfLightroom()), context.Language),
             UpdateRateHz = () => settings.UpdateRateHz,
             Notice = ShowNotice,
             OpenPalette = () => Panels?.OpenPalette(),
@@ -364,7 +364,7 @@ internal sealed class AppController : IDisposable
     {
         if (hook is not null) return;
         var newHook = new InputHook(keymap, intents => ui.BeginInvoke(() => dispatcher.Handle(intents)), Log.Write);
-        newHook.UpdateContext(context.Module.Length == 0 ? "develop" : context.Module, context.Tool);
+        newHook.UpdateContext(context.Module.Length == 0 ? "develop" : context.Module, context.Tool, context.Language);
         try
         {
             newHook.Start();
@@ -488,8 +488,15 @@ internal sealed class AppController : IDisposable
     private void Apply(LightroomContext newContext)
     {
         if (newContext == context) return;
+        var languageChanged = newContext.Language != context.Language;
         context = newContext;
-        hook?.UpdateContext(newContext.Module, newContext.Tool);
+        hook?.UpdateContext(newContext.Module, newContext.Tool, newContext.Language);
+        // Lightroom's keys follow its language: warnings, labels and "Sends …" are drawn again.
+        if (languageChanged)
+        {
+            LightroomShortcuts.Language = newContext.Language;
+            KeymapChanged?.Invoke();
+        }
         Log.Write($"Lightroom context: {newContext.Module} {newContext.Tool} (language {newContext.Language ?? "unknown"})");
         Panels?.ContextChanged(newContext);
         Changed?.Invoke();

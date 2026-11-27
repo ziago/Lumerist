@@ -50,7 +50,7 @@ def case_ids(group: str) -> tuple[set[str], float]:
     return ids, max(path.stat().st_mtime for path in files)
 
 
-GROUPS = ["bug-report", "gestures", "keymap-rules", "protocol", "standard-layout"]
+GROUPS = ["bug-report", "gestures", "keymap-rules", "lightroom-keys", "protocol", "standard-layout"]
 RUNNERS = {
     "swift": "swift test",
     "csharp": "dotnet test Windows",

@@ -60,6 +60,12 @@ public enum KeyNames {
         return ansiName(for: keyCode)
     }
 
+    /// The US key that types `name` ("V", "1", "["), for a shortcut named by
+    /// its character.
+    static func usKeyCode(for name: String) -> Int64? {
+        names.first { $0.value == name.uppercased() && layoutDependentKeyCodes.contains($0.key) }?.key
+    }
+
     /// The US (ANSI) name, independent of the active layout.
     static func ansiName(for keyCode: Int64) -> String {
         names[keyCode] ?? (keyCode == 10 ? "§" : "Key \(keyCode)")
