@@ -14,6 +14,10 @@
 #      password from appleid.apple.com, typed at the prompt, never in files):
 #        xcrun notarytool store-credentials lumerist-notary --apple-id <email> --team-id <TEAMID>
 #   3. gh logged in with permission to create releases on the repository.
+#   4. The update signing key (ECDSA P-256) in the login keychain, generic
+#      password "lumerist-update-signing" holding the base64 of its PKCS#8 PEM.
+#      It signs SHA256SUMS, without which the app does not update itself; its
+#      public key is below and built into the app. Never in files or in CI.
 #
 # The version comes from the top-level VERSION file; release notes come from
 # the matching "## [x.y.z]" (or "## x.y.z") section of CHANGELOG.md, which
@@ -254,19 +258,59 @@ fi
 
 ( cd "$out" && shasum -a 256 "$(basename "$dmg")" > "$(basename "$dmg").sha256" )
 
+# --- Signed checksums ---------------------------------------------------------
+# The app's updater installs only a file listed in SHA256SUMS whose signature,
+# SHA256SUMS.sig, matches a public key built into the app. SHA256SUMS: one line
+# per published package ("<sha256>  <name>", sorted by name, LF), the .sha256
+# files left out. SHA256SUMS.sig: the base64 of the DER ECDSA P-256 / SHA-256
+# signature of SHA256SUMS' exact bytes. The private key (base64 of a PKCS#8
+# PEM) stays in this Mac's Keychain, generic password "lumerist-update-signing":
+# it never reaches CI, the repository or the disk. /usr/bin/openssl (LibreSSL)
+# so the release does not depend on Homebrew.
+update_signing_service="lumerist-update-signing"
+update_public_key="MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEt37ZfOYd5bo4/ZKP73l2KTyzgZI9Ih0nlBof4WjmWuaoFd3JYfLtZah8HT6R2DP62EYmSxeW2N25UIN1DIhzVA=="
+sums="$out/SHA256SUMS"
+sums_signature="$out/SHA256SUMS.sig"
+rm -f "$sums" "$sums_signature"
+summed=("$dmg" "${(@)windows_assets:#*.sha256}")
+for file in "${summed[@]}"; do
+  print -r -- "$(shasum -a 256 < "$file" | cut -d ' ' -f 1)  ${file:t}"
+done | LC_ALL=C sort -k 2 > "$sums"
+step "SHA256SUMS: ${#summed} packages"
+
+verify_sums() {
+  /usr/bin/openssl dgst -sha256 \
+    -verify <(print -r -- "$update_public_key" | base64 -d | /usr/bin/openssl pkey -pubin -inform DER) \
+    -signature <(base64 -d < "$sums_signature") "$sums" >/dev/null 2>&1
+}
+if ! security find-generic-password -s "$update_signing_service" >/dev/null 2>&1; then
+  message="No \"$update_signing_service\" key in the Keychain: SHA256SUMS cannot be signed, and the app would not update itself."
+  if (( dry_run )); then warn "$message"; rm -f "$sums"; else fail "$message"; fi
+else
+  # The key goes from the Keychain to openssl through a pipe, never a file.
+  /usr/bin/openssl dgst -sha256 \
+    -sign <(security find-generic-password -s "$update_signing_service" -w | base64 -d) "$sums" \
+    | base64 > "$sums_signature" || fail "Signing SHA256SUMS failed."
+  verify_sums || fail "SHA256SUMS.sig does not verify with the public key the app trusts (is the Keychain key the right one?)."
+  step "SHA256SUMS signed and verified"
+fi
+update_assets=()
+[[ -s "$sums" && -s "$sums_signature" ]] && update_assets=("$sums" "$sums_signature")
+
 # --- Publish ---------------------------------------------------------------
 release_flags=(--title "Lumerist $version" --notes-file "$notes" --repo "$repo")
 (( prerelease )) && release_flags+=(--prerelease)
 if (( dry_run )); then
   step "Dry run complete. A real run would publish:"
-  print "  gh release create $tag ${(q)dmg} ${(q)dmg}.sha256 ${(q)windows_assets[@]} ${release_flags[*]}"
+  print "  gh release create $tag ${(q)dmg} ${(q)dmg}.sha256 ${(q)windows_assets[@]} ${(q)update_assets[@]} ${release_flags[*]}"
 else
   # Created as a draft on the built commit, checked, and only then published,
   # so a half-uploaded release is never visible to users.
   step "Creating draft release $tag on GitHub"
-  gh release create "$tag" "$dmg" "$dmg.sha256" "${windows_assets[@]}" "${release_flags[@]}" --target "$head_commit" --draft
+  (( ${#update_assets} == 2 )) || fail "SHA256SUMS and its signature are missing."
+  gh release create "$tag" "$dmg" "$dmg.sha256" "${windows_assets[@]}" "${update_assets[@]}" "${release_flags[@]}" --target "$head_commit" --draft
   assets="$(gh release view "$tag" --repo "$repo" --json assets --jq '.assets[].name')"
-  for expected in "$(basename "$dmg")" "$(basename "$dmg").sha256" "${windows_assets[@]:t}"; do
+  for expected in "$(basename "$dmg")" "$(basename "$dmg").sha256" "${windows_assets[@]:t}" "${update_assets[@]:t}"; do
     print -r -- "$assets" | grep -qxF "$expected" || fail "Draft $tag is missing $expected; fix it on GitHub before publishing."
   done
   step "Publishing $tag"
