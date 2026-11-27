@@ -16,7 +16,8 @@
 #   3. gh logged in with permission to create releases on the repository.
 #
 # The version comes from the top-level VERSION file; release notes come from
-# the matching "## [x.y.z]" (or "## x.y.z") section of CHANGELOG.md.
+# the matching "## [x.y.z]" (or "## x.y.z") section of CHANGELOG.md, which
+# starts with "### Highlights" (the app's update window shows them).
 # Output: build/release/<version>/ (git-ignored).
 #
 # Mac and Windows ship together. A release downloads the Windows packages
@@ -97,6 +98,21 @@ fi
 if [[ ! -s "$notes" ]]; then
   message="CHANGELOG.md has no section for $version (expected a heading like '## [$version]')."
   if (( dry_run )); then warn "$message"; print "Lumerist $version" > "$notes"; else fail "$message"; fi
+fi
+# The app's update window shows the release's Highlights: the section starts
+# with "### Highlights" and its "- " points (3 to 5, in plain text).
+highlights="$(awk '
+  NF == 0 { next }
+  !started { if ($0 != "### Highlights") exit; started = 1; next }
+  /^### / { exit }
+  /^- / { count++ }
+  END { print count + 0 }
+' "$notes")"
+if (( highlights == 0 )); then
+  message="The $version section of CHANGELOG.md must start with \"### Highlights\" and at least one \"- \" point (the update window shows them)."
+  if (( dry_run )); then warn "$message"; else fail "$message"; fi
+elif (( highlights < 3 || highlights > 5 )); then
+  warn "The $version Highlights have $highlights points; 3 to 5 read best in the update window."
 fi
 
 if (( ! dry_run )); then
