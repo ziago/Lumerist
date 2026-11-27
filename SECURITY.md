@@ -36,6 +36,23 @@ has a `.sha256` file next to it.
 
 If a hash does not match, do not run the file, and please report it as above.
 
+**Update now**, in Lumerist's update window, does these checks by itself
+before installing anything. It downloads only from GitHub over https, and
+the file must match `SHA256SUMS`, the release's list of hashes, whose
+signature in `SHA256SUMS.sig` must check out against the public key built
+into Lumerist. The private key never leaves the developer's Mac: it is not
+on GitHub or in the build service, so someone who could publish a release
+still could not make Lumerist install it. On the Mac the app must also carry
+Lumerist's Developer ID signature and Apple's notarization, and be the
+announced version. If any check fails, nothing is installed and the current
+version stays as it is.
+
+You can check the list yourself:
+`openssl dgst -sha256 -verify lumerist-update.pub -signature <(base64 -d < SHA256SUMS.sig) SHA256SUMS`,
+with the public key
+`MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEt37ZfOYd5bo4/ZKP73l2KTyzgZI9Ih0nlBof4WjmWuaoFd3JYfLtZah8HT6R2DP62EYmSxeW2N25UIN1DIhzVA==`
+(base64 DER; save it as PEM between `-----BEGIN PUBLIC KEY-----` lines).
+
 ## Supported versions
 
 Only the latest release receives security fixes.

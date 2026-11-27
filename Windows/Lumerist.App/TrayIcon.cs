@@ -42,26 +42,23 @@ internal sealed class TrayIcon : IDisposable
         Theme.Changed += OnThemeChanged;
         updates = GuideHost.Updates(controller);
         updates.Changed += OnUpdatesChanged;
-        icon.BalloonTipClicked += (_, _) => updates.OpenReleasePage();
+        GuideHost.Notice += ShowNotice;
         Refresh();
     }
 
     /// <summary>
-    /// A newer version: a line in the menu for as long as it is newer, and a
-    /// Windows notification once per version (the Mac shows the line in its
-    /// menu bar item). Clicking either opens the release page; nothing is
-    /// downloaded by Lumerist.
+    /// A newer version: a line in the menu for as long as it is newer (the
+    /// Mac shows the line in its menu bar item). It opens the update window;
+    /// the window itself opens by itself after the check at launch.
     /// </summary>
     private void OnUpdatesChanged()
     {
         var available = updates.State as UpdateCheckState.Available;
-        menu.ShowUpdate(available?.Version, updates.OpenReleasePage);
-        if (available is null || controller.Settings.LastAnnouncedVersion == available.Version) return;
-        controller.Settings.LastAnnouncedVersion = available.Version;
-        controller.SaveSettings();
-        icon.ShowBalloonTip(10_000, $"Lumerist {available.Version} is available",
-            "Click to open its download page. Your keys and settings stay as they are.", Forms.ToolTipIcon.Info);
+        menu.ShowUpdate(available?.Version, updates.ShowPrompt);
     }
+
+    /// <summary>A Windows notification (after an update: the new version is installed).</summary>
+    private void ShowNotice(string title, string text) => icon.ShowBalloonTip(10_000, title, text, Forms.ToolTipIcon.Info);
 
     /// <summary>
     /// NotifyIcon opens its menu by itself only on a right click. Its own
@@ -100,6 +97,7 @@ internal sealed class TrayIcon : IDisposable
         controller.Changed -= Refresh;
         Theme.Changed -= OnThemeChanged;
         updates.Changed -= OnUpdatesChanged;
+        GuideHost.Notice -= ShowNotice;
         icon.Visible = false;
         icon.Dispose();
         menu.Dispose();
@@ -179,12 +177,12 @@ internal sealed class TrayMenu : IDisposable
         Refresh();
     }
 
-    /// <summary>"Download Lumerist 0.9.1…" while a newer version exists.</summary>
+    /// <summary>"Update to Lumerist 0.9.3…" while a newer version exists.</summary>
     public void ShowUpdate(string? version, Action open)
     {
         openUpdate = open;
         update.Visible = version is not null;
-        if (version is not null) update.Text = $"Download Lumerist {version}…";
+        if (version is not null) update.Text = $"Update to Lumerist {version}…";
     }
 
     /// <summary>Everything but the plug-in (which reads files).</summary>

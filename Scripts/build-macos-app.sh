@@ -4,6 +4,7 @@
 #   zsh Scripts/build-macos-app.sh               host architecture, development signing
 #   zsh Scripts/build-macos-app.sh --universal   Apple Silicon + Intel
 #   zsh Scripts/build-macos-app.sh --release     universal + Developer ID + hardened runtime + timestamp
+#   zsh Scripts/build-macos-app.sh --debug       debug configuration: the LUMERIST_* test overrides work (never for a release)
 #   ... --output DIR                             where Lumerist.app goes (default: build/)
 #
 # Development builds are signed with your first "Apple Development" identity so
@@ -18,18 +19,25 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 source "$root/Scripts/plugin-version.zsh"
 
 mode="development"
+configuration="release"
 universal=0
 out_dir="$root/build"
 while (( $# > 0 )); do
   case "$1" in
     --universal) universal=1 ;;
     --release) mode="release"; universal=1 ;;
+    --debug) configuration="debug" ;;
     --output) shift; out_dir="${1:?--output needs a folder}" ;;
-    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
     *) print -u2 "Unknown option: $1"; exit 64 ;;
   esac
   shift
 done
+
+if [[ "$mode" == "release" && "$configuration" == "debug" ]]; then
+  print -u2 -r -- "--debug builds honour the LUMERIST_* test overrides: never use one for a release."
+  exit 64
+fi
 
 version="$(lumerist_version "$root")"
 build_number="${LUMERIST_BUILD_NUMBER:-$(date +%Y%m%d%H%M)}"
@@ -55,8 +63,8 @@ if (( universal )); then
 else
   arch_flags=()
 fi
-swift build -c release "${arch_flags[@]}"
-bin_dir="$(swift build -c release "${arch_flags[@]}" --show-bin-path)"
+swift build -c "$configuration" "${arch_flags[@]}"
+bin_dir="$(swift build -c "$configuration" "${arch_flags[@]}" --show-bin-path)"
 binary="$bin_dir/LumeristApp"
 archs="$(lipo -archs "$binary")"
 if (( universal )) && [[ "$archs" != *arm64* || "$archs" != *x86_64* ]]; then
@@ -103,4 +111,4 @@ fi
 codesign --verify --deep --strict "$app"
 
 print "Created $app"
-print "  version $version ($build_number) · $archs · $mode · signed with: $identity"
+print "  version $version ($build_number) · $archs · $mode · $configuration configuration · signed with: $identity"

@@ -7,13 +7,14 @@ using Lumerist.App.Guide;
 using Lumerist.App.Panels;
 using Lumerist.App.Services;
 using Lumerist.App.Snapshots;
+using Lumerist.Core;
 
 namespace Lumerist.App;
 
 internal static class Program
 {
     /// <summary>One Lumerist per Windows session.</summary>
-    private const string InstanceName = @"Local\io.github.ziago.lumerist";
+    private const string InstanceName = WindowsInstaller.InstanceMutexName;
 
     /// <summary>
     /// A second copy (the plug-in's "Open Lumerist", a double click) hands its
@@ -34,11 +35,42 @@ internal static class Program
     public const string WithLightroomArgument = "--with-lightroom";
 
     /// <summary>
+    /// The installer opens the new version after "Update now": in the
+    /// background, like a start with Lightroom (Windows/Installer/Lumerist.iss).
+    /// </summary>
+    public const string AfterUpdateArgument = WindowsInstaller.AfterUpdateArgument;
+
+    /// <summary>
     /// The user opened Lumerist (Start menu, double click, the plug-in's
-    /// "Open Lumerist"), as opposed to the plug-in starting it with Lightroom.
+    /// "Open Lumerist"), as opposed to the plug-in starting it with Lightroom
+    /// or the installer reopening it after an update.
     /// </summary>
     public static bool WantsWindow(IReadOnlyCollection<string> args) =>
-        args.Contains(ShowWindowArgument) || !args.Contains(WithLightroomArgument);
+        args.Contains(ShowWindowArgument) || !(args.Contains(WithLightroomArgument) || args.Contains(AfterUpdateArgument));
+
+    /// <summary>The single-instance mutex (the installer's AppMutex), owned by the UI thread while Lumerist runs.</summary>
+    private static Mutex? instance;
+
+    /// <summary>
+    /// "Update now" started the installer and Lumerist is about to quit: the
+    /// installer checks this mutex (AppMutex) before anything else, so it is
+    /// let go of now rather than when Main returns. UI thread only (the thread
+    /// that owns it).
+    /// </summary>
+    public static void ReleaseInstance()
+    {
+        if (instance is not { } owned) return;
+        instance = null;
+        try
+        {
+            owned.ReleaseMutex();
+        }
+        catch (ApplicationException)
+        {
+            // Not owned by this thread: closing the handle below still lets it go.
+        }
+        owned.Dispose();
+    }
 
     /// <summary><c>--render-snapshots &lt;folder&gt;</c>: PNGs of every screen, then quit.</summary>
     public const string RenderSnapshotsArgument = "--render-snapshots";
@@ -60,13 +92,22 @@ internal static class Program
         {
             return new LumeristApplication(args, snapshotFolder: args[1]).Run();
         }
-        using var instance = new Mutex(initiallyOwned: true, InstanceName, out var isFirst);
+        var mutex = new Mutex(initiallyOwned: true, InstanceName, out var isFirst);
         if (!isFirst)
         {
+            mutex.Dispose();
             HandToRunningCopy(args);
             return 0;
         }
-        return new LumeristApplication(args).Run();
+        instance = mutex;
+        try
+        {
+            return new LumeristApplication(args).Run();
+        }
+        finally
+        {
+            ReleaseInstance();
+        }
     }
 
     private static void HandToRunningCopy(string[] args)

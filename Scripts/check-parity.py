@@ -11,6 +11,7 @@ It fails when
   older than the cases;
 - a value of Shared/contract.json (ports, protocol version, bridge token file, plug-in id,
   consent version and hash) is missing from a side or from the plug-in;
+- a side's list of trusted update keys differs from Shared/update-public-keys.json;
 - a row of docs/feature-spec.md has an empty macOS or Windows column;
 - a theme colour of the Windows app differs from the Mac's;
 - Shared/lightroom-shortcuts.json is invalid, or the Mac's table made from
@@ -50,7 +51,7 @@ def case_ids(group: str) -> tuple[set[str], float]:
     return ids, max(path.stat().st_mtime for path in files)
 
 
-GROUPS = ["bug-report", "gestures", "keymap-rules", "lightroom-keys", "protocol", "standard-layout"]
+GROUPS = ["bug-report", "gestures", "keymap-rules", "lightroom-keys", "protocol", "standard-layout", "updates"]
 RUNNERS = {
     "swift": "swift test",
     "csharp": "dotnet test Windows",
@@ -137,6 +138,29 @@ def check_values(side: str):
         expect(side, code, "Windows link file", r'"plugin-link\.json"')
         expect(side, code, "bridge token file", rf'BridgeTokenFileName\s*=\s*"{token_file}"')
         expect(side, tests, "consent hash test", digest)
+
+
+# Update keys -------------------------------------------------------------------
+
+def declared_keys(text: str, name: str) -> list[str] | None:
+    """The quoted strings of the list declared after `name` (up to `]` or `}`), in order."""
+    match = re.search(rf"\b{name}\b[^=]*=\s*(?:new\s*(?:string)?\s*\[\s*\]\s*)?[\[{{]([^\]}}]*)[\]}}]", text)
+    return re.findall(r'"([A-Za-z0-9+/=]+)"', match.group(1)) if match else None
+
+
+def check_update_keys(side: str):
+    """The public keys that may sign SHA256SUMS are exactly Shared/update-public-keys.json's."""
+    shared = json.loads((root / "Shared/update-public-keys.json").read_text(encoding="utf-8"))["updatePublicKeys"]
+    if side == "swift":
+        found = declared_keys(sources(["Sources/LumeristCore/*.swift"]), "updatePublicKeys")
+    else:
+        found = declared_keys(sources(["Windows/Lumerist.Core/**/*.cs"]), "UpdatePublicKeys")
+    if found is None:
+        bad(f"{side}: no list of update public keys found ({'updatePublicKeys' if side == 'swift' else 'UpdatePublicKeys'})")
+    elif found != shared:
+        bad(f"{side}: the update public keys differ from Shared/update-public-keys.json")
+    else:
+        ok(f"{side}: the {len(shared)} update public key(s) match Shared/update-public-keys.json")
 
 
 # Feature list ------------------------------------------------------------------
@@ -227,6 +251,7 @@ def main():
     for name in sides:
         check_values(name)
         check_runs(name)
+        check_update_keys(name)
     check_feature_spec()
     check_theme_palettes()
     if "swift" in sides:

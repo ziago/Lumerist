@@ -38,11 +38,11 @@ struct StatusMenu: View {
                 neonShortcutsRow
             }
 
-            // A newer version: announced here (Windows also shows a notification);
-            // the click only opens its release page.
-            if case .available(let version, _) = updates.state {
+            // A newer version: announced here and in the update window; this
+            // line only opens its release page.
+            if case .available(let update) = updates.state {
                 divider
-                item("Download Lumerist \(version)…") { updates.openReleasePage() }
+                item("Download Lumerist \(update.version)…") { updates.openReleasePage() }
             }
 
             divider
@@ -187,6 +187,8 @@ struct MenuBarLabel: View {
                 FloatingPanels.shared.attach(store)
                 // The daily update check at launch, unless the user turned it off.
                 UpdateChecker.shared.checkIfDue()
+                // Started by "Update now": say the new version is in place.
+                UpdatePrompter.shared.showInstalledIfRelaunched()
             }
     }
 }

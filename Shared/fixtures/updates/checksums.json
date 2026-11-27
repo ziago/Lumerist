@@ -1,0 +1,630 @@
+{
+  "group": "updates",
+  "about": "The per-file .sha256, the signed SHA256SUMS and the final comparison (UpdateChecksums, SignedChecksumList).",
+  "cases": [
+    {
+      "id": "updates/checksums/sha256-file-shasum-with-a-line-break",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1  Lumerist-0.9.2.dmg\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1"
+      },
+      "about": "As shasum -a 256 writes it (the Mac's)."
+    },
+    {
+      "id": "updates/checksums/sha256-file-without-a-line-break",
+      "checksumFile": "5609f728403e197bb255ef50c62aeabb1f93b09f7b7c379903440b65cd4319cb  Lumerist-0.9.2-windows-x64-setup.exe",
+      "name": "Lumerist-0.9.2-windows-x64-setup.exe",
+      "expect": {
+        "sha256": "5609f728403e197bb255ef50c62aeabb1f93b09f7b7c379903440b65cd4319cb"
+      },
+      "about": "As the Windows CI writes it."
+    },
+    {
+      "id": "updates/checksums/sha256-file-crlf",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1  Lumerist-0.9.2.dmg\r\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-binary-marker",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1 *Lumerist-0.9.2.dmg\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-capital-hex",
+      "checksumFile": "00CBBD0DDBDA2762798F7009838ED34CA1F12B93965813C7DF22943BC62166D1  Lumerist-0.9.2.dmg\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-another-file",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1  Lumerist-0.9.1.dmg\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "nameMismatch"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-space-after-the-name",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1  Lumerist-0.9.2.dmg \n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "nameMismatch"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-one-space",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1 Lumerist-0.9.2.dmg\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedChecksumFile"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-short-hash",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d  Lumerist-0.9.2.dmg\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedChecksumFile"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-not-hex",
+      "checksumFile": "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg  Lumerist-0.9.2.dmg\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedChecksumFile"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-two-lines",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1  Lumerist-0.9.2.dmg\n5609f728403e197bb255ef50c62aeabb1f93b09f7b7c379903440b65cd4319cb  Lumerist-0.9.2-windows-x64-setup.exe\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedChecksumFile"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-empty",
+      "checksumFile": "",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedChecksumFile"
+      }
+    },
+    {
+      "id": "updates/checksums/sha256-file-two-line-breaks",
+      "checksumFile": "00cbbd0ddbda2762798f7009838ed34ca1f12b93965813c7df22943bc62166d1  Lumerist-0.9.2.dmg\n\n",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedChecksumFile"
+      }
+    },
+    {
+      "id": "updates/checksums/list-valid-signature",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "facf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01"
+      },
+      "about": "Signed with the throwaway test key A, whose public key is in `keys`."
+    },
+    {
+      "id": "updates/checksums/list-valid-signature-for-a-windows-setup",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2-windows-x64-setup.exe",
+      "expect": {
+        "sha256": "917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949"
+      }
+    },
+    {
+      "id": "updates/checksums/list-signature-without-its-line-break",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "facf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01"
+      }
+    },
+    {
+      "id": "updates/checksums/list-signature-with-spaces-and-crlf-around",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "  MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\r\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "facf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01"
+      }
+    },
+    {
+      "id": "updates/checksums/list-tampered-hash",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c00  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-tampered-name",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.3.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.3.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-one-more-line",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\nc8dee78f8c7b466c881847accc196998bad00e2b96c5ef913dfbe454d3807c96  extra.bin\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-wrong-key",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDu92YNiJgYPmQhR7RyQr1h4G3pm7tjJYBteVm67tZS5gIgFcqCdkCQiDw0Ir2XJJtITFNR6myCuo2vr11Wta8g2D4=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      },
+      "about": "Signed with test key B; only A is trusted."
+    },
+    {
+      "id": "updates/checksums/list-any-trusted-key-will-do",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEW0s5u9dHRdZpAkoOMacGKs52zuVAc0Aty9rjstt+UVnc+mag4kOgA6xg8ZhnzTOTW2kI9Ko28xFXbggrwc+Pvw==",
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "facf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01"
+      },
+      "about": "Key rotation: a signature valid under any listed key is accepted."
+    },
+    {
+      "id": "updates/checksums/list-an-unreadable-key-is-skipped",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "not a key",
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "facf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01"
+      }
+    },
+    {
+      "id": "updates/checksums/list-no-trusted-key",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-the-real-key-does-not-sign-test-lists",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEt37ZfOYd5bo4/ZKP73l2KTyzgZI9Ih0nlBof4WjmWuaoFd3JYfLtZah8HT6R2DP62EYmSxeW2N25UIN1DIhzVA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-signature-not-base64",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "!!!!\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-signature-with-a-line-break-inside",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhU\nY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-signature-without-padding",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-signature-empty",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-signature-not-der",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+Pw==\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      }
+    },
+    {
+      "id": "updates/checksums/list-missing-entry",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg.sha256",
+      "expect": {
+        "error": "notListed"
+      }
+    },
+    {
+      "id": "updates/checksums/list-the-list-does-not-list-itself",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "SHA256SUMS",
+      "expect": {
+        "error": "notListed"
+      }
+    },
+    {
+      "id": "updates/checksums/list-names-are-case-sensitive",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "notListed"
+      }
+    },
+    {
+      "id": "updates/checksums/list-no-final-line-break",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg",
+      "signature": "MEUCIALpUlullGq1Ro6dOILH66fxm15/wF7W7DS2ESvHhyKVAiEA7nhhl479DeH/JiD42yW1mG0zeYpRnjzqx9+pZx/j8cw=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "facf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01"
+      }
+    },
+    {
+      "id": "updates/checksums/list-the-order-is-the-signer's",
+      "sums": "facf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n",
+      "signature": "MEYCIQDicXaU401Yp17U6qti6UeYl6FV/3kD/GZYkSeKx2GHTQIhAP0DbjOQwxUhEW9hEgoxEB6Rfo0QjJIKgvKQH4708BIG\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "sha256": "facf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01"
+      },
+      "about": "The bytes are verified as they are; nothing is sorted again."
+    },
+    {
+      "id": "updates/checksums/list-malformed-capital-hex",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nFACF11E93AA481D0535169542C209DDADE6AD7030CFDCC7268DBD92F13D63C01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEYCIQC2a4wqlnNMJL8YBhGWUCFlZvnGT9S+MulYx0LUtH4nbQIhAIwgXN0tQYRKt0a3qEaY99JSYLBmUpJ72mtHnM2MsFxj\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-one-space",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01 Lumerist-0.9.2.dmg\n",
+      "signature": "MEYCIQCBddCqw/tMqcz/m6D9CLDCgalKjG8ZmTw94bV8vtHdxAIhAKSr+YSGIvqP0hfy+nJ6HqMpcEMFisHAzKiQ2AOUl2J1\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-tab",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01\tLumerist-0.9.2.dmg\n",
+      "signature": "MEQCICrXztx+EJ5f/lvaIeL1TXhW4O416uI2shF/Ae/ZiGGbAiBIvgNVP5aVrk8cP8ka6/jyH5v14sYIfKpkmEi8LI8HPg==\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-binary-marker",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01 *Lumerist-0.9.2.dmg\n",
+      "signature": "MEYCIQCMCIEjD4bw/ugsGTzzEaW7rSPMX1CXXcnvJwkQdGr0OAIhAIqxfiKFkCR2WFpnSRInDfPV+gbKCemAjHjjXzB8QmGV\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-crlf",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\r\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\r\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\r\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\r\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\r\n",
+      "signature": "MEUCIAzVPBVsV6mpjrGolTlCSvfz+y4oHwwK/UPkpRqj5vMGAiEAx1IxZjEGx479+Q77xZyIWdFFVceOe6N8znuJVNh6Z4g=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-blank-line",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCICmn2dsIuSqOX1FmqNu+vnJFSYYotLZVG7QtzajcFTloAiEA4rdMxXPLiKv4JF4YLQyuNxtSpqBsLyRV+2DvKkumWus=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-two-final-line-breaks",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n\n",
+      "signature": "MEYCIQD3Nw0grQUSJt+JLfi1IVxmlzhp4xDLSqZYbL9cU1xi4gIhAJT+KEr/BIbSzlqrThrDZrPswNF4v+bUw7KTyvp5rRff\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-same-name-twice",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\nb4c9e14061c2fd453b36700e3b0da008db2189c711ac629f0f583089164e267d  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIEfKyyh6eL6+NOlKHZLtzxihxY2kjWvuu9OQfyb1kdSVAiEAmtOp3eiDoytZMkY9z5WOFOvCy1fxncOU5DCax+OURZw=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-path-in-a-name",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  ../Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIC+v/XAseI9SletkGMiQy67GvgSRuI1aEyE5StlGEN3cAiEAkEbk2gmsF4QEPh5dFkllgeR+vqywafawq/pOBa1EUyU=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-dot-dot-name",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n0517cf1abcfd20eb941789b07f44fbfbe7ae3415fce3d0c834213235b2f228cc  ..\n",
+      "signature": "MEYCIQDmYjilnKlWtYcQOOHaJXwSiBdEbEBEIpHfAdAX8pNL4QIhAIDzuftBV67GXJ5c2PBerlNR8B34Upwpb1qXxWLIiEOA\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-short-hash",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c0  Lumerist-0.9.2.dmg\n",
+      "signature": "MEQCIDinD3r/mCecLw4lLgJuk8rS4zoQitF34jq17RBsELqpAiA5trPybBgotF8oj6v+4rzinUJv43Dp8wb0AC9y9G5jbQ==\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-space-after-the-name",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg \n",
+      "signature": "MEUCIQDeyXC1G//eeHfEUqbUaanJuUtyuHABuku16UXPeAghaQIgU2mNXMGNBRkK11AF8NxBPZzxqnfA8TomXEzbcazofJU=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-malformed-empty",
+      "sums": "",
+      "signature": "MEUCIBSE7ArfJFfLPwoUk9sykBldcKp9+6RrZGe64tB/sPXGAiEAyQPC4umS/eJiMxxRE+rJ03FwEvn3wlCXjOzyg+2NdIc=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      },
+      "about": "An empty, validly signed list."
+    },
+    {
+      "id": "updates/checksums/list-malformed-comment-line",
+      "sums": "# Lumerist 0.9.2\n18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nfacf11e93aa481d0535169542c209ddade6ad7030cfdcc7268dbd92f13d63c01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQD0F8YAZ8SY8auWut8YiTxf3t46ECwJFOnxFdvEm3j0BQIgTsvkzKiFrxFecivTuGs/bqPu0PcW/Aet6pb7lwwR1BY=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "malformedList"
+      }
+    },
+    {
+      "id": "updates/checksums/list-a-bad-signature-comes-first",
+      "sums": "18c2551aac07aed47412c64761f1710c570156adf0a5cf6c19ecf66bb4ababb4  Lumerist-0.9.2-windows-arm64-setup.exe\n41a2759ee0ebc242b2ef126ccae13e68d3fa5373b8af366393a3619a3bd62f24  Lumerist-0.9.2-windows-arm64.zip\n917c1b2765faceca9502537c3eabc347612cbfea69a9f3834b5938998f716949  Lumerist-0.9.2-windows-x64-setup.exe\n86ed39f91ee005ee8271654511ca8c2b1245ac10f8db64f4bcd06005f3e49d41  Lumerist-0.9.2-windows-x64.zip\nFACF11E93AA481D0535169542C209DDADE6AD7030CFDCC7268DBD92F13D63C01  Lumerist-0.9.2.dmg\n",
+      "signature": "MEUCIQDHZ3V+HnNIRjsjrVC+A/jOiKfwbfnkvuhUY4fL46oGLgIgUIvbBp8Mqn7kThNNly5X7bsZfMaJZaBm5Y3CyFRRiAM=\n",
+      "keys": [
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY76ykZtRTc0ChGfySs1D5/Qn//xK8RiFEw93nacCy9TqQm8el0B15k2i9e9+P9iBhpqLq7WWMmwO/hS0nWjBTA=="
+      ],
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "error": "badSignature"
+      },
+      "about": "The signature is checked before the lines are read."
+    },
+    {
+      "id": "updates/checksums/agree-all-agree",
+      "actual": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "listed": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "checksumFile": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "digest": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "expect": "ok"
+    },
+    {
+      "id": "updates/checksums/agree-only-the-list",
+      "actual": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "listed": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "checksumFile": null,
+      "digest": null,
+      "expect": "ok"
+    },
+    {
+      "id": "updates/checksums/agree-case-does-not-matter",
+      "actual": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "listed": "E5C6FDE86910DED72DB5CC7AFC32F850440D4EF7CAA5DBB69F5BDC0D3E39CB3B",
+      "checksumFile": "E5C6FDE86910DED72DB5CC7AFC32F850440D4EF7CAA5DBB69F5BDC0D3E39CB3B",
+      "digest": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "expect": "ok"
+    },
+    {
+      "id": "updates/checksums/agree-the-list-differs",
+      "actual": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "listed": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+      "checksumFile": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "digest": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "expect": {
+        "error": "mismatch",
+        "source": "list"
+      }
+    },
+    {
+      "id": "updates/checksums/agree-the-sha256-file-differs",
+      "actual": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "listed": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "checksumFile": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+      "digest": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "expect": {
+        "error": "mismatch",
+        "source": "checksumFile"
+      }
+    },
+    {
+      "id": "updates/checksums/agree-the-api-digest-differs",
+      "actual": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "listed": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "checksumFile": null,
+      "digest": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+      "expect": {
+        "error": "mismatch",
+        "source": "digest"
+      }
+    },
+    {
+      "id": "updates/checksums/agree-the-list-is-checked-first",
+      "actual": "e5c6fde86910ded72db5cc7afc32f850440d4ef7caa5dbb69f5bdc0d3e39cb3b",
+      "listed": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+      "checksumFile": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+      "digest": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+      "expect": {
+        "error": "mismatch",
+        "source": "list"
+      }
+    }
+  ]
+}

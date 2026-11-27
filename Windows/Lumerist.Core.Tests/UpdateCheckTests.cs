@@ -61,7 +61,9 @@ public class UpdateCheckTests
         UpdateRelease[] releases =
         [
             new("v1.0.0", new Uri("https://github.com/ziago/Lumerist/releases/tag/first"), false),
-            new("1.0.0", new Uri("https://github.com/ziago/Lumerist/releases/tag/second"), false),
+            new("v1.0.0", new Uri("https://github.com/ziago/Lumerist/releases/tag/second"), false),
+            // Not v + semver: never a release, however it sorts.
+            new("1.0.0", new Uri("https://github.com/ziago/Lumerist/releases/tag/third"), false),
         ];
         var state = Assert.IsType<UpdateCheckState.Available>(UpdateCheck.Evaluate(releases, "0.9.0"));
         Assert.EndsWith("/first", state.Page.AbsoluteUri);

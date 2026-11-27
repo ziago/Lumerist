@@ -1,0 +1,318 @@
+{
+  "group": "updates",
+  "about": "Where the updater may download from and which release pages open (UpdateURLRule).",
+  "cases": [
+    {
+      "id": "updates/urls/hop-release-download",
+      "url": "https://github.com/ziago/Lumerist/releases/download/v0.9.2/Lumerist-0.9.2.dmg",
+      "expect": {
+        "hop": true
+      }
+    },
+    {
+      "id": "updates/urls/hop-release-assets-host",
+      "url": "https://release-assets.githubusercontent.com/github-production-release-asset/1465696736/4e82f9aa?sp=r&sig=abc%3D",
+      "expect": {
+        "hop": true
+      }
+    },
+    {
+      "id": "updates/urls/hop-objects-host",
+      "url": "https://objects.githubusercontent.com/github-production-release-asset-2e65be/1?X-Amz-Signature=1",
+      "expect": {
+        "hop": true
+      }
+    },
+    {
+      "id": "updates/urls/hop-api-host",
+      "url": "https://api.github.com/repos/ziago/Lumerist/releases/assets/1",
+      "expect": {
+        "hop": true
+      }
+    },
+    {
+      "id": "updates/urls/hop-host-in-capitals",
+      "url": "https://GitHub.com/ziago/Lumerist/releases/download/v0.9.2/x",
+      "expect": {
+        "hop": true
+      }
+    },
+    {
+      "id": "updates/urls/hop-default-port-written",
+      "url": "https://github.com:443/ziago/Lumerist",
+      "expect": {
+        "hop": true
+      }
+    },
+    {
+      "id": "updates/urls/hop-another-port",
+      "url": "https://github.com:8443/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-plain-http",
+      "url": "http://github.com/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-another-host",
+      "url": "https://evil.example/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-lookalike-suffix",
+      "url": "https://github.com.evil.example/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-lookalike-prefix",
+      "url": "https://evilgithub.com/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-other-github-host",
+      "url": "https://raw.githubusercontent.com/ziago/Lumerist/main/README.md",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-user-info",
+      "url": "https://user@github.com/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-host-after-user-info",
+      "url": "https://github.com@evil.example/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-trailing-dot",
+      "url": "https://github.com./ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-escaped-host",
+      "url": "https://git%68ub.com/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      },
+      "about": "A host written with % is refused, whatever it decodes to."
+    },
+    {
+      "id": "updates/urls/hop-ftp",
+      "url": "ftp://github.com/ziago/Lumerist",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-file-without-the-test-feed",
+      "url": "file:///Users/tester/feed/SHA256SUMS",
+      "expect": {
+        "hop": false
+      }
+    },
+    {
+      "id": "updates/urls/hop-file-with-the-test-feed",
+      "url": "file:///Users/tester/feed/SHA256SUMS",
+      "expect": {
+        "hop": true
+      },
+      "allowFileURLs": true
+    },
+    {
+      "id": "updates/urls/hop-file-with-a-host",
+      "url": "file://localhost/Users/tester/feed/SHA256SUMS",
+      "expect": {
+        "hop": false
+      },
+      "allowFileURLs": true
+    },
+    {
+      "id": "updates/urls/hop-https-is-checked-with-the-test-feed-too",
+      "url": "https://evil.example/x",
+      "expect": {
+        "hop": false
+      },
+      "allowFileURLs": true
+    },
+    {
+      "id": "updates/urls/asset-exact",
+      "url": "https://github.com/ziago/Lumerist/releases/download/v0.9.2/Lumerist-0.9.2.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": true
+      }
+    },
+    {
+      "id": "updates/urls/asset-another-tag",
+      "url": "https://github.com/ziago/Lumerist/releases/download/v0.9.1/Lumerist-0.9.2.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": false
+      }
+    },
+    {
+      "id": "updates/urls/asset-another-name",
+      "url": "https://github.com/ziago/Lumerist/releases/download/v0.9.2/Lumerist-0.9.1.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": false
+      }
+    },
+    {
+      "id": "updates/urls/asset-with-a-query",
+      "url": "https://github.com/ziago/Lumerist/releases/download/v0.9.2/Lumerist-0.9.2.dmg?x=1",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": false
+      }
+    },
+    {
+      "id": "updates/urls/asset-with-dot-segments",
+      "url": "https://github.com/ziago/Lumerist/releases/download/v0.9.2/../v0.9.2/Lumerist-0.9.2.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": false
+      }
+    },
+    {
+      "id": "updates/urls/asset-host-in-capitals",
+      "url": "https://GITHUB.com/ziago/Lumerist/releases/download/v0.9.2/Lumerist-0.9.2.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": false
+      }
+    },
+    {
+      "id": "updates/urls/asset-a-fork",
+      "url": "https://github.com/someone/Lumerist/releases/download/v0.9.2/Lumerist-0.9.2.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": false
+      }
+    },
+    {
+      "id": "updates/urls/asset-the-storage-host",
+      "url": "https://release-assets.githubusercontent.com/github-production-release-asset/1/Lumerist-0.9.2.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": false
+      }
+    },
+    {
+      "id": "updates/urls/asset-file-with-the-test-feed",
+      "url": "file:///Users/tester/feed/Lumerist-0.9.2.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": true
+      },
+      "allowFileURLs": true
+    },
+    {
+      "id": "updates/urls/asset-file-without-the-test-feed",
+      "url": "file:///Users/tester/feed/Lumerist-0.9.2.dmg",
+      "tag": "v0.9.2",
+      "name": "Lumerist-0.9.2.dmg",
+      "expect": {
+        "asset": false
+      }
+    },
+    {
+      "id": "updates/urls/page-a-release",
+      "url": "https://github.com/ziago/Lumerist/releases/tag/v0.9.2",
+      "expect": {
+        "releasePage": true
+      }
+    },
+    {
+      "id": "updates/urls/page-default-port-written",
+      "url": "https://github.com:443/ziago/Lumerist/releases/tag/v0.9.2",
+      "expect": {
+        "releasePage": true
+      }
+    },
+    {
+      "id": "updates/urls/page-plain-http",
+      "url": "http://github.com/ziago/Lumerist/releases/tag/v0.9.2",
+      "expect": {
+        "releasePage": false
+      }
+    },
+    {
+      "id": "updates/urls/page-the-folder-itself",
+      "url": "https://github.com/ziago/Lumerist/releases",
+      "expect": {
+        "releasePage": false
+      }
+    },
+    {
+      "id": "updates/urls/page-escaped-steps",
+      "url": "https://github.com/ziago/Lumerist/releases/tag/%2e%2e%2f..%2fevil",
+      "expect": {
+        "releasePage": false
+      }
+    },
+    {
+      "id": "updates/urls/page-dot-segments",
+      "url": "https://github.com/ziago/Lumerist/releases/../../evil",
+      "expect": {
+        "releasePage": false
+      }
+    },
+    {
+      "id": "updates/urls/page-another-port",
+      "url": "https://github.com:444/ziago/Lumerist/releases/tag/v0.9.2",
+      "expect": {
+        "releasePage": false
+      }
+    },
+    {
+      "id": "updates/urls/page-user-info",
+      "url": "https://user@github.com/ziago/Lumerist/releases/tag/v0.9.2",
+      "expect": {
+        "releasePage": false
+      }
+    },
+    {
+      "id": "updates/urls/page-another-host",
+      "url": "https://evil.example/ziago/Lumerist/releases/tag/v0.9.2",
+      "expect": {
+        "releasePage": false
+      }
+    },
+    {
+      "id": "updates/urls/page-another-repository",
+      "url": "https://github.com/ziago/LumeristEvil/releases/tag/v0.9.2",
+      "expect": {
+        "releasePage": false
+      }
+    }
+  ]
+}

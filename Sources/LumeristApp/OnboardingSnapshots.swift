@@ -13,7 +13,7 @@ import LumeristCore
 /// main-window screen at full length (header and tabs drawn above it), the
 /// Develop Commands tab, the setup guide, the menu bar window and the
 /// "Stay in touch" sheet (editing, error, success, and as opened from About &
-/// Support) in each look. The stored theme is not changed. Native AppKit
+/// Support) and the update window (`update-*`) in each look. The stored theme is not changed. Native AppKit
 /// controls (stepper, slider, text field) show as ImageRenderer placeholders.
 @MainActor
 enum OnboardingSnapshots {
@@ -62,6 +62,46 @@ enum OnboardingSnapshots {
         }
     }
 
+    /// Release notes as a CHANGELOG section makes them (the 0.9.2 Highlights).
+    private static let sampleNotes = """
+        ### Highlights
+        - Culling keys for Lightroom's Import window: include, exclude and toggle
+          photos with keys you pick.
+        - A note when a key you assign is one Lightroom already uses.
+        - The same behaviour on every keyboard layout, following Lightroom's own
+          language.
+        - A private connection to Lightroom: the plug-in answers only Lumerist.
+        - From now on, a new version installs with one click.
+
+        ### Added
+        - More.
+        """
+
+    /// The update window in each state: offered (with and without Highlights,
+    /// not installable, not writable), downloading, installing, failed, and
+    /// in the new version (with Lightroom still on the old plug-in or not).
+    private static func updateWindows(to folder: URL, scheme: ColorScheme) {
+        let notes = UpdateHighlights.parse(sampleNotes)
+        let notWritable = "Lumerist can't replace itself in “/Applications”: this account may not change it. Download the new version instead."
+        let states: [(String, UpdatePromptModel)] = [
+            ("offer", UpdatePromptModel(preview: .offer, highlights: notes)),
+            ("offer-no-highlights", UpdatePromptModel(preview: .offer, highlights: [])),
+            ("offer-not-automatic", UpdatePromptModel(preview: .offer, highlights: notes, blocker: UpdateCopy.notAutomatic)),
+            ("offer-not-writable", UpdatePromptModel(preview: .offer, highlights: notes, blocker: notWritable)),
+            ("downloading", UpdatePromptModel(preview: .working(.downloading(received: 3_145_728, total: 7_002_867)), highlights: notes)),
+            ("installing", UpdatePromptModel(preview: .working(.installing), highlights: notes)),
+            ("failed-check", UpdatePromptModel(preview: .failed(UpdateFailure(
+                kind: .cantInstall, detail: "The download doesn't match the checksums signed for this release.")), highlights: notes)),
+            ("failed-network", UpdatePromptModel(preview: .failed(UpdateFailure(
+                kind: .stopped, detail: "The Internet connection appears to be offline.")), highlights: notes)),
+            ("installed", UpdatePromptModel(preview: .installed, current: nil, highlights: [])),
+            ("installed-plugin-waits", UpdatePromptModel(preview: .installed, current: nil, highlights: [], pluginWaits: true)),
+        ]
+        for (name, model) in states {
+            save(UpdatePromptView(model: model), name: "update-\(name)", to: folder, scheme: scheme)
+        }
+    }
+
     /// Every main-window screen, the setup guide and the menu bar window in
     /// each theme. Restores the theme in effect afterwards (nothing is saved).
     private static func renderThemes(to root: URL, store: CommandStore) {
@@ -88,6 +128,7 @@ enum OnboardingSnapshots {
             save(OnboardingView(store: store), name: "setup-guide", to: folder, scheme: look.scheme)
             save(StatusMenu(store: store), name: "status-menu", to: folder, scheme: look.scheme)
             stayInTouchSheets(to: folder, scheme: look.scheme)
+            updateWindows(to: folder, scheme: look.scheme)
             save(aboutSection(notAsked), name: "general-support-stay-in-touch", to: folder, scheme: look.scheme)
         }
     }

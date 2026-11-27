@@ -6,7 +6,23 @@ All notable changes to Lumerist are documented here. The format follows
 
 ## [Unreleased]
 
+### Highlights
+- Culling keys for Lightroom's Import window: include, exclude and toggle
+  photos with keys you pick.
+- A note when a key you assign is one Lightroom already uses.
+- The same behaviour on every keyboard layout, following Lightroom's own
+  language.
+- A private connection to Lightroom: the plug-in answers only Lumerist.
+- From now on, a new version installs with one click.
+
 ### Added
+- **Update window**: when Lumerist starts and a new version is out, a window
+  in the chosen theme says what's new. **Update now** downloads it from
+  GitHub, checks it and installs it, then reopens Lumerist; **Release page**
+  opens the download page; **Later** asks again a day later, and *Skip this
+  version* stops asking for that version. Nothing is installed unless every
+  check passes (see Security). The Windows portable zip copy is updated by
+  hand.
 - **Import keys** for culling in Lightroom's Import window: on the new
   Import page, pick an Include, an Exclude and a Toggle key. They act only
   while the Import window is in front and press Lightroom's own keys there

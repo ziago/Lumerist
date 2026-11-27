@@ -77,6 +77,21 @@ internal static class LightroomWindow
     }
 
     /// <summary>
+    /// The running Lightroom Classic processes and their program files, for
+    /// "Quit Lightroom &amp; update" after an update. The caller disposes them.
+    /// </summary>
+    public static List<(Process Process, string Path)> ClassicProcesses()
+    {
+        var found = new List<(Process, string)>();
+        foreach (var process in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(ExecutableName)))
+        {
+            if (IsLightroomClassic((uint)process.Id) && ProcessImagePath((uint)process.Id) is { } path) found.Add((process, path));
+            else process.Dispose();
+        }
+        return found;
+    }
+
+    /// <summary>
     /// Lightroom.exe that is Lightroom Classic, not the cloud-based Lightroom:
     /// by the product name in its version information, or by its folder
     /// ("Adobe Lightroom Classic") when that cannot be read.

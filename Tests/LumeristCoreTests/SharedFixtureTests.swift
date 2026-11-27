@@ -11,12 +11,12 @@ import Testing
 
 // MARK: - Loading
 
-private struct FixtureError: Error, CustomStringConvertible {
+struct FixtureError: Error, CustomStringConvertible {
     let description: String
     init(_ description: String) { self.description = description }
 }
 
-private enum Fixtures {
+enum Fixtures {
     static let root = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 

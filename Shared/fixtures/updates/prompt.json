@@ -1,0 +1,173 @@
+{
+  "group": "updates",
+  "about": "When the update window appears (UpdatePromptSchedule).",
+  "cases": [
+    {
+      "id": "updates/prompt/a-newer-version-at-launch",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": null,
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": true
+    },
+    {
+      "id": "updates/prompt/not-the-running-version",
+      "available": "0.9.2",
+      "current": "0.9.2",
+      "skippedVersion": null,
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": false
+    },
+    {
+      "id": "updates/prompt/never-an-older-version",
+      "available": "0.9.1",
+      "current": "0.9.2",
+      "skippedVersion": null,
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": false
+    },
+    {
+      "id": "updates/prompt/the-skipped-version-stays-hidden",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": "0.9.2",
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": false
+    },
+    {
+      "id": "updates/prompt/a-version-after-the-skipped-one-shows",
+      "available": "0.9.3",
+      "current": "0.9.1",
+      "skippedVersion": "0.9.2",
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": true
+    },
+    {
+      "id": "updates/prompt/an-unreadable-skipped-version-is-ignored",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": "v0.9.2 or so",
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": true
+    },
+    {
+      "id": "updates/prompt/later-hides-it-for-a-day",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": null,
+      "laterUntil": "2026-11-28T09:00:00Z",
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": false
+    },
+    {
+      "id": "updates/prompt/at-the-later-time-it-shows-again",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": null,
+      "laterUntil": "2026-11-27T10:00:00Z",
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": true
+    },
+    {
+      "id": "updates/prompt/after-the-later-time-it-shows",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": null,
+      "laterUntil": "2026-11-26T10:00:00Z",
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": true
+    },
+    {
+      "id": "updates/prompt/a-later-time-more-than-a-day-ahead-no-longer-counts",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": null,
+      "laterUntil": "2026-12-27T10:00:00Z",
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": true,
+      "about": "The clock was moved back after Later: the wait is never longer than 24 hours."
+    },
+    {
+      "id": "updates/prompt/exactly-a-day-ahead-still-counts",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": null,
+      "laterUntil": "2026-11-28T10:00:00Z",
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": false
+    },
+    {
+      "id": "updates/prompt/a-manual-check-always-shows",
+      "available": "0.9.2",
+      "current": "0.9.1",
+      "skippedVersion": "0.9.2",
+      "laterUntil": "2026-11-28T09:00:00Z",
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "manual",
+      "expect": true
+    },
+    {
+      "id": "updates/prompt/a-manual-check-never-shows-an-older-version",
+      "available": "0.9.1",
+      "current": "0.9.2",
+      "skippedVersion": null,
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "manual",
+      "expect": false
+    },
+    {
+      "id": "updates/prompt/a-development-build-never-sees-it",
+      "available": "0.9.2",
+      "current": "development build",
+      "skippedVersion": null,
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "manual",
+      "expect": false
+    },
+    {
+      "id": "updates/prompt/a-final-version-after-its-pre-release",
+      "available": "1.0.0",
+      "current": "1.0.0-rc.1",
+      "skippedVersion": null,
+      "laterUntil": null,
+      "now": "2026-11-27T10:00:00Z",
+      "trigger": "launch",
+      "expect": true
+    },
+    {
+      "id": "updates/prompt/later-waits-24-hours",
+      "action": "later",
+      "now": "2026-11-27T10:00:00Z",
+      "expect": {
+        "laterUntil": "2026-11-28T10:00:00Z"
+      }
+    },
+    {
+      "id": "updates/prompt/skip-remembers-the-version",
+      "action": "skip",
+      "version": "0.9.2",
+      "expect": {
+        "skippedVersion": "0.9.2"
+      }
+    }
+  ]
+}

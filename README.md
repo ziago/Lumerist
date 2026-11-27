@@ -146,15 +146,27 @@ window from Lightroom, choose *File → Plug-in Extras → Open Lumerist*.
 Lumerist tells you when a new version is out: when it starts, at most once a
 day, it checks GitHub's list of releases (untick *Tell me when a new version
 is out* in the first-run guide, or the automatic check in *General*, to turn
-this off). The new version then shows in the menu bar item on the Mac, and as
-a notification and in the menu of the notification-area icon on Windows.
-Click it to open the download page.
+this off). A window then says what's new:
 
-Install the new version just like the first one:
+- **Update now** downloads the new version from GitHub, checks it, installs
+  it and reopens Lumerist. The download must match the release's list of
+  SHA-256 hashes, which is signed with Lumerist's own key; on the Mac it must
+  also carry Lumerist's Developer ID signature and Apple's notarization.
+- **Release page** opens the download page, to install it yourself.
+- **Later** asks again a day later; *Skip this version* stops asking for that
+  version.
+
+The new version also stays in the menu bar item on the Mac and in the menu of
+the notification-area icon on Windows. From 0.9.2 on, the window appears for
+the next versions; earlier versions only show the menu line.
+
+To install a new version yourself, do it just like the first time:
 
 - **Mac:** drag the new Lumerist into *Applications* and choose *Replace*.
 - **Windows:** run the new installer. It closes Lumerist, replaces the old
-  version completely, and updates the Lightroom plug-in.
+  version completely, and updates the Lightroom plug-in. The portable zip
+  copy is always updated by hand: download the new zip and replace the
+  folder.
 
 Your keys, settings and plug-in backups are always kept. Lumerist also updates
 its Lightroom plug-in by itself the next time Lightroom Classic is closed, so
@@ -254,7 +266,7 @@ Lumerist has no telemetry, and nothing about your photos, your catalog, or
 your keystrokes ever leaves your computer: the app and the plug-in talk to
 each other only through `127.0.0.1`.
 
-Lumerist goes online only in these two cases:
+Lumerist goes online only in these three cases:
 
 - **Update check.** When Lumerist starts, at most once a day, it asks GitHub,
   and only GitHub, for the list of Lumerist releases, so it can tell you when
@@ -263,6 +275,11 @@ Lumerist goes online only in these two cases:
   address). Untick *Tell me when a new version is out* in the first-run guide,
   or the automatic check in *General*, to turn it off; *Check for updates*
   still works by hand. Nothing is downloaded or installed by itself.
+- **Update now (only when you press it).** Lumerist downloads that release's
+  file from GitHub (the DMG on the Mac, the installer on Windows) and checks
+  it before installing it: the release's signed list of SHA-256 hashes and,
+  on the Mac, Lumerist's Developer ID signature and Apple's notarization. It
+  sends nothing about you.
 - **Stay in touch (optional).** Now and then (at most three times, and never
   while Lightroom is in front) Lumerist asks if you'd like news about new
   versions and about other photography tools from its developer. Only if you

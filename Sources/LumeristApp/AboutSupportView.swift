@@ -115,21 +115,21 @@ struct UpdatesSection: View {
 
     var body: some View {
         SettingsSection(title: "Updates", systemImage: "arrow.down.circle",
-                        footer: "Lumerist never downloads or installs anything by itself. Checking asks GitHub for the list of releases; with automatic checks off, Lumerist talks to nothing but Lightroom on this Mac, unless you leave your email under Stay in touch.") {
+                        footer: "Lumerist downloads a new version only when you press Update now, from GitHub, and installs it only if it carries Lumerist's signature. Checking asks GitHub for the list of releases; with automatic checks off, Lumerist talks to nothing but Lightroom on this Mac, unless you leave your email under Stay in touch.") {
             SettingRow(title: "Version \(SupportLinks.appVersion)", detail: stateDetail) {
                 HStack(spacing: Synth.Space.s) {
-                    if case .available = checker.state {
-                        Button("Download…") { checker.openReleasePage() }
+                    if case .available(let update) = checker.state {
+                        Button("Update…") { UpdatePrompter.shared.offer(update, current: UpdateEnvironment.currentVersion, trigger: .manual) }
                             .buttonStyle(.neonPrimary)
                     }
                     Button(checker.state == .checking ? "Checking…" : "Check for updates") {
-                        Task { await checker.check() }
+                        Task { await checker.check(trigger: .manual) }
                     }
                     .buttonStyle(.neonSecondary)
                     .disabled(checker.state == .checking)
                 }
             }
-            SettingRow(title: "Check automatically once a day", detail: "When Lumerist starts. A new version shows in the menu bar.") {
+            SettingRow(title: "Check automatically once a day", detail: "When Lumerist starts. A new version shows in a window and in the menu bar.") {
                 Toggle("Check automatically once a day", isOn: Binding(
                     get: { checker.checksAutomatically },
                     set: { checker.checksAutomatically = $0 }
@@ -146,8 +146,9 @@ struct UpdatesSection: View {
             return checker.lastCheck.map { "Last checked \($0.formatted(.relative(presentation: .named)))." } ?? "Not checked yet."
         case .checking: return "Asking GitHub…"
         case .upToDate(let version): return "Lumerist \(version) is the newest release."
-        case .available(let version, _): return "Lumerist \(version) is available on GitHub."
+        case .available(let update): return "Lumerist \(update.version) is available on GitHub."
         case .noReleases: return "No release has been published yet."
+        case .developmentBuild: return "A development build doesn't update itself."
         case .failed(let message): return message
         }
     }

@@ -3,12 +3,12 @@ import Foundation
 import LumeristCore
 import Observation
 
-/// Looks for a newer Lumerist release on GitHub. Nothing is ever downloaded
-/// or installed automatically: a newer version is announced in the menu bar
-/// item and only opens its release page. Lumerist checks when it starts, at
-/// most once a day, unless the user unticks "Tell me when a new version is
-/// out" (first-run guide) or the automatic check in General; the request
-/// carries nothing about the user.
+/// Looks for a newer Lumerist release on GitHub. Lumerist checks when it
+/// starts, at most once a day, unless the user unticks "Tell me when a new
+/// version is out" (first-run guide) or the automatic check in General; the
+/// request carries nothing about the user. A newer version is announced in
+/// the menu bar item and in the update window (`UpdatePrompter`); nothing is
+/// downloaded until the user presses "Update now" there.
 @MainActor
 @Observable
 final class UpdateChecker {
@@ -18,8 +18,10 @@ final class UpdateChecker {
         case idle
         case checking
         case upToDate(String)
-        case available(version: String, page: URL)
+        case available(AvailableUpdate)
         case noReleases
+        /// `swift run` and other builds without a version: never offered an update.
+        case developmentBuild
         case failed(String)
     }
 
@@ -47,91 +49,127 @@ final class UpdateChecker {
         checksAutomatically = defaults.object(forKey: Key.automatic) as? Bool ?? true
     }
 
-    /// The daily check at launch, unless the user turned it off.
+    /// The daily check at launch, unless the user turned it off. With a
+    /// debug test hook set it is always due, and leaves no time behind.
     func checkIfDue() {
         guard checksAutomatically, state != .checking else { return }
-        if let lastCheck, Date().timeIntervalSince(lastCheck) < Self.automaticInterval { return }
-        Task { await check() }
+        if !UpdateEnvironment.isTesting, let lastCheck, Date().timeIntervalSince(lastCheck) < Self.automaticInterval { return }
+        Task { await check(trigger: .launch) }
     }
 
-    func check() async {
+    func check(trigger: UpdatePromptSchedule.Trigger) async {
         guard state != .checking else { return }
         state = .checking
+        let current = UpdateEnvironment.currentVersion
         do {
-            var request = URLRequest(url: SupportLinks.releasesAPI, timeoutInterval: 15)
-            request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-            request.setValue("Lumerist", forHTTPHeaderField: "User-Agent")
-            let (data, response) = try await URLSession.shared.data(for: request)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            if status == 404 {
-                // Only a real answer counts as "checked": being offline or
-                // rate-limited must not silence the daily check.
-                defaults.set(Date(), forKey: Key.lastCheck)
-                state = .noReleases
+            let data: Data
+            switch UpdateEnvironment.feed {
+            case .github:
+                var request = URLRequest(url: SupportLinks.releasesAPI, timeoutInterval: 15)
+                request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+                request.setValue("Lumerist", forHTTPHeaderField: "User-Agent")
+                let (body, response) = try await URLSession.shared.data(for: request)
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                if status == 404 {
+                    // Only a real answer counts as "checked": being offline or
+                    // rate-limited must not silence the daily check.
+                    recordCheck()
+                    state = .noReleases
+                    return
+                }
+                guard status == 200 else {
+                    state = .failed("GitHub answered with status \(status). Try again later.")
+                    return
+                }
+                data = body
+            case .file(let url):
+                data = try Data(contentsOf: url)
+            case .invalid(let reason):
+                state = .failed(reason)
                 return
             }
-            guard status == 200 else {
-                state = .failed("GitHub answered with status \(status). Try again later.")
-                return
+            let releases = try UpdateFeedRelease.decodeList(data)
+            recordCheck()
+            state = Self.evaluate(releases, current: current)
+            if case .available(let update) = state {
+                UpdatePrompter.shared.offer(update, current: current, trigger: trigger)
             }
-            let releases = try JSONDecoder().decode([Release].self, from: data)
-            defaults.set(Date(), forKey: Key.lastCheck)
-            state = Self.evaluate(releases, current: SupportLinks.appVersion)
         } catch {
             state = .failed("Could not reach GitHub: \(error.localizedDescription)")
         }
     }
 
+    private func recordCheck() {
+        guard !UpdateEnvironment.isTesting else { return }
+        defaults.set(Date(), forKey: Key.lastCheck)
+    }
+
     func openReleasePage() {
-        if case .available(_, let page) = state, Self.isTrustedReleasePage(page) {
-            NSWorkspace.shared.open(page)
+        if case .available(let update) = state {
+            NSWorkspace.shared.open(update.page)
         } else {
             NSWorkspace.shared.open(SupportLinks.releases)
         }
     }
 
-    struct Release: Decodable {
-        let tagName: String
-        let htmlURL: URL
-        let draft: Bool
-
-        enum CodingKeys: String, CodingKey {
-            case tagName = "tag_name"
-            case htmlURL = "html_url"
-            case draft
-        }
-    }
-
-    /// Only a https page of this project's releases on github.com is opened,
-    /// whatever the API answered.
-    /// The path is compared as the browser will request it: an escaped
-    /// character (%2F, %2E…) or a `..` step is refused, and so are another
-    /// port and user info.
-    static func isTrustedReleasePage(_ url: URL) -> Bool {
-        let releases = SupportLinks.releases
-        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
-        let path = parts.percentEncodedPath
-        return parts.scheme == "https"
-            && parts.host == "github.com"
-            && parts.port == nil
-            && parts.user == nil && parts.password == nil
-            && !path.contains("%")
-            && !path.split(separator: "/").contains("..")
-            && path.hasPrefix(releases.path + "/")
-    }
-
-    /// The newest non-draft release (pre-releases included) against the running version.
-    static func evaluate(_ releases: [Release], current: String) -> State {
-        let published = releases.filter { !$0.draft }
-        guard let newest = SemanticVersion.newest(in: published.map(\.tagName)),
-              let page = published.first(where: { $0.tagName == newest.tag })?.htmlURL else { return .noReleases }
-        guard let running = SemanticVersion(current) else {
-            // A development build: just point at the newest release.
-            return .available(version: newest.version.description, page: page)
-        }
-        if running < newest.version {
-            return .available(version: newest.version.description, page: page)
-        }
+    /// The newest non-draft release with a `v<semver>` tag (pre-releases
+    /// included), offered only when strictly newer than the running version.
+    static func evaluate(_ releases: [UpdateFeedRelease], current: String) -> State {
+        guard let running = UpdateChoice.version(fromCurrent: current) else { return .developmentBuild }
+        guard UpdateChoice.newest(in: releases) != nil else { return .noReleases }
+        if let update = UpdateChoice.update(in: releases, current: current) { return .available(update) }
         return .upToDate(running.description)
     }
+}
+
+/// The updater's debug-only test hooks. A release build (the signed app from
+/// Scripts/build-macos-app.sh without --debug) ignores them, like the other
+/// LUMERIST_* overrides.
+///
+/// - `LUMERIST_UPDATE_PRETEND_VERSION`: the version Lumerist believes it is
+///   ("0.9.0" is offered the real v0.9.1).
+/// - `LUMERIST_UPDATE_FEED_URL`: a `file://` URL (or an absolute path) of a
+///   JSON in the releases API's format, read instead of api.github.com; its
+///   assets may then also be `file://` URLs. https downloads keep the host
+///   allowlist.
+///
+/// With either set, the launch check runs at every launch and its time is not saved.
+enum UpdateEnvironment {
+    enum Feed: Equatable {
+        case github
+        case file(URL)
+        case invalid(String)
+    }
+
+    private static let values: [String: String] = {
+        #if DEBUG
+        ProcessInfo.processInfo.environment
+        #else
+        [:]
+        #endif
+    }()
+
+    static var pretendVersion: String? {
+        values["LUMERIST_UPDATE_PRETEND_VERSION"].flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var feed: Feed {
+        guard let text = values["LUMERIST_UPDATE_FEED_URL"], !text.isEmpty else { return .github }
+        if text.hasPrefix("/") { return .file(URL(fileURLWithPath: text)) }
+        guard let url = URL(string: text), url.isFileURL else {
+            // Refuse rather than fall back to GitHub.
+            return .invalid("LUMERIST_UPDATE_FEED_URL must be a file:// URL or an absolute path.")
+        }
+        return .file(url)
+    }
+
+    static var isTesting: Bool { pretendVersion != nil || feed != .github }
+
+    /// Asset URLs may be `file://` only with the test feed.
+    static var allowsFileURLs: Bool {
+        if case .file = feed { return true }
+        return false
+    }
+
+    static var currentVersion: String { pretendVersion ?? SupportLinks.appVersion }
 }

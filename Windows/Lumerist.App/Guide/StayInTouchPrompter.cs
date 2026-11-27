@@ -125,7 +125,7 @@ internal sealed class StayInTouchPrompter
     /// </summary>
     private bool UserIsLookingAtMainWindow()
     {
-        if (controller is null || !controller.Settings.GuideCompleted || GuideWindow.IsOpen) return false;
+        if (controller is null || !controller.Settings.GuideCompleted || GuideWindow.IsOpen || UpdateWindow.IsOpen) return false;
         if (MainWindowInstance() is not { } window) return false;
         return window.IsVisible && window.IsActive && window.WindowState != WindowState.Minimized
             && !window.OwnedWindows.Cast<Window>().Any(owned => owned.IsVisible)

@@ -14,6 +14,8 @@ every case.
 | `protocol/*.json` | bridge protocol 4: request lines (with the bridge token), plug-in messages | same | `Windows/Lumerist.Core.Tests/ProtocolFixtureTests.cs` |
 | `standard-layout.json` | the standard layout and default options | same | `Windows/Lumerist.Core.Tests/KeymapFixtureTests.cs` |
 | `bug-report/*.json` | "Report a problem": the prefilled GitHub bug form | same | `Windows/Lumerist.Core.Tests/BugReportTests.cs` |
+| `updates/*.json` | the updater: which release and files, the URL rules, the signed checksums, the Highlights, when the update window appears (see below) | `Tests/LumeristCoreTests/UpdateFixtureTests.swift` | planned |
+| `../update-public-keys.json` | the public keys whose signature on `SHA256SUMS` is trusted | `UpdateFixtureTests.swift` and `Scripts/check-parity.py` | `Scripts/check-parity.py` |
 | `../lightroom-shortcuts.json` | Lightroom Classic's own default keys in Library, Develop and the Import window, from Adobe's public help (see below) | `LightroomShortcutsTests.swift`; the warnings in `keymap-rules/lightroom-shortcuts.json` | the C# keymap rules read the same file |
 | `../contract.json` | ports, plug-in id, protocol version, consent hash | `Scripts/check-parity.py` | `Scripts/check-parity.py` |
 
@@ -234,3 +236,107 @@ in its own place gets a warning, which never blocks saving:
 become (compared as JSON, ending with one `\n`), or the validation `error`.
 `messages.json`: a line from the plug-in and the message it decodes to,
 `null` when this build ignores it, or the decoding `error`.
+
+## Update cases
+
+`updates/` is one group; the second part of each id says the kind of case
+(`updates/<kind>/…`). Regular expressions below are anchored with `\A` and
+`\z`: `$` would also match before a final line break.
+
+**`releases`**: `current` (the running version), `releases` (GitHub's
+releases API: `tag_name`, `draft`, `prerelease`, `html_url`, `body`,
+`assets` with `name`, `browser_download_url`, `size`, `digest`, `state`),
+`allowFileURLs` (optional, the debug test feed), and `expect`: `null` (no
+update) or `{version, tag, page, platforms}`, where each of `mac`,
+`windows-x64` and `windows-arm64` is `null` (not installable there) or
+`{installer, checksum, sums, signature}`, each `{name, url, size, sha256}`
+or `null` (only `checksum` may be).
+
+- A tag is `v` + `MAJOR.MINOR.PATCH` with an optional `-prerelease`
+  (ASCII letters, digits and `-`, dot-separated), no leading zeros, no
+  build metadata, at most 64 characters; `current` is the same without `v`
+  (no update when it isn't one).
+- Drafts are skipped; the newest release wins (the first in the API's
+  order on a tie), only when strictly newer than `current`: never a
+  downgrade. `page` is `html_url` when it is a trusted release page, else
+  `https://github.com/ziago/Lumerist/releases`.
+- The installer is `Lumerist-<v>.dmg` or `Lumerist-<v>-windows-<x64|arm64>-setup.exe`,
+  its checksum the same name + `.sha256`, then `SHA256SUMS` and
+  `SHA256SUMS.sig`; each found by exact name among the assets whose `state`
+  is absent or `uploaded`. A name listed twice, a size of 0 or over the
+  limit (installer 314572800, `.sha256` 1024, `SHA256SUMS` 65536, `.sig`
+  1024), or a `browser_download_url` other than, as text,
+  `https://github.com/ziago/Lumerist/releases/download/<tag>/<name>` (with
+  `allowFileURLs`, also a `file:` URL without a host) makes the file
+  invalid. A `digest` of `sha256:<64 hex>` gives `sha256` in lowercase;
+  none or another algorithm gives `null`; a malformed `sha256:` makes the
+  file invalid.
+- A system is `null` when its installer, `SHA256SUMS` or the signature is
+  missing or invalid, or its `.sha256` is present but invalid.
+
+**`urls`**: `url`, `allowFileURLs` (optional), `tag` and `name` (for
+`asset`), and `expect` with any of:
+
+- `hop`: a download step may go there: `https`, a host (any case) among
+  `api.github.com`, `github.com`, `objects.githubusercontent.com`,
+  `release-assets.githubusercontent.com`, written without `%`, port absent
+  or 443, no user info; or, with `allowFileURLs`, `file:` without a host;
+- `asset`: the `browser_download_url` rule above;
+- `releasePage`: `https` to `github.com`, port absent or 443, no user info,
+  a path without `%` or a `..` segment, under `/ziago/Lumerist/releases/`.
+
+**`checksums`**, by the case id's last part:
+
+- `sha256-file-…`: `checksumFile` (the per-file `.sha256`), `name`,
+  `expect` `{sha256}` or `{error}` (`malformedChecksumFile`,
+  `nameMismatch`). One line, with or without a final LF or CRLF:
+  `<64 hex>`, two spaces or a space and `*`, then the file's name.
+- `list-…`: `sums` (`SHA256SUMS`; its UTF-8 bytes are what is signed),
+  `signature` (`SHA256SUMS.sig`), `keys` (SPKI DER in base64), `name`,
+  `expect` `{sha256}` or `{error}` (`badSignature`, `malformedList`,
+  `notListed`). The signature comes first: whitespace around it is
+  trimmed; the rest must be base64 (`[A-Za-z0-9+/]+={0,2}`, a length that
+  is a multiple of 4, nothing inside) of a DER ECDSA P-256 / SHA-256
+  signature that verifies under any key of `keys` (unreadable keys are
+  skipped). Then the list: UTF-8, no CR; split on LF, a single final LF
+  allowed; every line `<64 lowercase hex>␠␠<name>`, a name made of ASCII
+  letters, digits, `.`, `_`, `+`, `-`, not `.` or `..`, never twice; the
+  order is not checked.
+- `agree-…`: `actual`, `listed`, `checksumFile`, `digest` (`null` when
+  the release has none), `expect` `"ok"` or `{"error": "mismatch",
+  "source": "list" | "checksumFile" | "digest"}`, checked in that order,
+  any case.
+
+The `list-` cases are signed with two throwaway test keys made only for
+these files (their private halves are not in the repository); one case checks that
+Lumerist's real key does not verify them.
+
+**`highlights`**: `body` (release notes) and `expect` (the lines).
+
+- The section starts after the first line that reads `### Highlights`
+  (spaces around and case ignored) and ends at the next line starting with
+  `#` after leading spaces or tabs. Lines end with LF or CRLF.
+- A line starting with `- ` or `* ` (after leading spaces or tabs) starts a
+  bullet; a following line indented by a space or tab continues it, joined
+  with one space; a blank line or unindented plain text ends it.
+- Plain text: U+0000–U+001F, U+007F–U+009F, U+2028 and U+2029 become
+  spaces; U+061C, U+200E, U+200F, U+202A–U+202E, U+2066–U+2069 and U+FEFF
+  are removed. Links `!?\[([^\]]*)\]\([^)]*\)` become `$1`. Then code spans
+  `` `([^`]*)` `` keep their content as is, and outside them these become
+  `$1`, in this order: `\*\*(?=\S)(.+?)(?<=\S)\*\*`,
+  `(?<![A-Za-z0-9])__(?=\S)(.+?)(?<=\S)__(?![A-Za-z0-9])`,
+  `\*(?=\S)(.+?)(?<=\S)\*`, `(?<![A-Za-z0-9])_(?=\S)(.+?)(?<=\S)_(?![A-Za-z0-9])`.
+  Runs of whitespace become one space; empty bullets are skipped.
+- Lengths count Unicode scalars. Over 140: keep 139, back to the last
+  space when the next scalar isn't one and there is a space, trim, add
+  `…`. At most 5 bullets and 600 scalars: the bullet that would pass 600
+  and those after it are left out. With none, the window shows "See what's
+  new on the release page."
+
+**`prompt`**: `available`, `current`, `skippedVersion`, `laterUntil`
+(ISO 8601 or `null`), `now`, `trigger` (`launch` or `manual`), `expect`
+(shown or not). Both versions must be `<semver>` and `available` newer;
+`manual` always shows; otherwise not for the skipped version, and not while
+`now` is before `laterUntil` when that is at most 24 hours ahead. Action
+cases: `{"action": "later", "now"}` sets `laterUntil` to `now` + 24 hours;
+`{"action": "skip", "version"}` sets `skippedVersion`.

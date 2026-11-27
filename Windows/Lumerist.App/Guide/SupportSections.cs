@@ -30,9 +30,9 @@ internal sealed class UpdatesSection : LiveView
     {
         var buttons = new List<UIElement>();
         if (checker.State is UpdateCheckState.Available)
-            buttons.Add(GuideKit.Button("Download…", GuideButtonKind.Primary, checker.OpenReleasePage));
+            buttons.Add(GuideKit.Button("Update…", GuideButtonKind.Primary, checker.ShowPrompt));
         var check = GuideKit.Button(checker.IsChecking ? "Checking…" : "Check for updates", GuideButtonKind.Secondary,
-                                    () => _ = checker.CheckAsync());
+                                    () => _ = checker.CheckAsync(UpdatePrompt.Trigger.Manual));
         check.IsEnabled = !checker.IsChecking;
         buttons.Add(check);
 
@@ -41,9 +41,9 @@ internal sealed class UpdatesSection : LiveView
             "Check automatically once a day");
 
         return GuideKit.Section("Updates", GuideIcon.ArrowDownCircle,
-            "Lumerist never downloads or installs anything by itself. Checking asks GitHub for the list of releases; with automatic checks off, Lumerist talks to nothing but Lightroom on this PC, unless you leave your email under Stay in touch.",
+            "Lumerist downloads and installs an update only when you press Update now, and only after its signed checksum matches. Checking asks GitHub for the list of releases; with automatic checks off, Lumerist talks to nothing but Lightroom on this PC, unless you leave your email under Stay in touch.",
             GuideKit.Row($"Version {AppController.AppVersion}", StateDetail, GuideKit.Buttons([.. buttons])),
-            GuideKit.Row("Check automatically once a day", "When Lumerist starts. A new version shows in the notification area.", daily));
+            GuideKit.Row("Check automatically once a day", "When Lumerist starts. A new version opens a window with what's new.", daily));
     }
 
     private string StateDetail => checker.State switch

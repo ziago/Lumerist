@@ -1,0 +1,249 @@
+{
+  "group": "updates",
+  "about": "The \"What's new\" lines of the update window (UpdateHighlights).",
+  "cases": [
+    {
+      "id": "updates/highlights/a-highlights-list",
+      "body": "### Highlights\n- One.\n- Two.\n- Three.\n\n### Added\n- Not a highlight.\n",
+      "expect": [
+        "One.",
+        "Two.",
+        "Three."
+      ]
+    },
+    {
+      "id": "updates/highlights/wrapped-bullets-are-joined",
+      "body": "### Highlights\n- Culling keys for Lightroom's Import window: include, exclude and toggle\n  photos with keys you pick.\n- A note when a key you assign is one Lightroom already uses.\n",
+      "expect": [
+        "Culling keys for Lightroom's Import window: include, exclude and toggle photos with keys you pick.",
+        "A note when a key you assign is one Lightroom already uses."
+      ]
+    },
+    {
+      "id": "updates/highlights/crlf-line-endings",
+      "body": "### Highlights\r\n- First line\r\n  continues.\r\n- Second.\r\n\r\n### Fixed\r\n- No.\r\n",
+      "expect": [
+        "First line continues.",
+        "Second."
+      ]
+    },
+    {
+      "id": "updates/highlights/star-bullets",
+      "body": "### Highlights\n* One.\n* Two\n  wraps.\n",
+      "expect": [
+        "One.",
+        "Two wraps."
+      ]
+    },
+    {
+      "id": "updates/highlights/tabs-continue-too",
+      "body": "### Highlights\n- One\n\tmore.\n",
+      "expect": [
+        "One more."
+      ]
+    },
+    {
+      "id": "updates/highlights/stops-at-the-next-version",
+      "body": "Intro text.\n\n### Highlights\n- Only this.\n## [0.9.1]\n- Not this.\n",
+      "expect": [
+        "Only this."
+      ]
+    },
+    {
+      "id": "updates/highlights/stops-at-any-heading",
+      "body": "### Highlights\n- Yes.\n#### Small heading\n- No.\n",
+      "expect": [
+        "Yes."
+      ]
+    },
+    {
+      "id": "updates/highlights/no-highlights",
+      "body": "### Added\n- Something.\n",
+      "expect": []
+    },
+    {
+      "id": "updates/highlights/empty-notes",
+      "body": "",
+      "expect": []
+    },
+    {
+      "id": "updates/highlights/heading-in-capitals-with-spaces",
+      "body": "   ### HIGHLIGHTS  \n- Found.\n",
+      "expect": [
+        "Found."
+      ]
+    },
+    {
+      "id": "updates/highlights/only-the-first-section-counts",
+      "body": "### Highlights\n- First.\n\n### Highlights\n- Second.\n",
+      "expect": [
+        "First."
+      ],
+      "about": "The second heading ends the first section."
+    },
+    {
+      "id": "updates/highlights/at-most-five",
+      "body": "### Highlights\n- Bullet 1.\n- Bullet 2.\n- Bullet 3.\n- Bullet 4.\n- Bullet 5.\n- Bullet 6.\n- Bullet 7.\n",
+      "expect": [
+        "Bullet 1.",
+        "Bullet 2.",
+        "Bullet 3.",
+        "Bullet 4.",
+        "Bullet 5."
+      ]
+    },
+    {
+      "id": "updates/highlights/markdown-becomes-plain-text",
+      "body": "### Highlights\n- **Update window**: _one_ *click*, `Tab + K`, the [release page](https://github.com/ziago/Lumerist/releases) and ![icon](icon.png).\n",
+      "expect": [
+        "Update window: one click, Tab + K, the release page and icon."
+      ]
+    },
+    {
+      "id": "updates/highlights/bold-with-underscores-and-nested-emphasis",
+      "body": "### Highlights\n- __Bold__, ***both*** and **bold _inside_**.\n",
+      "expect": [
+        "Bold, both and bold inside."
+      ]
+    },
+    {
+      "id": "updates/highlights/underscores-inside-words-stay",
+      "body": "### Highlights\n- local_dehaze and snake_case_name stay; _this_ goes.\n",
+      "expect": [
+        "local_dehaze and snake_case_name stay; this goes."
+      ]
+    },
+    {
+      "id": "updates/highlights/code-spans-keep-their-content",
+      "body": "### Highlights\n- `**not bold**` and **bold** and `[a](b)`.\n",
+      "expect": [
+        "**not bold** and bold and a."
+      ],
+      "about": "Links are turned into their text first, then code spans keep what is inside them."
+    },
+    {
+      "id": "updates/highlights/lone-markers-stay",
+      "body": "### Highlights\n- 2 * 3 = 6 and a_b, ** alone.\n",
+      "expect": [
+        "2 * 3 = 6 and a_b, ** alone."
+      ]
+    },
+    {
+      "id": "updates/highlights/html-is-shown-as-text",
+      "body": "### Highlights\n- <b>Bold</b> & <script>alert(1)</script> stay as typed.\n",
+      "expect": [
+        "<b>Bold</b> & <script>alert(1)</script> stay as typed."
+      ],
+      "about": "Nothing is rendered: HTML is plain text."
+    },
+    {
+      "id": "updates/highlights/links-are-not-kept",
+      "body": "### Highlights\n- Read [the notes](javascript:alert(1)) or https://example.com/x.\n",
+      "expect": [
+        "Read the notes) or https://example.com/x."
+      ],
+      "about": "The link pattern stops at the first ); what remains is plain, unclickable text."
+    },
+    {
+      "id": "updates/highlights/control-and-direction-characters",
+      "body": "### Highlights\n- Safe‮txt.exe⁦ and\u0007bell and​tab end.\n",
+      "expect": [
+        "Safetxt.exe and bell and​tab end."
+      ],
+      "about": "C0/C1 controls and U+2028/U+2029 become spaces; U+061C, U+200E, U+200F, U+202A–U+202E, U+2066–U+2069 and U+FEFF are removed; whitespace runs become one space."
+    },
+    {
+      "id": "updates/highlights/empty-bullets-are-skipped",
+      "body": "### Highlights\n- \n-\n- Real.\n",
+      "expect": [
+        "Real."
+      ]
+    },
+    {
+      "id": "updates/highlights/plain-text-ends-a-bullet",
+      "body": "### Highlights\n- One\nnot indented\n  nor this\n- Two\n",
+      "expect": [
+        "One",
+        "Two"
+      ],
+      "about": "Unindented text ends the bullet and is left out; so is an indented line after it."
+    },
+    {
+      "id": "updates/highlights/indented-bullets-are-bullets-too",
+      "body": "### Highlights\n- One\n  - Sub\n- Two\n",
+      "expect": [
+        "One",
+        "Sub",
+        "Two"
+      ]
+    },
+    {
+      "id": "updates/highlights/a-blank-line-ends-a-bullet",
+      "body": "### Highlights\n- One\n\n  indented after a blank\n- Two\n",
+      "expect": [
+        "One",
+        "Two"
+      ]
+    },
+    {
+      "id": "updates/highlights/a-long-bullet-is-cut-at-a-space",
+      "body": "### Highlights\n- Lumerist now updates itself: it downloads the new version from GitHub, checks the signed checksums, Apple's notarization and the Developer ID, then swaps the app and reopens it.\n",
+      "expect": [
+        "Lumerist now updates itself: it downloads the new version from GitHub, checks the signed checksums, Apple's notarization and the Developer…"
+      ],
+      "about": "140 Unicode scalars at most: cut after 139, back to the last space, then …"
+    },
+    {
+      "id": "updates/highlights/a-long-word-is-cut-anywhere",
+      "body": "### Highlights\n- aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+      "expect": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…"
+      ]
+    },
+    {
+      "id": "updates/highlights/exactly-140-is-kept",
+      "body": "### Highlights\n- bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n",
+      "expect": [
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ]
+    },
+    {
+      "id": "updates/highlights/a-cut-at-a-word-end",
+      "body": "### Highlights\n- aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbb cc\n",
+      "expect": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbb…"
+      ]
+    },
+    {
+      "id": "updates/highlights/length-counts-unicode-scalars",
+      "body": "### Highlights\n- éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\n",
+      "expect": [
+        "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé…"
+      ],
+      "about": "é as one scalar (U+00E9)."
+    },
+    {
+      "id": "updates/highlights/at-most-600-in-all",
+      "body": "### Highlights\n- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 1yyyyyyyyyyyyyyyy\n- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 2yyyyyyyyyyyyyyyy\n- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 3yyyyyyyyyyyyyyyy\n- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 4yyyyyyyyyyyyyyyy\n- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 5yyyyyyyyyyyyyyyy\n",
+      "expect": [
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 1yyyyyyyyyyyyyyyy",
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 2yyyyyyyyyyyyyyyy",
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 3yyyyyyyyyyyyyyyy",
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 4yyyyyyyyyyyyyyyy"
+      ],
+      "about": "Four bullets of 138 scalars make 552; the fifth would pass 600, so it and any later ones are left out."
+    },
+    {
+      "id": "updates/highlights/the-0-9-2-notes",
+      "body": "### Highlights\n- Culling keys for Lightroom's Import window: include, exclude and toggle\n  photos with keys you pick.\n- A note when a key you assign is one Lightroom already uses.\n- The same behaviour on every keyboard layout, following Lightroom's own\n  language.\n- A private connection to Lightroom: the plug-in answers only Lumerist.\n- From now on, a new version installs with one click.\n\n### Added\n- **Update window**: when Lumerist starts and a new version is out, a window\n  in the chosen theme says what's new.\n",
+      "expect": [
+        "Culling keys for Lightroom's Import window: include, exclude and toggle photos with keys you pick.",
+        "A note when a key you assign is one Lightroom already uses.",
+        "The same behaviour on every keyboard layout, following Lightroom's own language.",
+        "A private connection to Lightroom: the plug-in answers only Lumerist.",
+        "From now on, a new version installs with one click."
+      ],
+      "about": "The CHANGELOG's Highlights for 0.9.2, as the release notes carry them."
+    }
+  ]
+}

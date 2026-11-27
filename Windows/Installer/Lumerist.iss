@@ -12,6 +12,11 @@
 ; plug-in backups, which live in %APPDATA%\Lumerist. Uninstalling removes the
 ; app and its "open at login" entry, and keeps that folder and the Lightroom
 ; plug-in, as removing the app does on the Mac.
+;
+; Lumerist's "Update now" runs it as
+;   <setup>.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LUMERISTRELAUNCH
+; after checking its signed checksum, then quits. /LUMERISTRELAUNCH makes the
+; installer wait for that Lumerist to be gone and open the new version at the end.
 
 #ifndef Version
   #error Pass the version: /DVersion=x.y.z
@@ -78,6 +83,8 @@ Name: "{userprograms}\Lumerist"; Filename: "{app}\Lumerist.exe"; Parameters: "--
 
 [Run]
 Filename: "{app}\Lumerist.exe"; Parameters: "--show-window"; Description: "Open Lumerist"; Flags: nowait postinstall skipifsilent
+; After "Update now" (silent, /LUMERISTRELAUNCH): the new version, in the background.
+Filename: "{app}\Lumerist.exe"; Parameters: "--after-update"; Flags: nowait; Check: StartedByLumerist
 
 [Registry]
 ; Written by General → "Open at login"; only removed here.
@@ -91,6 +98,44 @@ const
   { Lumerist.exe --install-plugin exit codes (PluginInstaller.CommandLineOutcome). }
   PluginDone = 0;
   LightroomIsOpen = 2;
+  { Held by the Lumerist that started this installer from "Update now" until it has quit (UpdateInstaller.cs). }
+  UpdatingMutex = 'Local\io.github.ziago.lumerist.updating';
+  { How long to wait for it, in milliseconds. }
+  QuitWait = 30000;
+
+{ /LUMERISTRELAUNCH on the command line: Lumerist's "Update now" started this installer. }
+function StartedByLumerist(): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+    if CompareText(ParamStr(I), '/LUMERISTRELAUNCH') = 0 then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+{ Before AppMutex is checked: the Lumerist that started this update is quitting.
+  Wait until it is gone, so its files are free (after the wait, CloseApplications
+  still closes a copy that is left). }
+function InitializeSetup(): Boolean;
+var
+  Waited: Integer;
+begin
+  Result := True;
+  if not StartedByLumerist() then
+    Exit;
+  Waited := 0;
+  while CheckForMutexes(UpdatingMutex) and (Waited < QuitWait) do
+  begin
+    Sleep(200);
+    Waited := Waited + 200;
+  end;
+  if Waited > 0 then
+    Log(Format('Waited %d ms for Lumerist to quit.', [Waited]));
+end;
 
 function InstallPlugin(): Integer;
 var
