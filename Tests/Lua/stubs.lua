@@ -206,6 +206,12 @@ function Stubs.new()
         LrDate = {
             currentTime = function() return env.clock end,
         },
+        LrLocalization = {
+            currentLanguage = function()
+                if env.languageError then error(env.languageError, 0) end
+                return env.language
+            end,
+        },
         LrDevelopController = develop,
         LrSelection = selection,
         LrUndo = {
@@ -277,6 +283,7 @@ function Stubs.new()
     env.standardPaths = { appData = "/Users/test/Library/Application Support", home = "/Users/test" }
     env.pathSeparator = "/"
     env.files = {}
+    env.language = "en"
 
     -- Records every line the bridge would send to the companion.
     env.responses = {}

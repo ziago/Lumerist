@@ -162,14 +162,16 @@ function Bridge.encodeAck(id, accepted, message, details)
     return line(object)
 end
 
---- Encodes the context event (current module and Develop tool).
-function Bridge.encodeContext(module, tool)
+--- Encodes the context event (current module, Develop tool and, when
+--- known, Lightroom's interface language).
+function Bridge.encodeContext(module, tool, language)
     return line({
         version = Actions.protocolVersion,
         kind = "event",
         name = "context",
         module = tostring(module or ""),
         tool = tostring(tool or ""),
+        language = type(language) == "string" and language or nil,
     })
 end
 
@@ -277,7 +279,10 @@ function Bridge.pushContextIfChanged()
     local last = _G.lumeristLastContext
     local changed = not last or last.module ~= module or last.tool ~= tool
     if (changed or _G.lumeristContextDirty) and _G.lumeristResponseSocket then
-        if send(Bridge.encodeContext(module, tool)) then
+        -- The language never changes while Lightroom runs; it rides along
+        -- with every push, so each new connection gets it first thing.
+        local languageOk, language = LrTasks.pcall(Actions.language)
+        if send(Bridge.encodeContext(module, tool, languageOk and language or nil)) then
             _G.lumeristLastContext = { module = module, tool = tool }
             _G.lumeristContextDirty = false
         end

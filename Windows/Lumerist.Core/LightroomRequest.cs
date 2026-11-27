@@ -536,6 +536,10 @@ internal static class WireJson
         ? value.ValueKind == JsonValueKind.String ? value.GetString() : throw new FormatException(key + " must be text")
         : null;
 
+    /// <summary>Text, or null when the field is missing or holds another type.</summary>
+    public static string? TextOrNull(Dictionary<string, JsonElement> fields, string key) =>
+        Present(fields, key) is { ValueKind: JsonValueKind.String } value ? value.GetString() : null;
+
     public static bool? Flag(Dictionary<string, JsonElement> fields, string key) => Present(fields, key) is { } value
         ? value.ValueKind switch
         {

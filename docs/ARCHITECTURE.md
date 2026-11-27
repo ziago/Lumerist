@@ -204,7 +204,7 @@ The same pieces as on the Mac, with Windows means:
   preferences, so stale loops stop by themselves.
 - The "send" socket is recreated rather than reconnected.
 - Module and tool are polled about every 0.15 s and pushed as `context`
-  events; presets and an unsupported-parameter check are available as queries.
+  events, which also carry Lightroom's interface language; presets and an unsupported-parameter check are available as queries.
 
 ## Network
 

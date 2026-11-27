@@ -582,7 +582,8 @@ private enum ProtocolRunner {
     }
 
     static func context(_ object: [String: Any]) -> LightroomContext {
-        LightroomContext(module: object["module"] as? String ?? "", tool: object["tool"] as? String ?? "")
+        LightroomContext(module: object["module"] as? String ?? "", tool: object["tool"] as? String ?? "",
+                         language: object["language"] as? String)
     }
 
     static func message(_ object: [String: Any]) throws -> LightroomMessage {

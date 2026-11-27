@@ -77,11 +77,37 @@ public sealed record LightroomAck
 
 /// <summary>
 /// Where the user is in Lightroom: the module and, in Develop, the tool
-/// ("masking" while the Masking panel is open).
+/// ("masking" while the Masking panel is open), plus Lightroom's interface
+/// language, which decides its keyboard shortcuts.
 /// </summary>
-public sealed record LightroomContext(string Module, string Tool)
+public sealed record LightroomContext(string Module, string Tool, string? Language = null)
 {
+    /// <summary>
+    /// The plug-in's <c>LrLocalization.currentLanguage()</c> as a language code
+    /// ("en", "it", "zh_cn"…; see <see cref="LanguageCode"/>), or null when the
+    /// plug-in sent none or sent something that is not a language code.
+    /// </summary>
+    public string? Language { get; init; } = Language is null ? null : LanguageCode(Language);
+
     public bool IsMasking => Module == "develop" && Tool == "masking";
+
+    /// <summary>
+    /// A language code written the one way: lowercase, "_" before a region.
+    /// "it" → "it", "zh_CN" → "zh_cn", "pt-BR" → "pt_br"; null for anything
+    /// else (2–3 letters, then optionally 2–8 letters or digits).
+    /// Shared/fixtures/protocol/messages.json; Mac: LightroomContext.languageCode.
+    /// </summary>
+    public static string? LanguageCode(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var code = text.Trim().ToLowerInvariant().Replace('-', '_');
+        var parts = code.Split('_');
+        if (parts.Length > 2) return null;
+        if (parts[0].Length is < 2 or > 3 || !parts[0].All(char.IsAsciiLetterLower)) return null;
+        if (parts.Length == 2 && (parts[1].Length is < 2 or > 8 || !parts[1].All(c => char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c))))
+            return null;
+        return code;
+    }
 }
 
 /// <summary>One develop preset as listed by the plug-in.</summary>
@@ -151,7 +177,7 @@ public static class MessageCodec
     /// events or results this build does not know (a newer plug-in may add them).
     /// Unknown fields are ignored.
     /// </summary>
-    /// <exception cref="ValidationException">The line is not a protocol-3 message.</exception>
+    /// <exception cref="ValidationException">The line is not a protocol-4 message.</exception>
     public static LightroomMessage? DecodeLine(ReadOnlyMemory<byte> data)
     {
         var trimmed = data.Span.Length > 0 && data.Span[^1] == (byte)'\n' ? data[..^1] : data;
@@ -184,11 +210,11 @@ public static class MessageCodec
                     wire.Id, accepted, wire.Message, wire.Parameter, ParameterScopes.FromWireName(wire.Scope),
                     wire.Value, wire.Minimum, wire.Maximum, wire.Unit));
             case "event":
-                return wire.Name == "context" ? new LightroomMessage.Context(new LightroomContext(wire.Module ?? "", wire.Tool ?? "")) : null;
+                return wire.Name == "context" ? new LightroomMessage.Context(new LightroomContext(wire.Module ?? "", wire.Tool ?? "", wire.Language)) : null;
             case "result":
                 LightroomResult? result = wire.Name switch
                 {
-                    "context" => new LightroomResult.Context(wire.Id, new LightroomContext(wire.Module ?? "", wire.Tool ?? "")),
+                    "context" => new LightroomResult.Context(wire.Id, new LightroomContext(wire.Module ?? "", wire.Tool ?? "", wire.Language)),
                     "presets" => new LightroomResult.Presets(wire.Id, wire.Items ?? [], wire.Truncated ?? false),
                     "catalog" => new LightroomResult.Catalog(wire.Id, wire.Unsupported ?? [], wire.Skipped ?? []),
                     _ => null,
@@ -220,14 +246,16 @@ public static class MessageCodec
                     .Add("unit", ack.Unit);
                 break;
             case LightroomMessage.Context(var context):
-                line.Add("kind", "event").Add("name", "context").Add("module", context.Module).Add("tool", context.Tool);
+                line.Add("kind", "event").Add("name", "context").Add("module", context.Module).Add("tool", context.Tool)
+                    .Add("language", context.Language);
                 break;
             case LightroomMessage.Result(var result):
                 line.Add("kind", "result").Add("id", result.Id);
                 switch (result)
                 {
                     case LightroomResult.Context(_, var context):
-                        line.Add("name", "context").Add("module", context.Module).Add("tool", context.Tool);
+                        line.Add("name", "context").Add("module", context.Module).Add("tool", context.Tool)
+                            .Add("language", context.Language);
                         break;
                     case LightroomResult.Presets(_, var items, var truncated):
                         line.Add("name", "presets")
@@ -284,7 +312,7 @@ public static class MessageCodec
     private sealed record Wire(
         long Version, string? Kind, long? Id, bool? Accepted, string? Message, string? Parameter, string? Scope,
         double? Value, double? Minimum, double? Maximum, string? Unit, string? Name, string? Module, string? Tool,
-        List<PresetItem>? Items, bool? Truncated, List<string>? Unsupported, List<string>? Skipped)
+        string? Language, List<PresetItem>? Items, bool? Truncated, List<string>? Unsupported, List<string>? Skipped)
     {
         public static Wire Read(ReadOnlyMemory<byte> data)
         {
@@ -305,6 +333,8 @@ public static class MessageCodec
                 WireJson.Text(fields, "name"),
                 WireJson.Text(fields, "module"),
                 WireJson.Text(fields, "tool"),
+                // Another type than text reads as no language instead of failing the line.
+                WireJson.TextOrNull(fields, "language"),
                 WireJson.Objects(fields, "items")?.Select(item => new PresetItem(
                     WireJson.Text(item, "id") ?? throw new FormatException("a preset needs an id"),
                     WireJson.Text(item, "name") ?? throw new FormatException("a preset needs a name"),

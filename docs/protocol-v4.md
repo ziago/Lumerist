@@ -11,7 +11,8 @@ A peer that receives another version rejects the message (the plug-in answers
 with an `ack` whose `accepted` is false and whose message says "protocol 4
 required"), so stale builds fail visibly.
 
-Version 4 is version 3 plus the bridge token (below). Nothing else changed.
+Version 4 is version 3 plus the bridge token (below) and Lightroom's
+interface language in the `context` event and result. Nothing else changed.
 
 ## The bridge token
 
@@ -93,11 +94,21 @@ sending Lightroom's own keyboard shortcut.
 | kind | fields |
 | --- | --- |
 | `ack` | `id`, `accepted`, `message` (≤ 1024 UTF-8 bytes), optional `parameter`, `scope`, `value`, `minimum`, `maximum`, `unit` (`EV`, `K`, `deg`, `px`, `%`, `pt`, `choice`) |
-| `event` | `name: "context"`, `module` (Lightroom module name), `tool` (`getSelectedTool()`, may be empty). Pushed after connect and whenever either changes (polled about every 0.15 s) |
-| `result` | `id`, `name`, then for `context`: `module`, `tool`; for `presets`: `items: [{ "id": uuid, "name": …, "group": … }]` and `truncated: true` when the list was cut to fit the line; for `catalog`: `unsupported: [parameter ids]` (develop parameters whose `getRange` fails in this Lightroom) |
+| `event` | `name: "context"`, `module` (Lightroom module name), `tool` (`getSelectedTool()`, may be empty), optional `language` (below). Pushed after connect and whenever module or tool changes (polled about every 0.15 s) |
+| `result` | `id`, `name`, then for `context`: `module`, `tool`, optional `language`; for `presets`: `items: [{ "id": uuid, "name": …, "group": … }]` and `truncated: true` when the list was cut to fit the line; for `catalog`: `unsupported: [parameter ids]` (develop parameters whose `getRange` fails in this Lightroom) |
 
 Numbers are finite; non-finite values are omitted. A single line may be up to
 256 KB (preset lists); the companion accepts lines up to 1 MB.
+
+`language` is Lightroom's interface language, which decides its keyboard
+shortcuts: `LrLocalization.currentLanguage()` as Lightroom gives it ("en",
+"it", "zh_cn"…). It is left out when the call fails or returns no text. It
+cannot change while Lightroom runs (a new language needs a restart, and the
+restart reconnects), so every push carries the same value. The apps write it
+one way, lowercase with `_` before a region ("zh_CN" and "zh-cn" become
+"zh_cn"), and treat anything that is not 2–3 letters plus an optional region
+of 2–8 letters or digits, or that is not text, as unknown (nil) without
+rejecting the line. Which shortcuts a code means is up to the app.
 
 Merged adjustments: the plug-in sums consecutive `adjust` requests for
 the same scope + parameter before applying them, and answers with one `ack`

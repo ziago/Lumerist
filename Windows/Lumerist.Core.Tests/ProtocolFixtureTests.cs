@@ -85,7 +85,8 @@ public class ProtocolFixtureTests
     // Messages ----------------------------------------------------------------
 
     private static LightroomContext Context(JsonObject obj) =>
-        new(FixtureValues.OptionalText(obj["module"]) ?? "", FixtureValues.OptionalText(obj["tool"]) ?? "");
+        new(FixtureValues.OptionalText(obj["module"]) ?? "", FixtureValues.OptionalText(obj["tool"]) ?? "",
+            FixtureValues.OptionalText(obj["language"]));
 
     private static LightroomMessage Message(JsonObject obj)
     {

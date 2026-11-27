@@ -63,17 +63,42 @@ public struct LightroomAck: Sendable, Hashable {
 }
 
 /// Where the user is in Lightroom: the module and, in Develop, the tool
-/// ("masking" while the Masking panel is open).
+/// ("masking" while the Masking panel is open), plus Lightroom's interface
+/// language, which decides its keyboard shortcuts.
 public struct LightroomContext: Sendable, Hashable {
     public let module: String
     public let tool: String
+    /// The plug-in's `LrLocalization.currentLanguage()` as a language code
+    /// ("en", "it", "zh_cn"...; see `languageCode`), or nil when the plug-in
+    /// sent none or sent something that is not a language code.
+    public let language: String?
 
-    public init(module: String, tool: String) {
+    public init(module: String, tool: String, language: String? = nil) {
         self.module = module
         self.tool = tool
+        self.language = language.flatMap(Self.languageCode)
     }
 
     public var isMasking: Bool { module == "develop" && tool == "masking" }
+
+    /// A language code written the one way: lowercase, "_" before a region.
+    /// "it" → "it", "zh_CN" → "zh_cn", "pt-BR" → "pt_br"; nil for anything
+    /// else (2–3 letters, then optionally 2–8 letters or digits).
+    /// Shared/fixtures/protocol/messages.json; Windows: LightroomContext.LanguageCode.
+    public static func languageCode(_ text: String) -> String? {
+        let code = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            .replacingOccurrences(of: "-", with: "_")
+        let parts = code.split(separator: "_", omittingEmptySubsequences: false)
+        func isLetter(_ byte: UInt8) -> Bool { (0x61...0x7A).contains(byte) }
+        func isDigit(_ byte: UInt8) -> Bool { (0x30...0x39).contains(byte) }
+        guard let language = parts.first, parts.count <= 2,
+              (2...3).contains(language.utf8.count), language.utf8.allSatisfy(isLetter) else { return nil }
+        if parts.count == 2 {
+            let region = parts[1]
+            guard (2...8).contains(region.utf8.count), region.utf8.allSatisfy({ isLetter($0) || isDigit($0) }) else { return nil }
+        }
+        return code
+    }
 }
 
 /// One develop preset as listed by the plug-in.
@@ -119,6 +144,24 @@ enum MessageCodec {
     /// Lines may be large (preset lists).
     static let maximumLineBytes = 1_048_576
 
+    /// Text that may also arrive as another JSON type, which then reads as
+    /// nil instead of failing the whole line (for optional extras such as
+    /// the context's language).
+    struct LenientText: Codable, Equatable {
+        let value: String?
+
+        init(_ value: String?) { self.value = value }
+
+        init(from decoder: Decoder) throws {
+            value = try? decoder.singleValueContainer().decode(String.self)
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(value)
+        }
+    }
+
     struct Wire: Codable {
         var version: Int
         /// Optional so that a line from an older plug-in (no `kind`) still
@@ -136,6 +179,7 @@ enum MessageCodec {
         var name: String?
         var module: String?
         var tool: String?
+        var language: LenientText?
         var items: [PresetItem]?
         var truncated: Bool?
         var unsupported: [String]?
@@ -172,11 +216,12 @@ enum MessageCodec {
             ))
         case "event":
             guard wire.name == "context" else { return nil }
-            return .context(LightroomContext(module: wire.module ?? "", tool: wire.tool ?? ""))
+            return .context(LightroomContext(module: wire.module ?? "", tool: wire.tool ?? "", language: wire.language?.value))
         case "result":
             switch wire.name {
             case "context":
-                return .result(.context(id: wire.id, LightroomContext(module: wire.module ?? "", tool: wire.tool ?? "")))
+                return .result(.context(id: wire.id, LightroomContext(module: wire.module ?? "", tool: wire.tool ?? "",
+                                                                      language: wire.language?.value)))
             case "presets":
                 return .result(.presets(id: wire.id, items: wire.items ?? [], truncated: wire.truncated ?? false))
             case "catalog":
@@ -208,6 +253,7 @@ enum MessageCodec {
             wire.name = "context"
             wire.module = context.module
             wire.tool = context.tool
+            wire.language = context.language.map(LenientText.init)
         case .result(let result):
             wire.kind = "result"
             wire.id = result.id
@@ -216,6 +262,7 @@ enum MessageCodec {
                 wire.name = "context"
                 wire.module = context.module
                 wire.tool = context.tool
+                wire.language = context.language.map(LenientText.init)
             case .presets(_, let items, let truncated):
                 wire.name = "presets"
                 wire.items = items

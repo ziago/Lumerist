@@ -490,7 +490,7 @@ internal sealed class AppController : IDisposable
         if (newContext == context) return;
         context = newContext;
         hook?.UpdateContext(newContext.Module, newContext.Tool);
-        Log.Write($"Lightroom context: {newContext.Module} {newContext.Tool}");
+        Log.Write($"Lightroom context: {newContext.Module} {newContext.Tool} (language {newContext.Language ?? "unknown"})");
         Panels?.ContextChanged(newContext);
         Changed?.Invoke();
     }

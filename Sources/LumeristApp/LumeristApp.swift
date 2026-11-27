@@ -430,7 +430,7 @@ final class CommandStore {
         guard newContext != context else { return }
         context = newContext
         monitor?.update(module: newContext.module, tool: newContext.tool)
-        DebugLog.write("Lightroom context: \(newContext.module) \(newContext.tool)")
+        DebugLog.write("Lightroom context: \(newContext.module) \(newContext.tool) (language \(newContext.language ?? "unknown"))")
         if !newContext.isMasking && isPaletteOpen { closePalette() }
     }
 

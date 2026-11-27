@@ -5,6 +5,7 @@
 local LrApplication = import "LrApplication"
 local LrApplicationView = import "LrApplicationView"
 local LrDevelopController = import "LrDevelopController"
+local LrLocalization = import "LrLocalization"
 local LrSelection = import "LrSelection"
 local LrUndo = import "LrUndo"
 local Catalog = require "Catalog"
@@ -285,11 +286,22 @@ function Commands.context()
     return current, tool
 end
 
+--- Lightroom's interface language, as LrLocalization.currentLanguage() gives
+--- it ("en", "it", "zh_cn"...), or nil. Lightroom's shortcuts depend on it;
+--- the app decides what the code means. Fixed until Lightroom restarts.
+function Commands.language()
+    local ok, language = pcall(LrLocalization.currentLanguage)
+    if ok and type(language) == "string" and #language > 0 and #language <= 32 then
+        return language
+    end
+    return nil
+end
+
 local queries = {}
 
 function queries.context()
     local current, tool = Commands.context()
-    return { name = "context", module = current, tool = tool }
+    return { name = "context", module = current, tool = tool, language = Commands.language() }
 end
 
 function queries.presets()

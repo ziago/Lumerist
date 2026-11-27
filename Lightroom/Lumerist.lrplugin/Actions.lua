@@ -130,6 +130,11 @@ function Actions.context()
     return Commands.context()
 end
 
+--- Lightroom's interface language (or nil), for the context event.
+function Actions.language()
+    return Commands.language()
+end
+
 --- Test hook: forget remembered writes.
 function Actions._resetForTests()
     Develop._resetForTests()

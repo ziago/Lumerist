@@ -853,6 +853,29 @@ test("context query reports module and Develop tool", function()
     eq(result.tool, "", "no tool outside Develop")
 end)
 
+test("context query reports Lightroom's interface language", function()
+    local env, Actions = fresh()
+    local function language()
+        local ok, _, _, result = run(Actions, request({ kind = "query", name = "context" }))
+        truthy(ok, "ok")
+        return result.language
+    end
+    eq(language(), "en", "default")
+    env.language = "zh_cn"
+    eq(language(), "zh_cn", "as Lightroom gives it")
+    env.language = nil
+    eq(language(), nil, "none")
+    env.language = 42
+    eq(language(), nil, "not text")
+    env.language = ""
+    eq(language(), nil, "empty")
+    env.language = string.rep("a", 33)
+    eq(language(), nil, "too long")
+    env.language = "it"
+    env.languageError = "LrLocalization failed"
+    eq(language(), nil, "an error is no language, and no failure")
+end)
+
 test("presets query lists every develop preset with its folder", function()
     local _, Actions = fresh()
     local _, _, _, result = run(Actions, request({ kind = "query", name = "presets" }))
@@ -940,6 +963,9 @@ test("encodeContext and encodeResult produce valid lines", function()
     eq(event.kind, "event", "kind")
     eq(event.name, "context", "name")
     eq(event.tool, "masking", "tool")
+    eq(event.language, nil, "no language given, none sent")
+    eq(decodeJSON(Bridge.encodeContext("develop", "masking", "it"):sub(1, -2)).language, "it", "language")
+    eq(decodeJSON(Bridge.encodeContext("develop", "masking", 7):sub(1, -2)).language, nil, "only text")
     local Json = require "Json"
     local result = decodeJSON(Bridge.encodeResult(9, { name = "catalog", unsupported = Json.array({ "A", "B" }),
         skipped = Json.array({}) }):sub(1, -2))
@@ -1198,6 +1224,18 @@ test("the worker pushes the context right after a client connects", function()
     eq(event.kind, "event", "first line is the context")
     eq(event.module, "develop", "module")
     eq(event.tool, "masking", "tool")
+    eq(event.language, "en", "Lightroom's language")
+end)
+
+test("the context still goes out when Lightroom's language cannot be read", function()
+    local env, _, Bridge = fresh()
+    env.languageError = "LrLocalization failed"
+    startAndStopAfterFirstIdle(env, Bridge)
+    env.tasks[1]()
+    local event = sent(env, 1)
+    eq(event.kind, "event", "context sent")
+    eq(event.module, "develop", "module")
+    eq(event.language, nil, "no language")
 end)
 
 test("the worker pushes the context again within a quarter second of a change", function()

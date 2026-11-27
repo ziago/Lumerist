@@ -29,6 +29,36 @@
       "message": { "context": { "module": "library", "tool": "" } }
     },
     {
+      "id": "protocol-messages/context-event-with-the-lightroom-language",
+      "line": { "version": 4, "kind": "event", "name": "context", "module": "library", "language": "it" },
+      "message": { "context": { "module": "library", "tool": "", "language": "it" } }
+    },
+    {
+      "id": "protocol-messages/context-language-with-a-region",
+      "line": { "version": 4, "kind": "event", "name": "context", "module": "library", "language": "zh_CN" },
+      "message": { "context": { "module": "library", "tool": "", "language": "zh_cn" } }
+    },
+    {
+      "id": "protocol-messages/context-language-with-a-hyphen",
+      "line": { "version": 4, "kind": "event", "name": "context", "module": "library", "language": "pt-BR" },
+      "message": { "context": { "module": "library", "tool": "", "language": "pt_br" } }
+    },
+    {
+      "id": "protocol-messages/context-language-that-is-not-a-code",
+      "line": { "version": 4, "kind": "event", "name": "context", "module": "library", "language": "Italiano (Italia)" },
+      "message": { "context": { "module": "library", "tool": "" } }
+    },
+    {
+      "id": "protocol-messages/context-language-that-is-empty",
+      "line": { "version": 4, "kind": "event", "name": "context", "module": "library", "language": "" },
+      "message": { "context": { "module": "library", "tool": "" } }
+    },
+    {
+      "id": "protocol-messages/context-language-that-is-not-text",
+      "line": { "version": 4, "kind": "event", "name": "context", "module": "library", "language": 7 },
+      "message": { "context": { "module": "library", "tool": "" } }
+    },
+    {
       "id": "protocol-messages/unknown-events-are-ignored",
       "line": { "version": 4, "kind": "event", "name": "somethingNew" },
       "message": null
@@ -37,6 +67,11 @@
       "id": "protocol-messages/context-result",
       "line": { "version": 4, "kind": "result", "id": 3, "name": "context", "module": "develop", "tool": "crop" },
       "message": { "result": { "context": { "id": 3, "module": "develop", "tool": "crop" } } }
+    },
+    {
+      "id": "protocol-messages/context-result-with-the-lightroom-language",
+      "line": { "version": 4, "kind": "result", "id": 3, "name": "context", "module": "develop", "tool": "crop", "language": "de" },
+      "message": { "result": { "context": { "id": 3, "module": "develop", "tool": "crop", "language": "de" } } }
     },
     {
       "id": "protocol-messages/presets-result",
