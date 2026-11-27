@@ -105,7 +105,7 @@ Intents: `{"adjust": "develop/Exposure", "delta": 0.05}`, `{"reset": p}`,
 Actions: `{"command": "undo"}` (optional `"argument"`), `{"shortcut": chord}`,
 `{"preset": uuid, "name": name}`, `{"macro": [{"action": action, "delay": s}]}`.
 
-A command is one of Lightroom's (docs/protocol-v3.md), which the app sends
+A command is one of Lightroom's (docs/protocol-v4.md), which the app sends
 to the plug-in, or one Lumerist runs itself by pressing Lightroom's own
 shortcut, which sends nothing to the plug-in. There is one of those:
 `pasteSettingsFromPrevious`, Lightroom's Paste Settings from Previous (⌥⌘V
