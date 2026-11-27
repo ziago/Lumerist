@@ -45,8 +45,10 @@ can read.
   already do anything that user can. The response port (50551) is not
   authenticated: whoever connects to it first receives the acks, the module
   name and the preset names (never photos or keystrokes), and a program that
-  holds either port can keep the app from connecting. The token is never
-  logged.
+  holds either port can keep the app from connecting. A refused sender is
+  disconnected and the plug-in listens again about 10 s later (the same
+  restart as when the app quits); while the app is connected, other
+  connections wait and are not served. The token is never logged.
 
 Parameter ids come from `Shared/parameters.json` (generated into
 `Parameters.lua`, `ParameterCatalogData.swift` and

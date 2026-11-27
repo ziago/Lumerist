@@ -6,6 +6,8 @@ All notable changes to Lumerist are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.9.2] — Import keys, keys that follow your keyboard and Lightroom's language, one-click updates and a security fix
+
 ### Highlights
 - Culling keys for Lightroom's Import window: include, exclude and toggle
   photos with keys you pick.
@@ -173,6 +175,7 @@ Lumerist is made by the creator of [Galerist](https://galerist.photo/c/lk-releas
 online galleries where photographers and videographers deliver their work to
 clients.
 
-[Unreleased]: https://github.com/ziago/Lumerist/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/ziago/Lumerist/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/ziago/Lumerist/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/ziago/Lumerist/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/ziago/Lumerist/releases/tag/v0.9.0
