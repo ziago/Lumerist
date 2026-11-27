@@ -17,7 +17,8 @@
 #   4. The update signing key (ECDSA P-256) in the login keychain, generic
 #      password "lumerist-update-signing" holding the base64 of its PKCS#8 PEM.
 #      It signs SHA256SUMS, without which the app does not update itself; its
-#      public key is below and built into the app. Never in files or in CI.
+#      public key is in Shared/update-public-keys.json and built into the app.
+#      Never in files or in CI.
 #
 # The version comes from the top-level VERSION file; release notes come from
 # the matching "## [x.y.z]" (or "## x.y.z") section of CHANGELOG.md, which
@@ -265,10 +266,19 @@ fi
 # files left out. SHA256SUMS.sig: the base64 of the DER ECDSA P-256 / SHA-256
 # signature of SHA256SUMS' exact bytes. The private key (base64 of a PKCS#8
 # PEM) stays in this Mac's Keychain, generic password "lumerist-update-signing":
-# it never reaches CI, the repository or the disk. /usr/bin/openssl (LibreSSL)
-# so the release does not depend on Homebrew.
+# it never reaches CI, the repository or the disk. The public keys the app
+# trusts (any one of them may sign) are in Shared/update-public-keys.json, the
+# same file the app is checked against. /usr/bin/openssl (LibreSSL) so the
+# release does not depend on Homebrew.
 update_signing_service="lumerist-update-signing"
-update_public_key="MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEt37ZfOYd5bo4/ZKP73l2KTyzgZI9Ih0nlBof4WjmWuaoFd3JYfLtZah8HT6R2DP62EYmSxeW2N25UIN1DIhzVA=="
+update_keys_file="$root/Shared/update-public-keys.json"
+update_public_keys=()
+key_count="$(plutil -extract updatePublicKeys raw -o - "$update_keys_file" 2>/dev/null)" \
+  || fail "Cannot read the update public keys from $update_keys_file."
+for (( index = 0; index < key_count; index++ )); do
+  update_public_keys+=("$(plutil -extract "updatePublicKeys.$index" raw -o - "$update_keys_file")")
+done
+(( ${#update_public_keys} )) || fail "$update_keys_file lists no update public key."
 sums="$out/SHA256SUMS"
 sums_signature="$out/SHA256SUMS.sig"
 rm -f "$sums" "$sums_signature"
@@ -278,10 +288,15 @@ for file in "${summed[@]}"; do
 done | LC_ALL=C sort -k 2 > "$sums"
 step "SHA256SUMS: ${#summed} packages"
 
+# True when the signature checks out against one of the keys the app trusts.
 verify_sums() {
-  /usr/bin/openssl dgst -sha256 \
-    -verify <(print -r -- "$update_public_key" | base64 -d | /usr/bin/openssl pkey -pubin -inform DER) \
-    -signature <(base64 -d < "$sums_signature") "$sums" >/dev/null 2>&1
+  local key
+  for key in "${update_public_keys[@]}"; do
+    /usr/bin/openssl dgst -sha256 \
+      -verify <(print -r -- "$key" | base64 -d | /usr/bin/openssl pkey -pubin -inform DER) \
+      -signature <(base64 -d < "$sums_signature") "$sums" >/dev/null 2>&1 && return 0
+  done
+  return 1
 }
 if ! security find-generic-password -s "$update_signing_service" >/dev/null 2>&1; then
   message="No \"$update_signing_service\" key in the Keychain: SHA256SUMS cannot be signed, and the app would not update itself."
@@ -291,7 +306,7 @@ else
   /usr/bin/openssl dgst -sha256 \
     -sign <(security find-generic-password -s "$update_signing_service" -w | base64 -d) "$sums" \
     | base64 > "$sums_signature" || fail "Signing SHA256SUMS failed."
-  verify_sums || fail "SHA256SUMS.sig does not verify with the public key the app trusts (is the Keychain key the right one?)."
+  verify_sums || fail "SHA256SUMS.sig does not verify with any key in Shared/update-public-keys.json (is the Keychain key the right one?)."
   step "SHA256SUMS signed and verified"
 fi
 update_assets=()

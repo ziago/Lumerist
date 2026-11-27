@@ -37,7 +37,8 @@ has a `.sha256` file next to it.
 From 0.9.2 every release also has `SHA256SUMS`, the hashes of all its
 packages, and `SHA256SUMS.sig`, their signature with Lumerist's update key.
 The key is kept off GitHub, and the app checks this signature before it
-updates itself. To check it by hand on a Mac:
+updates itself (below). To check it by hand on a Mac, with the public key
+from `Shared/update-public-keys.json`:
 
 ```sh
 echo MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEt37ZfOYd5bo4/ZKP73l2KTyzgZI9Ih0nlBof4WjmWuaoFd3JYfLtZah8HT6R2DP62EYmSxeW2N25UIN1DIhzVA== \
@@ -59,12 +60,6 @@ still could not make Lumerist install it. On the Mac the app must also carry
 Lumerist's Developer ID signature and Apple's notarization, and be the
 announced version. If any check fails, nothing is installed and the current
 version stays as it is.
-
-You can check the list yourself:
-`openssl dgst -sha256 -verify lumerist-update.pub -signature <(base64 -d < SHA256SUMS.sig) SHA256SUMS`,
-with the public key
-`MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEt37ZfOYd5bo4/ZKP73l2KTyzgZI9Ih0nlBof4WjmWuaoFd3JYfLtZah8HT6R2DP62EYmSxeW2N25UIN1DIhzVA==`
-(base64 DER; save it as PEM between `-----BEGIN PUBLIC KEY-----` lines).
 
 ## Supported versions
 
