@@ -29,6 +29,7 @@
 <p align="center">
   <a href="#install-in-three-steps">Install</a> ·
   <a href="#what-it-does">Features</a> ·
+  <a href="#culling-in-the-import-window">Culling</a> ·
   <a href="#the-standard-layout">Layout</a> ·
   <a href="#faq--troubleshooting">FAQ</a> ·
   <a href="#contributing">Contributing</a> ·
@@ -73,6 +74,9 @@ clients.
 - **Masks follow you** — with a mask selected, your keys move the *mask's*
   sliders. Keys with no mask equivalent never touch the whole photo.
 - **Library too** — Quick Develop adjustments applied to every selected photo.
+- **Import keys** — cull in Lightroom's Import window with three keys you
+  pick, under one hand: Include, Exclude and Toggle. Lumerist can move on to
+  the next photo for you. [More below](#culling-in-the-import-window).
 - **Palette** — hold the Palette Key for your favourite presets and
   Lightroom's *Create New Mask* tools (subject, sky, background, people,
   objects, brush, linear, radial…). With a mask selected, ⇧-click adds,
@@ -95,6 +99,38 @@ clients.
 <p align="center">
   <img src="docs/images/screenshot-develop.png" alt="The Lumerist window: Develop page with Dial and Nudge columns for every slider" width="49%">
   <img src="docs/images/screenshot-keyboard.png" alt="The Keyboard tab: every Dial Key drawn on the keyboard, with the slider it moves" width="49%">
+</p>
+
+## Culling in the Import window
+
+New in 0.9.2. Pick three keys for Lightroom's Import window, for example
+**Z**, **X** and **C**, side by side under one hand:
+
+- **Include** ticks the photo, so Lightroom imports it;
+- **Exclude** unticks it, so Lightroom leaves it out;
+- **Toggle** ticks or unticks it.
+
+Turn on **Move to the next photo** and Lumerist also presses → after Include
+or Exclude, so you go through a whole card without leaving the keys.
+
+<p align="center">
+  <img src="docs/images/import.gif" alt="Lightroom Classic's Import window with twelve photos: Z keeps a photo and moves to the next one, X leaves one out and moves on, C ticks or unticks the photo it is on, and the count of photos to import follows" width="100%">
+</p>
+
+You set them on Lumerist's **Import** page. No key is assigned until you pick
+one, so the Import window stays as it is until you do. The keys act only
+while the Import window is in front: there your Develop and Library keys
+pause, and the mouse wheel and the trackpad scroll Lightroom as usual.
+
+Lumerist presses Lightroom's own Import keys for you (P, X and the Toggle
+key), found by the character they type on your keyboard layout and by
+Lightroom's language. The page shows which key each one sends: Toggle sends
+`<` on the Italian keyboard below, `` ` `` on a US one. Lumerist recognises
+the Import window by the type and size of Lightroom's windows and never reads
+their text.
+
+<p align="center">
+  <img src="docs/images/screenshot-import.png" alt="The Import page in Lumerist: Include on Z sends P, Exclude on X sends X, Toggle on C sends the Toggle key (less-than on this Italian keyboard), and Move to the next photo is on" width="100%">
 </p>
 
 ## Install in three steps
@@ -240,7 +276,8 @@ Everything can be reassigned: click a key cap in the app and press the new
 key. You can add Nudge and Command Keys, make any of them a combo (hold Tab
 while you press the key), change the step of each slider, make the larger step
 the default, reverse the scroll direction, set the trackpad sensitivity,
-and export or import your layout.
+and export or import your layout. When a key you pick is one Lightroom
+already uses, Lumerist says so on its row; it never stops you.
 
 <p align="center">
   <img src="docs/images/customize.png" alt="The Keyboard view in Lumerist: click a key cap and press the new key; set the step per notch for each slider; export and import your layout" width="100%">
